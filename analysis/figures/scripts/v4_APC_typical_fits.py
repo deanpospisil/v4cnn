@@ -12,6 +12,7 @@ import numpy as np
 import scipy.io as  l
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib as mpl
 import os
 
 top_dir = os.getcwd().split('v4cnn')[0]
@@ -99,33 +100,51 @@ threshFits = v4fits[k[0:4]][(v4fits['r'].values>rthresh) ]
 plt.close('all')
 
 fig = plt.figure()
+import matplotlib.gridspec as gridspec
+gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
+
+ax1 = plt.subplot(gs[0])
+ax2 = plt.subplot(gs[1])
+ax2.xaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
+ax2.yaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
 
 
+ax3 = plt.subplot(gs[3])
 
-import seaborn as sns
+ax1.hist(np.random.rand(100), orientation='horizontal')
+ax1.xaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=3, presets=None))
+ax1.yaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
 
-sns.set_context("talk", font_scale=1.4)
-g = sns.jointplot(x='sdcurv', y='mcurv', data=threshFits, stat_func=None)
-plt.title('Curvature Fits r>' + str(rthresh))
-g.set_axis_labels('Standard Deviation','Mean')
-g.ax_joint.set_ylim((-1,1.1))
-g.ax_joint.set_xlim((0,1))
-g.ax_joint.set_xticks([0,0.5,1])
-plt.gca().xaxis.set_ticks_position('none')
-plt.gca().yaxis.set_ticks_position('none')
-plt.gca().set_aspect('auto')
-plt.savefig(top_dir + 'v4cnn/analysis/figures/images/v4_apc_fits.png')
-
-
+ax3.hist(np.random.rand(100), orientation='vertical')
+ax3.yaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=3, presets=None))
+ax3.xaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
+ax3.xaxis.set_tick_params(length=0)
+plt.show()
+#
+#import seaborn as sns
+#
 #sns.set_context("talk", font_scale=1.4)
-g = sns.jointplot(x='sdori', y='mori',data= threshFits, stat_func=None)
-plt.title('Angular Position Fits r>' + str(rthresh))
-g.set_axis_labels('Standard Deviation', 'Mean')
-g.ax_joint.set_ylim((-8, 360))
-g.ax_joint.set_xlim((0, 190))
-g.ax_joint.set_xticks([0,90, 180])
-plt.gca().xaxis.set_ticks_position('none')
-plt.gca().yaxis.set_ticks_position('none')
-plt.gca().set_aspect('auto')
-
-plt.savefig(top_dir + 'v4cnn/analysis/figures/images/v4_apc_correlation_hist.png')
+#g = sns.jointplot(x='sdcurv', y='mcurv', data=threshFits, stat_func=None)
+#plt.title('Curvature Fits r>' + str(rthresh))
+#g.set_axis_labels('Standard Deviation','Mean')
+#g.ax_joint.set_ylim((-1,1.1))
+#g.ax_joint.set_xlim((0,1))
+#g.ax_joint.set_xticks([0,0.5,1])
+#plt.gca().xaxis.set_ticks_position('none')
+#plt.gca().yaxis.set_ticks_position('none')
+#plt.gca().set_aspect('auto')
+#plt.savefig(top_dir + 'v4cnn/analysis/figures/images/v4_apc_fits.png')
+#
+#
+##sns.set_context("talk", font_scale=1.4)
+#g = sns.jointplot(x='sdori', y='mori',data= threshFits, stat_func=None)
+#plt.title('Angular Position Fits r>' + str(rthresh))
+#g.set_axis_labels('Standard Deviation', 'Mean')
+#g.ax_joint.set_ylim((-8, 360))
+#g.ax_joint.set_xlim((0, 190))
+#g.ax_joint.set_xticks([0,90, 180])
+#plt.gca().xaxis.set_ticks_position('none')
+#plt.gca().yaxis.set_ticks_position('none')
+#plt.gca().set_aspect('auto')
+#
+#plt.savefig(top_dir + 'v4cnn/analysis/figures/images/v4_apc_correlation_hist.png')
