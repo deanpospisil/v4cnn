@@ -91,35 +91,83 @@ plt.tight_layout()
 plt.savefig(top_dir + 'v4cnn/analysis/figures/images/v4_apc_correlation_hist.png')
 plt.close('all')
 
-v4fits['mori'] = (v4fits['mori']/(2*np.pi))*360
-v4fits['sdori'] = (v4fits['sdori']/(2*np.pi))*360
+
+
+def tick_format_d(x,pos):
+    if x==0:
+        return('0')
+    else:
+        return(x)
+import matplotlib.gridspec as gridspec
+import matplotlib.ticker as mtick
+
+
+def scatter_w_marginals(x, y, titlex, titley):
+    fig = plt.figure()
+    gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
+
+    ax1 = plt.subplot(gs[0])
+
+    ax2 = plt.subplot(gs[1])
+    ax2.scatter(x,y)
+    ax2.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+    ax2.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+
+
+    ax3 = plt.subplot(gs[3])
+    ax1.hist(y, orientation='horizontal')
+    ax1.xaxis.set_major_locator(mtick.LinearLocator(numticks=3, presets=None))
+    ax1.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+
+    ax3.hist(x, orientation='vertical')
+    ax3.yaxis.set_major_locator(mtick.LinearLocator(numticks=3, presets=None))
+    ax3.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+
+
+    for axes in fig.axes:
+        axes.xaxis.set_tick_params(length=0)
+        axes.yaxis.set_tick_params(length=0)
+        axes.yaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
+        axes.xaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
+    plt.show()
+
+    return fig
+
+
+
+v4fits['mori'] = ((v4fits['mori']/(2*np.pi))*360)%360
+v4fits['sdori'] = ((v4fits['sdori']/(2*np.pi))*360)
 k = v4fits.keys()
 rthresh = 0.6
-
 threshFits = v4fits[k[0:4]][(v4fits['r'].values>rthresh) ]
-plt.close('all')
 
-fig = plt.figure()
-import matplotlib.gridspec as gridspec
-gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
+scatter_w_marginals(threshFits['mori'], threshFits['sdori'], 'Mean Orientation', 'SD Orientation')
 
-ax1 = plt.subplot(gs[0])
-ax2 = plt.subplot(gs[1])
-ax2.xaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
-ax2.yaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
+#gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
+#ax1 = plt.subplot(gs[0])
+#
+#ax2 = plt.subplot(gs[1])
+#ax2.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+#ax2.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+#
+#
+#ax3 = plt.subplot(gs[3])
+#ax1.hist(np.random.rand(100), orientation='horizontal')
+#ax1.xaxis.set_major_locator(mtick.LinearLocator(numticks=3, presets=None))
+#ax1.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+#
+#ax3.hist(np.random.rand(100), orientation='vertical')
+#ax3.yaxis.set_major_locator(mtick.LinearLocator(numticks=3, presets=None))
+#ax3.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+#
+#
+#for axes in fig.axes:
+#    axes.xaxis.set_tick_params(length=0)
+#    axes.yaxis.set_tick_params(length=0)
+#    axes.yaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
+#    axes.xaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
+#
 
-
-ax3 = plt.subplot(gs[3])
-
-ax1.hist(np.random.rand(100), orientation='horizontal')
-ax1.xaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=3, presets=None))
-ax1.yaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
-
-ax3.hist(np.random.rand(100), orientation='vertical')
-ax3.yaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=3, presets=None))
-ax3.xaxis.set_major_locator(mpl.ticker.LinearLocator(numticks=5, presets=None))
-ax3.xaxis.set_tick_params(length=0)
-plt.show()
 #
 #import seaborn as sns
 #
