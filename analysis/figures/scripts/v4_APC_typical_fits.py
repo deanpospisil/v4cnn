@@ -116,19 +116,23 @@ def scatter_w_marginals(x, y, titlex, titley):
 
     ax3 = plt.subplot(gs[3])
     ax1.hist(y, orientation='horizontal')
-    ax1.xaxis.set_major_locator(mtick.LinearLocator(numticks=3, presets=None))
+    ax1.xaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
     ax1.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
 
     ax3.hist(x, orientation='vertical')
-    ax3.yaxis.set_major_locator(mtick.LinearLocator(numticks=3, presets=None))
+    ax3.yaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
     ax3.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
 
 
-    for axes in fig.axes:
+    for i, axes in enumerate(fig.axes):
         axes.xaxis.set_tick_params(length=0)
         axes.yaxis.set_tick_params(length=0)
         axes.yaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
         axes.xaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
+        if i==2:
+            axes.set_ylim(lims[1][:2])
+
+
     plt.show()
 
     return fig
@@ -141,7 +145,9 @@ k = v4fits.keys()
 rthresh = 0.6
 threshFits = v4fits[k[0:4]][(v4fits['r'].values>rthresh) ]
 
-scatter_w_marginals(threshFits['mori'], threshFits['sdori'], 'Mean Orientation', 'SD Orientation')
+scatter_w_marginals(threshFits['mori'], threshFits['sdori'],
+                    'Mean Orientation', 'SD Orientation',
+                    lims=[[0, 360, 0, 'max'] ,[0, 'max', 0, 'max']])
 
 #gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
 #ax1 = plt.subplot(gs[0])
