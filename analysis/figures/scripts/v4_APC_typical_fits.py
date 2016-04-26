@@ -102,7 +102,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.ticker as mtick
 
 
-def scatter_w_marginals(x, y, titlex, titley):
+def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, title):
     fig = plt.figure()
     gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
 
@@ -110,27 +110,35 @@ def scatter_w_marginals(x, y, titlex, titley):
 
     ax2 = plt.subplot(gs[1])
     ax2.scatter(x,y)
+    ax2.set_xlim(xlim)
+    ax2.set_ylim(ylim)
+    ax2.set_title(title)
+
     ax2.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
     ax2.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
-
+    ax2.xaxis.set_ticklabels([])
+    ax2.yaxis.set_ticklabels([])
 
     ax3 = plt.subplot(gs[3])
     ax1.hist(y, orientation='horizontal')
     ax1.xaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
     ax1.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+    ax1.yaxis.set_label_text(titley)
 
     ax3.hist(x, orientation='vertical')
     ax3.yaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
     ax3.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+    ax3.xaxis.set_label_text(titlex)
 
+    ax3.set_xlim(xlim)
+    ax1.set_ylim(ylim)
 
     for i, axes in enumerate(fig.axes):
         axes.xaxis.set_tick_params(length=0)
         axes.yaxis.set_tick_params(length=0)
         axes.yaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
         axes.xaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
-        if i==2:
-            axes.set_ylim(lims[1][:2])
+
 
 
     plt.show()
@@ -145,9 +153,25 @@ k = v4fits.keys()
 rthresh = 0.6
 threshFits = v4fits[k[0:4]][(v4fits['r'].values>rthresh) ]
 
-scatter_w_marginals(threshFits['mori'], threshFits['sdori'],
+fig = scatter_w_marginals(threshFits['mori'], threshFits['sdori'],
                     'Mean Orientation', 'SD Orientation',
-                    lims=[[0, 360, 0, 'max'] ,[0, 'max', 0, 'max']])
+                    xlim= [0, 360],
+                    ylim= [0, np.round(np.max(threshFits['sdori'] ),-1)],
+                    title = 'r > ' + str(rthresh))
+
+plt.title('r> ' + str(rthresh) )
+plt.savefig(top_dir + 'v4cnn/analysis/figures/images/v4_apc_ori.png')
+plt.close('all')
+
+
+
+fig = scatter_w_marginals(threshFits['mcurv'], threshFits['sdcurv'],
+                    'Mean Curve', 'SD Curve',
+                    xlim= [-1, 1],
+                    ylim= [0, np.round(np.max(threshFits['sdcurv']),0)],
+                    title = 'r > ' + str(rthresh))
+
+plt.savefig(top_dir + 'v4cnn/analysis/figures/images/v4_apc_curv.png')
 
 #gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
 #ax1 = plt.subplot(gs[0])
