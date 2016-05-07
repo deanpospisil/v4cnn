@@ -6,18 +6,18 @@ Created on Sun Feb 28 21:52:09 2016
 """
 #apc model fit over trans
 import sys, os
-top_dir = os.getcwd().split('net_code')[0] 
-sys.path.append(top_dir + 'net_code/common/')
+top_dir = os.getcwd().split('v4cnn')[0]
+sys.path.append(top_dir + 'v4cnn/common/')
 sys.path.append( top_dir + 'xarray/')
 import xarray as xr
 import apc_model_fit as ac
-data = 'net_code/data/'
+data = 'v4cnn/data/'
 
-dmod = xr.open_dataset(top_dir + data + 'models/apc_models.nc',
+dmod = xr.open_dataset(top_dir + data + 'models/apc_models_362.nc',
                        chunks={'models':1000, 'shapes':370})['resp']
 
-da = xr.open_dataset(top_dir + data + '/responses/' 
-                     'PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc', 
+da = xr.open_dataset(top_dir + data + '/responses/'
+                     'PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc',
                      chunks={'unit':100})['resp']
 
 #da = da.sel(x=[-5,0,5], method='nearest')

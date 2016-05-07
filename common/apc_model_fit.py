@@ -80,20 +80,19 @@ def apc_models(shape_dict_list=[{'curvature': None, 'orientation': None} ],
 def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
                           maxAngSD, minAngSD, maxCurSD, minCurSD,
                           model_params_dict=None, prov_commit=False, cart=True,
-                          save=False):
+                          save=False, replace_prev_model=False):
     #make this into a pyramid based on d-prime
-    fn = top_dir + 'data/models/' + fn
 
     if cart:
         orMeans = np.linspace(0, 2*np.pi - 2*np.pi / nMeans, nMeans)
         orSDs = np.logspace(np.log10( minAngSD ), np.log10( maxAngSD ), nSD )
-        curvMeans = np.linspace( -0.5, 1, nMeans )
+        curvMeans = np.linspace( -1, 1, nMeans )
         curvSDs = np.logspace( np.log10(minCurSD), np.log10(maxCurSD), nSD )
         model_params_dict = ord_d({'or_sd': orSDs, 'or_mean':orMeans,
                              'cur_mean' :curvMeans, 'cur_sd':curvSDs})
         model_params_dict = dm.cartesian_prod_dicts_lists( model_params_dict )
 
-    if not os.path.isfile(fn):
+    if not (os.path.isfile(fn) and not replace_prev_model):
         model_resp = apc_models(shape_dict_list=shape_dict_list,
                                 model_params_dict=model_params_dict)
         dam = xr.DataArray(model_resp, dims = ['shapes', 'models'], coords=[shape_id, range(model_resp.shape[1])])
@@ -137,8 +136,8 @@ def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
         n_over = 1
 
     all_cor = (proj_resp_on_model_var) / (resp_norm * (n_over**0.5))
-    all_cor = all_cor.dropna('unit')
     all_cor = all_cor.load()
+    #all_cor = all_cor.dropna('unit')
 
 
     corarg = all_cor.argmax('models')

@@ -9,15 +9,27 @@ import scipy.io as  l
 import os
 import matplotlib.pyplot as plt
 import itertools
-import scipy
+import sys
+
+top_dir = os.getcwd().split('net_code')[0]
+sys.path.append(top_dir + 'xarray')
+top_dir = top_dir+ 'net_code/'
+sys.path.append(top_dir)
+sys.path.append(top_dir + 'common')
+
+import xarray as xr
+import d_misc as dm
+
+
+
 plt.close('all')
-fnum = [2, 5, 6, 11, 13, 16, 17, 19, 20, 21, 22, 23, 24, 25, 27, 29, 31, 
-        33, 34, 37, 39, 43 ,44 ,45, 46, 48, 49, 50, 52, 54, 55, 56, 57, 58, 62, 
-        66, 67, 68, 69, 70, 71 ,72, 74, 76, 77, 79, 80, 81, 83, 85, 86, 94, 104, 
-        106, 108, 116, 117, 118, 123, 127,128 ,131, 133, 137, 138, 141, 142, 145, 
+fnum = [2, 5, 6, 11, 13, 16, 17, 19, 20, 21, 22, 23, 24, 25, 27, 29, 31,
+        33, 34, 37, 39, 43 ,44 ,45, 46, 48, 49, 50, 52, 54, 55, 56, 57, 58, 62,
+        66, 67, 68, 69, 70, 71 ,72, 74, 76, 77, 79, 80, 81, 83, 85, 86, 94, 104,
+        106, 108, 116, 117, 118, 123, 127,128 ,131, 133, 137, 138, 141, 142, 145,
         152, 153, 154, 155, 156, 166, 170, 175, 190, 191, 193, 194]
 
-maindir = '/Users/dean/Desktop/AlexNet_APC_Analysis/'
+maindir = top_dir
 os.chdir( maindir)
 resps = []
 
@@ -26,30 +38,30 @@ ryl = []
 
 transPos = []
 rfDiameter = []
-for f in fnum:     
-    mat = l.loadmat('PositionData_Yasmine/pos_'+ str(f)  +'.mat')
-    
+for f in fnum:
+    mat = l.loadmat('data/responses/PositionData_Yasmine/pos_'+ str(f)  +'.mat')
+
     rxl.append(np.squeeze(mat['data'][0][0][0]))
-    ryl.append(np.squeeze(mat['data'][0][0][1]))    
-    
+    ryl.append(np.squeeze(mat['data'][0][0][1]))
+
     rx = np.double(np.squeeze(mat['data'][0][0][0]))
     ry = np.double(np.squeeze(mat['data'][0][0][1]))
     #print ry
-    rfDiameter.append(np.sqrt( rx**2 + ry**2 )*0.625 + 40)    
-    
+    rfDiameter.append(np.sqrt( rx**2 + ry**2 )*0.625 + 40)
+
     transPos.append(np.squeeze(mat['data'][0][0][2]))
     resps.append(np.squeeze(mat['data'][0][0][3]))
 
-rxl = np.array(rxl)   
-ryl = np.array(ryl) 
+rxl = np.array(rxl)
+ryl = np.array(ryl)
 corrl = []
 fracRFtrans = []
 for trans, resp, cellInd in itertools.izip(transPos,resps, range(len(fnum))):
-    
+
     stimPerPos = np.product(np.shape(resp[0]))
-    numPos = len(trans) 
+    numPos = len(trans)
     stimResByPos = np.zeros( ( stimPerPos, numPos  ) )
-    
+
     for posResp, pos in itertools.izip( resp, range(numPos)):
         stimResByPos[:,pos] = posResp.reshape(stimPerPos)
     centerCorr = np.corrcoef(stimResByPos.T)[trans==0].reshape(numPos)
@@ -57,17 +69,17 @@ for trans, resp, cellInd in itertools.izip(transPos,resps, range(len(fnum))):
     #fracRFtrans.append(trans / rfDiameter[cellInd])
     #fracRFtrans.append(trans / 1)
     fracRFtrans.append(trans / rfDiameter[cellInd]*2)
-    
+
     plt.plot(fracRFtrans[cellInd], centerCorr, alpha = 0.2)
     plt.scatter(fracRFtrans[cellInd], centerCorr,alpha = 0.2)
-#    
+#
 #lets get the mean response and correlation
 corrPosPairs = []
 for r, p in itertools.izip(corrl, fracRFtrans):
 #    r = r - np.mean(r)
-    for corr, pos in itertools.izip(r, p):   
+    for corr, pos in itertools.izip(r, p):
         corrPosPairs.append([corr,pos])
-corrPosPairs = np.array(corrPosPairs)    
+corrPosPairs = np.array(corrPosPairs)
 sortPosInd=np.argsort(corrPosPairs[:,1])
 corrPosPairs = corrPosPairs[sortPosInd,:]
 
@@ -77,9 +89,9 @@ corrPosPairsEcc = []
 for r, p in itertools.izip(corrl, fracRFtrans):
     r = r[p<0]
     r = r - np.mean(r)
-    for corr, pos in itertools.izip(r, p):   
+    for corr, pos in itertools.izip(r, p):
         corrPosPairsEcc.append([corr,pos])
-corrPosPairsEcc = np.array(corrPosPairsEcc)    
+corrPosPairsEcc = np.array(corrPosPairsEcc)
 sortPosInd=np.argsort(corrPosPairsEcc[:,1])
 corrPosPairsEcc = corrPosPairsEcc[sortPosInd,:]
 
@@ -89,8 +101,8 @@ mcor = []
 for ind in range(len(corrPosPairs)-width):
     mcor.append(np.mean(corrPosPairs[ind:ind+width, 0]))
     mpos.append(np.mean(corrPosPairs[ind:ind+width, 1]))
-#plt.figure() 
-#plt.scatter(mpos,mcor) 
+#plt.figure()
+#plt.scatter(mpos,mcor)
 
 #
 #mpos = []
@@ -107,11 +119,11 @@ for ind in range(len(corrPosPairs)-width):
 #        mcor.append(np.nan)
 #        mpos.append(np.nan)
 #        mcsd.append(np.nan)
-#    
+#
 #mcsd = np.array(mcsd)
 #mpos = np.array(mpos)
 #mcor = np.array(mcor)
-#plt.plot(mpos,mcor, linewidth = 4) 
+#plt.plot(mpos,mcor, linewidth = 4)
 #plt.fill_between(mpos, mcor+mcsd, mcor-mcsd, alpha=0.5)
 
 
@@ -160,7 +172,7 @@ plt.text(pos[-1]+0.01,regline[-1], 'r = '+ str(round(r[0,1],3)) +', b = ' +str(r
 #plt.title('V4 Cell ' + str(fnum[cell]) )
 #plt.xlabel(' Degrees Visual Angle from RF center')
 #plt.ylabel('Normalized Mean Response',fontsize = fsize)
-#plt.yticks([0, 0.25, 0.5, 0.75, 1]) 
+#plt.yticks([0, 0.25, 0.5, 0.75, 1])
 #labels = [item.get_text() for item in plt.gca().get_yticklabels()]
 ##
 #labels[0] = '0'
@@ -180,10 +192,10 @@ plt.text(pos[-1]+0.01,regline[-1], 'r = '+ str(round(r[0,1],3)) +', b = ' +str(r
 #plt.xlim(-rfDiameter[cell]/2., rfDiameter[cell]/2.)
 #
 #plt.ylabel('Correlation', fontsize = fsize)
-#    
-##plt.gca().set_aspect('equal', adjustable='box') 
-#    
-#plt.yticks([0, 0.25, 0.5, 0.75, 1]) 
+#
+##plt.gca().set_aspect('equal', adjustable='box')
+#
+#plt.yticks([0, 0.25, 0.5, 0.75, 1])
 #labels = [item.get_text() for item in plt.gca().get_yticklabels()]
 ##
 #labels[0] = '0'
