@@ -267,7 +267,7 @@ sepi = [((asingval[0]**2)/(sum(asingval**2))) for asingval in singvals]
 sepixr = xr.DataArray(sepi, dims='cells')
 ti_dat = xr.Dataset({'resp':respsxr, 'pos':pos, 'cor':corrsxr, 'ti':sepixr})
 data = 'v4cnn/data/'
-ti_dat.to_netcdf(top_dir + 'data/an_results/apc_model_fit_over_trans.nc')
+ti_dat.to_netcdf(top_dir + 'data/an_results/v4_TI_data.nc')
 
 #
 ##centered_cor =
