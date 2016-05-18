@@ -53,11 +53,18 @@ def vis_square(data, padsize=0, padval=0):
     plt.tight_layout()
     return data
 
-def tick_format_d(x,pos):
+
+def tick_format_d_int(x, pos):
     if x==0:
         return('0')
     else:
-        return(x)
+        return(str(round(x,0)).split('.')[0])
+
+def tick_format_d(x,pos,dec=2):
+    if x==0:
+        return('0')
+    else:
+        return(round(x,dec))
 #def nice_axes(axes):
 #    for i, an_axes in enumerate(axes):
 #        an_axes.xaxis.set_tick_params(length=0)
@@ -77,7 +84,7 @@ def nice_axes(axes, xticks=None, yticks=None, nxticks=5, nyticks=2):
             an_axes.set_xticks(xticks)
         an_axes.xaxis.set_tick_params(length=0)
         an_axes.yaxis.set_tick_params(length=0)
-        an_axes.yaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
+        an_axes.yaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d_int))
         an_axes.xaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
 
 def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, title, bins=10):
@@ -107,7 +114,88 @@ def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, title, bins=10):
     nice_axes(fig.axes)
     plt.show()
     return fig
+
+#BRUTE FORCE FITS
+#V4
+import pickle
+import apc_model_fit as ac
+
+with open(top_dir + 'data/models/ds_list.p', 'rb') as f:
+    ds_list= pickle.load(f)
+
+da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
+daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
+daa=daa.loc[:, 0, :]#without translation
+
+
+plt.close('all')
+fig = plt.figure()
+nbins=20
+n_resp_sets = len(ds_list)
+for i, cor in enumerate(ds_list):
+    ax = plt.subplot(n_resp_sets, 1, i+1)
+    ax.hist(cor['real'].values, bins=nbins, range= [0,1])
+    ax.hist(cor['shuf'].values, bins=nbins, range= [0,1])
+    ax.xaxis.set_label_text('Correlation Coefficient')
+    ax.yaxis.set_label_text('Unit Count', fontsize='x-large')
+    #ax.tight_layout()
+    ax.set_xlim([0,1])
+
+nice_axes(plt.gcf().axes, nxticks=5, nyticks=5)
+plt.tight_layout()
+plt.show()
+
 '''
+#responses plotted on shapes V4
+baseImageDir = top_dir +'images/baseimgs/PCunique/'
+files = os.listdir(baseImageDir)
+shapes = []
+nImgs = 362
+imgStack = np.zeros(( nImgs, 227, 227))
+
+for f in files:
+    if '.npy' in f:
+        num, ext = f.split('.')
+        num = int(num)
+        imgStack[num, :,: ] = np.load(baseImageDir + f)
+image_square = 10 #max 19
+cells = [37,]
+v4 = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc')['resp']
+#multiply shape luminance by firing rate
+resp_sc = (v4[cells[0], : ].values*0.8 +.2)
+imgStack = imgStack*resp_sc.reshape(362,1,1)
+#sort images
+sortStack = imgStack[list(reversed(np.argsort(resp_sc))),:,:]
+sortStack = np.array([imp.centeredCrop(img, 64, 64) for img in sortStack])
+data = vis_square(sortStack[0:image_square**2])
+plt.title('Shape Response: Cell ' + str(cells[0]) )
+plt.tight_layout()
+plt.savefig(top_dir + 'analysis/figures/images/example_cell_rank_ordered_shapes.eps')
+
+
+cor.coords['or_mean'] = ((cor.coords['or_mean']/(2*np.pi))*360)%360
+cor.coords['or_sd'] = ((cor.coords['or_sd']/(2*np.pi))*360)
+
+threshFits = cor[cor>rthresh].coords
+ncell = len(threshFits['unit'])
+fig = scatter_w_marginals(threshFits['or_mean'], threshFits['or_sd'],
+                    'Mean Orientation', 'SD Orientation',
+                    xlim= [0, 360],
+                    #ylim= [0, np.round(np.max(threshFits['or_sd'] )+1,-1)],
+                    ylim = [0, 180],
+                    title = 'r > ' + str(rthresh) + ', ' +str(ncell) + '/109' )
+
+plt.savefig(top_dir + 'analysis/figures/images/v4_apc_ori_brute.png')
+
+
+fig = scatter_w_marginals(threshFits['cur_mean'].values, threshFits['cur_sd'].values,
+                    'Mean Curve', 'SD Curve',
+                    xlim= [-1, 1],
+                    ylim= [0, np.round(np.max(threshFits['cur_sd']),0)],
+                    title = 'r > ' + str(rthresh) + ', ' +str(ncell) + '/109' )
+
+plt.savefig(top_dir + 'analysis/figures/images/v4_apc_curv_brute.png')
+
 #NON-LIN FITS
 #correlation histogram
 plt.figure()
@@ -148,121 +236,3 @@ fig = scatter_w_marginals(threshFits['mcurv'], threshFits['sdcurv'],
 
 plt.savefig(top_dir + 'analysis/figures/images/v4_apc_curv.png')
 '''
-#BRUTE FORCE FITS
-#V4
-import pickle
-import apc_model_fit as ac
-
-#open those responses, and build apc models for their shapes
-with open(top_dir + 'data/models/PC370_params.p', 'rb') as f:
-    shape_dict_list = pickle.load(f)
-
-da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
-
-shape_id = da.coords['shapes'].values
-shape_dict_list = [shape_dict_list[sn] for sn in shape_id.astype(int)]
-
-maxAngSD = np.deg2rad(171); minAngSD = np.deg2rad(23)
-maxCurSD = 0.98; minCurSD = 0.09;
-maxCurSD = 0.98; minCurSD = 0.01
-nMeans = 16; nSD = 16
-fn = top_dir + 'data/models/' + 'apc_models_362.nc'
-dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD, maxAngSD, minAngSD,
-                      maxCurSD, minCurSD, prov_commit=False, save=True, replace_prev_model=False)
-
-#load the models you made, and fit them to the cells responses
-dmod = xr.open_dataset(fn, chunks = {'models': 1000, 'shapes': 370}  )['resp']
-cor = ac.cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False)
-
-#correlation histogram for v4
-plt.figure()
-h = plt.hist(cor.values)
-plt.xlabel('Correlation Coefficient')
-plt.ylabel('Cell Count')
-#plt.xticks([0,0.25,0.5,0.75,1])
-#plt.xlim([0,1])
-#plt.ylim([0, 20])
-plt.tight_layout()
-nice_axes(plt.gcf().axes)
-plt.savefig(top_dir + 'analysis/figures/images/v4_apc_correlation_hist_brute.png')
-
-#ALEXNET
-#if not 'daa' in locals():
-daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
-#ensure fraction of variance that can be explained by single translation
-#or shape is not more than minfracvar
-daa=daa.loc[:,0,:]
-minfracvar = 0.5
-_ = (daa**2)
-tot_var = _.sum('shapes')
-non_zero=tot_var<1e-8
-just_one_shape = (_.max('shapes')/tot_var)>minfracvar
-degen = just_one_shape + non_zero
-daa = daa[:,-degen]
-daa = daa - daa.mean(['shapes'])
-daa = daa.chunk({'unit':109, 'shapes':370}).T
-
-#correlation histogram for v4
-cor = ac.cor_resp_to_model(daa, dmod, fit_over_dims=None, prov_commit=False)
-
-plt.figure()
-plt.hist(cor.values)
-plt.xlabel('Correlation Coefficient')
-plt.ylabel('Unit Count', fontsize='large')
-plt.tight_layout()
-nice_axes(plt.gcf().axes, nxticks=5, nyticks=5)
-plt.savefig(top_dir + 'analysis/figures/images/alex_apc_correlation_hist_brute.png')
-
-
-'''
-cor.coords['or_mean'] = ((cor.coords['or_mean']/(2*np.pi))*360)%360
-cor.coords['or_sd'] = ((cor.coords['or_sd']/(2*np.pi))*360)
-
-threshFits = cor[cor>rthresh].coords
-ncell = len(threshFits['unit'])
-fig = scatter_w_marginals(threshFits['or_mean'], threshFits['or_sd'],
-                    'Mean Orientation', 'SD Orientation',
-                    xlim= [0, 360],
-                    #ylim= [0, np.round(np.max(threshFits['or_sd'] )+1,-1)],
-                    ylim = [0, 180],
-                    title = 'r > ' + str(rthresh) + ', ' +str(ncell) + '/109' )
-
-plt.savefig(top_dir + 'analysis/figures/images/v4_apc_ori_brute.png')
-
-
-fig = scatter_w_marginals(threshFits['cur_mean'].values, threshFits['cur_sd'].values,
-                    'Mean Curve', 'SD Curve',
-                    xlim= [-1, 1],
-                    ylim= [0, np.round(np.max(threshFits['cur_sd']),0)],
-                    title = 'r > ' + str(rthresh) + ', ' +str(ncell) + '/109' )
-
-plt.savefig(top_dir + 'analysis/figures/images/v4_apc_curv_brute.png')
-
-
-
-'''
-#responses plotted on shapes V4
-baseImageDir = top_dir +'images/baseimgs/PCunique/'
-files = os.listdir(baseImageDir)
-shapes = []
-nImgs = 362
-imgStack = np.zeros(( nImgs, 227, 227))
-
-for f in files:
-    if '.npy' in f:
-        num, ext = f.split('.')
-        num = int(num)
-        imgStack[num, :,: ] = np.load(baseImageDir + f)
-image_square = 10 #max 19
-cells = [37,]
-v4 = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc')['resp']
-#multiply shape luminance by firing rate
-resp_sc = (v4[cells[0], : ].values*0.8 +.2)
-imgStack = imgStack*resp_sc.reshape(362,1,1)
-#sort images
-sortStack = imgStack[list(reversed(np.argsort(resp_sc))),:,:]
-sortStack = np.array([imp.centeredCrop(img, 64, 64) for img in sortStack])
-data = vis_square(sortStack[0:image_square**2])
-plt.title('Shape Response: Cell ' + str(cells[0]) )
-plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/example_cell_rank_ordered_shapes.eps')

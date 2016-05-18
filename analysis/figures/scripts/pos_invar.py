@@ -65,7 +65,7 @@ fnum = np.array([2, 5, 6, 11, 13, 16, 17, 19, 20, 21, 22, 23, 24, 25, 27, 29, 31
 maindir = top_dir
 os.chdir( maindir)
 resps = []
-'''
+
 ######
 #getting v4 data from matlab
 rxl = [];ryl = []
@@ -88,7 +88,7 @@ for f in fnum:
 #originally: resps cellXposXrotXshape --> converted to cell X pos X unique_shape
 cell_resps = [np.dstack(cell).T.reshape(cell.shape[0], np.prod(cell[0].shape))
              for cell in resps]
-                       
+
 ## putting yasmin data into data_array
 lsxr = [xr.DataArray(aresp, dims=['x','shapes']) for aresp in cell_resps]
 resp= xr.concat(xr.align(*lsxr, join='outer'), dim='cells')
@@ -121,7 +121,7 @@ plt.tight_layout()
 plt.savefig(top_dir + 'analysis/figures/images/v4_SI_translation_distribution.png')
 '''
 '''
-font = {'size' : 10}
+font = {'size' : 15}
 mpl.rc('font', **font)
 
 ####################
@@ -164,7 +164,7 @@ for a in range(nlayers):
 #        ax.set_xlabel(r'$R^2$')
 
 ax = fig.add_subplot(nlayers+1, 1, a+2)
-ax.hist(best_r, bins=40)
+ax.hist(best_r, bins=40, color='red')
 ax.axis([0,1, 0, ax.axis()[3]])
 ax.set_ylabel('v4',ha='right')
 ax.yaxis.set_label_position("right")
@@ -254,9 +254,11 @@ def drop_nans(da):
 
 
 v4=False
-resp = xr.open_dataset(top_dir + 
+
+
+resp = xr.open_dataset(top_dir +
 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
-resp = resp.sel(x=[-5,0,5], method='nearest')
+
 
 
 ####
@@ -280,8 +282,8 @@ if v4:
 else:
     pos = resp.coords['x']
 singvals = [np.linalg.svd(acell.values - np.mean(acell.values, 1, keepdims=True), compute_uv=0)
-            for acell in 
-            [drop_nans(resp.sel(unit=nancellind)) 
+            for acell in
+            [drop_nans(resp.sel(unit=nancellind))
             for nancellind in resp.coords['unit'].values]]
 
 ##SVD calc
@@ -289,7 +291,9 @@ sepi = [((asingval[0]**2)/(sum(asingval**2))) for asingval in singvals]
 sepixr = xr.DataArray(sepi, dims='unit')
 ti_dat = xr.Dataset({'resp':resp, 'pos':pos, 'cor':corrsxr, 'ti':sepixr})
 data = 'v4cnn/data/'
+
 ti_dat.to_netcdf(top_dir + 'data/an_results/cnn_TI_data.nc')
+
 
 #
 ##centered_cor =
@@ -328,3 +332,4 @@ ti_dat.to_netcdf(top_dir + 'data/an_results/cnn_TI_data.nc')
 #plt.plot([x, y], [x, y], color='black')
 #
 #plt.tight_layout()
+'''
