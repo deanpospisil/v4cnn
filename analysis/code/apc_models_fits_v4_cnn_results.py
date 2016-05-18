@@ -80,7 +80,7 @@ dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
                          prov_commit=False, save=True, replace_prev_model=True)
 
 #load the models you made, and fit them to the cells responses
-dmod = xr.open_dataset(fn, chunks={'models': 1000, 'shapes': 370}  )['resp']
+dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
 ds = {'v4':da, 'cnn':daa}
 
 ds_list = apc_model_cors_and_nulls(ds, dmod)
