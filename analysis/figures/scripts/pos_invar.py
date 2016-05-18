@@ -8,12 +8,12 @@ Created on Fri Apr 29 12:03:29 2016
 import numpy as  np
 import scipy.io as  l
 import os
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import itertools
 import sys
-import matplotlib.ticker as mtick
-
-import matplotlib as mpl
+#import matplotlib.ticker as mtick
+#
+#import matplotlib as mpl
 top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append(top_dir + 'xarray')
 top_dir = top_dir+ 'v4cnn/'
@@ -53,7 +53,7 @@ def nice_axes(axes, xticks=None, yticks=None, nxticks=5, nyticks=2):
 
 
 
-plt.close('all')
+#plt.close('all')
 fnum = np.array([2, 5, 6, 11, 13, 16, 17, 19, 20, 21, 22, 23, 24, 25, 27, 29, 31,
         33, 34, 37, 39, 43 ,44 ,45, 46, 48, 49, 50, 52, 54, 55, 56, 57, 58, 62,
         66, 67, 68, 69, 70, 71 ,72, 74, 76, 77, 79, 80, 81, 83, 85, 86, 94, 104,
@@ -255,7 +255,8 @@ def drop_nans(da):
 
 v4=False
 resp = xr.open_dataset(top_dir + 
-'data/response/PC370_shapes_0.0_369.0_370_x_-100.0_100.0_201.nc')['resp']
+'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
+resp = resp.sel(x=[-5,0,5], method='nearest')
 
 
 ####
