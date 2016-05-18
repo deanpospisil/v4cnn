@@ -118,7 +118,7 @@ def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, title, bins=10):
 #BRUTE FORCE FITS
 #V4
 import pickle
-with open(top_dir + 'data/models/ds_list.p', 'rb') as f:
+with open(top_dir + 'data/models/ds_list_with_degen.p', 'rb') as f:
     ds_list= pickle.load(f)
 
 da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
@@ -132,8 +132,9 @@ nbins=20
 n_resp_sets = len(ds_list)
 for i, cor in enumerate(ds_list):
     ax = plt.subplot(n_resp_sets, 1, i+1)
+
     ax.hist(cor['real'].values, bins=nbins, range= [0,1])
-    ax.hist(cor['shuf'].values, bins=nbins, range= [0,1])
+    ax.hist(cor['shuf'].values, bins=nbins, range= [0,1], alpha=0.7)
     ax.xaxis.set_label_text('Correlation Coefficient')
     ax.yaxis.set_label_text('Unit Count', fontsize='x-large')
     #ax.tight_layout()

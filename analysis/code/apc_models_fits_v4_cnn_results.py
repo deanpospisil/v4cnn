@@ -41,6 +41,9 @@ def apc_model_cors_and_nulls(ds, dmod):
     dmod = dmod.chunk({'models':1000, 'shapes':370})
     for key in ds.keys():
         daa = ds[key].load()
+        if daa.dims[0] == 'unit':#make sure its shape x unit
+            daa = daa.T
+
 #        degen_inds = degen(daa)
 #        daa = daa[:,-degen_inds]
 
@@ -73,11 +76,11 @@ shape_dict_list = [shape_dict_list[sn] for sn in shape_id.astype(int)]
 maxAngSD = np.deg2rad(171); minAngSD = np.deg2rad(23)
 maxCurSD = 0.98; minCurSD = 0.09;
 maxCurSD = 0.98; minCurSD = 0.01
-nMeans = 16; nSD = 16
+nMeans = 2; nSD = 2
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
 dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
                          maxAngSD, minAngSD, maxCurSD, minCurSD,
-                         prov_commit=False, save=True, replace_prev_model=False)
+                         prov_commit=False, save=True, replace_prev_model=True)
 
 #load the models you made, and fit them to the cells responses
 dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
