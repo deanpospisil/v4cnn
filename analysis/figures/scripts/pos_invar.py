@@ -65,7 +65,7 @@ fnum = np.array([2, 5, 6, 11, 13, 16, 17, 19, 20, 21, 22, 23, 24, 25, 27, 29, 31
 maindir = top_dir
 os.chdir( maindir)
 resps = []
-'''
+
 ######
 #getting v4 data from matlab
 rxl = [];ryl = []
@@ -121,7 +121,7 @@ plt.tight_layout()
 plt.savefig(top_dir + 'analysis/figures/images/v4_SI_translation_distribution.png')
 '''
 '''
-font = {'size' : 10}
+font = {'size' : 15}
 mpl.rc('font', **font)
 
 ####################
@@ -164,7 +164,7 @@ for a in range(nlayers):
 #        ax.set_xlabel(r'$R^2$')
 
 ax = fig.add_subplot(nlayers+1, 1, a+2)
-ax.hist(best_r, bins=40)
+ax.hist(best_r, bins=40, color='red')
 ax.axis([0,1, 0, ax.axis()[3]])
 ax.set_ylabel('v4',ha='right')
 ax.yaxis.set_label_position("right")
@@ -266,31 +266,31 @@ resp.coords['degen'] = ('unit', degen)
 resp = resp.isel(unit=-degen)
 
 
-#
-###correlation
-#lscr = [xr.DataArray(resp.sel(unit=cellind).T.to_pandas().corr().values, dims=['x1', 'x2'])
-#        for cellind in resp.coords['unit'].values]
-#corrsxr = xr.concat(xr.align(*lscr, join='outer'), dim='unit')
-#
-####frac rf calc
-#if v4:
-#    pos = [ xr.DataArray(pos/rfd, dims=['x']) for pos, rfd in zip(transPos, rfDiameter)]
-#    pos= xr.concat( xr.align(*rffrac, join='outer'), dim='unit')
-#else:
-#    pos = resp.coords['x']
-#singvals = [np.linalg.svd(acell.values - np.mean(acell.values, 1, keepdims=True), compute_uv=0)
-#            for acell in
-#            [drop_nans(resp.sel(unit=nancellind))
-#            for nancellind in resp.coords['unit'].values]]
-#
-###SVD calc
-#sepi = [((asingval[0]**2)/(sum(asingval**2))) for asingval in singvals]
-#sepixr = xr.DataArray(sepi, dims='unit')
-#ti_dat = xr.Dataset({'resp':resp, 'pos':pos, 'cor':corrsxr, 'ti':sepixr})
-#data = 'v4cnn/data/'
-#
-#ti_dat.to_netcdf(top_dir + 'data/an_results/cnn_TI_data.nc')
-#
+
+##correlation
+lscr = [xr.DataArray(resp.sel(unit=cellind).T.to_pandas().corr().values, dims=['x1', 'x2'])
+        for cellind in resp.coords['unit'].values]
+corrsxr = xr.concat(xr.align(*lscr, join='outer'), dim='unit')
+
+###frac rf calc
+if v4:
+    pos = [ xr.DataArray(pos/rfd, dims=['x']) for pos, rfd in zip(transPos, rfDiameter)]
+    pos= xr.concat( xr.align(*rffrac, join='outer'), dim='unit')
+else:
+    pos = resp.coords['x']
+singvals = [np.linalg.svd(acell.values - np.mean(acell.values, 1, keepdims=True), compute_uv=0)
+            for acell in
+            [drop_nans(resp.sel(unit=nancellind))
+            for nancellind in resp.coords['unit'].values]]
+
+##SVD calc
+sepi = [((asingval[0]**2)/(sum(asingval**2))) for asingval in singvals]
+sepixr = xr.DataArray(sepi, dims='unit')
+ti_dat = xr.Dataset({'resp':resp, 'pos':pos, 'cor':corrsxr, 'ti':sepixr})
+data = 'v4cnn/data/'
+
+ti_dat.to_netcdf(top_dir + 'data/an_results/cnn_TI_data.nc')
+
 
 #
 ##centered_cor =
@@ -329,3 +329,4 @@ resp = resp.isel(unit=-degen)
 #plt.plot([x, y], [x, y], color='black')
 #
 #plt.tight_layout()
+'''

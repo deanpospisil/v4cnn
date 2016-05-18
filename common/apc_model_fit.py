@@ -86,7 +86,7 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
     if cart:
         orMeans = np.linspace(0, 2*np.pi - 2*np.pi / nMeans, nMeans)
         orSDs = np.logspace(np.log10( minAngSD ), np.log10( maxAngSD ), nSD )
-        curvMeans = np.linspace( -1, 1, nMeans )
+        curvMeans = np.linspace( -0.5, 1, nMeans )
         curvSDs = np.logspace( np.log10(minCurSD), np.log10(maxCurSD), nSD )
         model_params_dict = ord_d({'or_sd': orSDs, 'or_mean':orMeans,
                              'cur_mean' :curvMeans, 'cur_sd':curvSDs})
@@ -115,6 +115,9 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
 def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
     #typically takes da, data, and dm, a set of linear models, an fn to write to,
     #and finally fit_over_dims which says over what dims is a models fit supposed to hold.
+    da = da.reindex_like(dmod+da)
+    dmod = dmod.reindex_like(dmod+da)#reindex to the intersection of both
+
     da = da - da.mean(('shapes'))
     ats = dmod.attrs
     dmod = dmod - dmod.mean(('shapes'))
