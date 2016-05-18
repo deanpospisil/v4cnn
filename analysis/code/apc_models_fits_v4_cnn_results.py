@@ -41,8 +41,8 @@ def apc_model_cors_and_nulls(ds, dmod):
     dmod = dmod.chunk({'models':1000, 'shapes':370})
     for key in ds.keys():
         daa = ds[key].load()
-        degen_inds = degen(daa)
-        daa = daa[:,-degen_inds]
+#        degen_inds = degen(daa)
+#        daa = daa[:,-degen_inds]
 
         cor = ac.cor_resp_to_model(daa.chunk({'unit':100, 'shapes':370}),
                                    dmod, fit_over_dims=None, prov_commit=False)
@@ -77,16 +77,16 @@ nMeans = 16; nSD = 16
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
 dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
                          maxAngSD, minAngSD, maxCurSD, minCurSD,
-                         prov_commit=False, save=True, replace_prev_model=True)
+                         prov_commit=False, save=True, replace_prev_model=False)
 
 #load the models you made, and fit them to the cells responses
 dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
 ds = {'v4':da, 'cnn':daa}
 
 ds_list = apc_model_cors_and_nulls(ds, dmod)
-with open(top_dir + 'data/models/ds_list.p','wb') as f:
+with open(top_dir + 'data/models/ds_list_with_degen.p','wb') as f:
     pickle.dump(ds_list, f)
 
-with open(top_dir + 'data/models/ds_list.p', 'rb') as f:
+with open(top_dir + 'data/models/ds_list_with_degen.p', 'rb') as f:
     d_rec = pickle.load(f)
 

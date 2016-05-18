@@ -140,7 +140,7 @@ def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
 
     all_cor = (proj_resp_on_model_var) / (resp_norm * (n_over**0.5))
     all_cor = all_cor.load()
-    #all_cor = all_cor.dropna('unit')
+    all_cor = all_cor.dropna('unit')
 
 
     corarg = all_cor.argmax('models')
