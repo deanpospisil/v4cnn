@@ -76,7 +76,7 @@ shape_dict_list = [shape_dict_list[sn] for sn in shape_id.astype(int)]
 maxAngSD = np.deg2rad(171); minAngSD = np.deg2rad(23)
 maxCurSD = 0.98; minCurSD = 0.09;
 maxCurSD = 0.98; minCurSD = 0.01
-nMeans = 2; nSD = 2
+nMeans = 16; nSD =16
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
 dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
                          maxAngSD, minAngSD, maxCurSD, minCurSD,
