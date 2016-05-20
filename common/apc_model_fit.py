@@ -115,8 +115,8 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
 def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
     #typically takes da, data, and dm, a set of linear models, an fn to write to,
     #and finally fit_over_dims which says over what dims is a models fit supposed to hold.
-    da = da.reindex_like(dmod+da)
-    dmod = dmod.reindex_like(dmod+da)#reindex to the intersection of both
+#    da = da.reindex_like(dmod+da)
+#    dmod = dmod.reindex_like(dmod+da)#reindex to the intersection of both
 
     da = da - da.mean(('shapes'))
     ats = dmod.attrs
