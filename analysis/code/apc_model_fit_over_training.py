@@ -20,10 +20,10 @@ dmod = xr.open_dataset(top_dir + data + 'models/apc_models_362_16X16.nc',
 dmod = dmod.sel(models = range(10), method = 'nearest' )
 ds = xr.open_mfdataset(top_dir + data + 'responses/' +'iter_*.nc', 
                        concat_dim = 'niter', chunks = {'unit':100, 'shapes': 370})
-ds = ds.sel(x = np.linspace(-50, 50, 2), method = 'nearest' )
-ds = ds.sel(niter=np.linspace(0, da.coords['niter'].shape[0], 2),  
-                                method = 'nearest')
-ds = ds.sel(unit=range(10), method='nearest')
+#ds = ds.sel(x = np.linspace(-50, 50, 2), method = 'nearest' )
+#ds = ds.sel(niter=np.linspace(0, da.coords['niter'].shape[0], 2),  
+#                                method = 'nearest')
+#ds = ds.sel(unit=range(10), method='nearest')
 
 for iterind in ds.niter.values:
     da_c = ds.sel(niter=iterind)
