@@ -160,21 +160,7 @@ shape_id = da.coords['shapes'].values
 shape_dict_list = [shape_dict_list[sn] for sn in shape_id.astype(int)]
 maxAngSD = np.deg2rad(171); minAngSD = np.deg2rad(23)
 maxCurSD = 0.98; minCurSD = 0.09;
-<<<<<<< HEAD
-nMeans = 16; nSD =16
 
-
-fn = top_dir + 'data/models/' + 'apc_models_362_16X16.nc'
-dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
-                         maxAngSD, minAngSD, maxCurSD, minCurSD,
-                         prov_commit=False, save=True, replace_prev_model=False)
-
-dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370} )['resp']
-ds = {'v4':da, 'cnn':daa}
-ds = {'cnn':daa}
-#ds_list = apc_model_cors_and_nulls(ds, dmod,remove_degen=True)
-#with open(top_dir + 'data/models/ds_list_no_degen.p','wb') as f:
-=======
 #maxCurSD = 0.98; minCurSD = 0.01
 nMeans = 16; nSD = 16
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
@@ -188,12 +174,9 @@ dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
 #ds = {'v4':da, 'cnn':daa}
 #ds = {'v4':da.copy()}
 #ds_list = apc_model_cors_and_nulls(ds, dmod)
-#with open(top_dir + 'data/models/ds_list_with_degent.p','wb') as f:
->>>>>>> 3a69c33f41c911cef808b767b45f76f6b09ff58f
+#with open(top_dir + 'data/models/ds_list_with_degent.p','wb') as f:s
 #    pickle.dump(ds_list, f)
 
-
-<<<<<<< HEAD
 nMeans = 16; nSD = 10
 dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
                          maxAngSD, minAngSD, maxCurSD, minCurSD,
@@ -225,7 +208,7 @@ with open(top_dir + 'data/models/no_degen_16x16.p','wb') as f:
 
 
 
-=======
+
 #nMeans = 2; nSD = 1
 #dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
 #                         maxAngSD, minAngSD, maxCurSD, minCurSD,
@@ -255,7 +238,7 @@ with open(top_dir + 'data/models/no_degen_16x16.p','wb') as f:
 #
 #
 #
->>>>>>> 3a69c33f41c911cef808b767b45f76f6b09ff58f
+
 
 
 
