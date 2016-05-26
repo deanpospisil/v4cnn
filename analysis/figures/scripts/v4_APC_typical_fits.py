@@ -153,7 +153,6 @@ plt.savefig(top_dir + 'analysis/figures/images/v4_apc_curv.png')
 import pickle
 import apc_model_fit as ac
 
-#open those responses, and build apc models for their shapes
 with open(top_dir + 'data/models/PC370_params.p', 'rb') as f:
     shape_dict_list = pickle.load(f)
 
