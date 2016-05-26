@@ -107,10 +107,10 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
             ds = xr.Dataset({'resp': dam})
             ds.to_netcdf(fn)
 
-        return dam
+        return dam.copy()
     else:
         warnings.warn('Model File has Already Been Written.')
-        return xr.open_dataset(fn)
+        return xr.open_dataset(fn).copy()
 
 def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
     #typically takes da, data, and dm, a set of linear models, an fn to write to,
