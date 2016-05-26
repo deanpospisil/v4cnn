@@ -25,7 +25,6 @@ sys.path.append(top_dir + 'img_gen')
 import d_img_process as imp
 import xarray as xr
 
-plt.close('all')
 # take an array of shape (n, height, width) or (n, height, width, channels)
 # and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)
 def vis_square(data, padsize=0, padval=0):
@@ -115,34 +114,57 @@ def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, title, bins=10):
     plt.show()
     return fig
 
+
+import pickle
+plt.subplot(221)
+with open(top_dir + 'data/models/degen_16x10.p', 'rb') as f:
+    ds_list = pickle.load(f)
+
+ds_list[0]['real']
+plt.hist(ds_list[0]['real'].values, alpha=0.5, range=[0,1],bins=40,color='red')
+plt.hist(ds_list[0]['shuf'].values, alpha=0.5, range=[0,1],bins=40,color='blue')
+plt.title('w/ degen and 16x16')
+
+plt.subplot(222)
+
+plt.title('w/o degen and 16x16')
+plt.subplot(223)
+plt.title('w/ degen and 16x10')
+
+plt.subplot(224)
+plt.title('w/o degen and 16x10')
+
+
+
 #BRUTE FORCE FITS
 #V4
-import pickle
-with open(top_dir + 'data/models/ds_list_with_degen.p', 'rb') as f:
-    ds_list= pickle.load(f)
-
-da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
-daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
-daa=daa.loc[:, 0, :]#without translation
-
-
-plt.close('all')
-fig = plt.figure()
-nbins=20
-n_resp_sets = len(ds_list)
-for i, cor in enumerate(ds_list):
-    ax = plt.subplot(n_resp_sets, 1, i+1)
-
-    ax.hist(cor['real'].values, bins=nbins, range= [0,1])
-    ax.hist(cor['shuf'].values, bins=nbins, range= [0,1], alpha=0.7)
-    ax.xaxis.set_label_text('Correlation Coefficient')
-    ax.yaxis.set_label_text('Unit Count', fontsize='x-large')
-    #ax.tight_layout()
-    ax.set_xlim([0,1])
-
-nice_axes(plt.gcf().axes, nxticks=5, nyticks=5)
-plt.tight_layout()
-plt.show()
+#
+#with open(top_dir + 'data/models/ds_list.p', 'rb') as f:
+#    ds_list= pickle.load(f)
+#
+#da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
+#daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
+#daa=daa.loc[:, 0, :]#without translation
+#
+#
+##plt.close('all')
+#fig = plt.figure()
+#nbins=30
+#n_resp_sets = len(ds_list)
+#for i, cor in enumerate(ds_list):
+#    ax = plt.subplot(n_resp_sets, 1, i+1)
+#
+#    ax.hist(cor['real'].values, bins=nbins, range= [0,1])
+#    ax.hist(cor['shuf'].values, bins=nbins, range= [0,1], alpha=0.7)
+#    ax.xaxis.set_label_text('Correlation Coefficient')
+#    ax.yaxis.set_label_text('Unit Count', fontsize='x-large')
+#    #ax.tight_layout()
+#    ax.set_xlim([0,1])
+#
+#nice_axes(plt.gcf().axes, nxticks=5, nyticks=5)
+#plt.tight_layout()
+#plt.title('without degen')
+#plt.show()
 
 '''
 #responses plotted on shapes V4
