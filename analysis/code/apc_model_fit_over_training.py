@@ -26,7 +26,7 @@ ds = xr.open_mfdataset(top_dir + data + 'responses/' +'iter_*.nc',
 #ds = ds.sel(unit=range(10), method='nearest')
 
 for iterind in ds.niter.values:
-    da_c = ds.sel(niter=iterind)
+    da_c = ds.sel(niter=iterind)['resp']
     cor = ac.cor_resp_to_model(da_c, dmod, fit_over_dims=('x',))
     cor.to_dataset(name='r').to_netcdf(top_dir + 'analysis/data/r_iter_' + str(iterind) + '.nc')
 
