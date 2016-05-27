@@ -18,7 +18,9 @@ data = 'v4cnn/data/'
 dmod = xr.open_dataset(top_dir + data + 'models/apc_models_362_16X16.nc',
                        chunks = {'models': 1000, 'shapes': 370}  )['resp']
 dmod = dmod.sel(models = range(10), method = 'nearest' )
-ds = xr.open_mfdataset(top_dir + data + 'responses/' +'iter_*.nc', 
+#ds = xr.open_mfdataset(top_dir + data + 'responses/' +'iter_*.nc', 
+#                       concat_dim = 'niter', chunks = {'unit':100, 'shapes': 370})
+ds = xr.open_mfdataset('/data/dean_data/responses/' +'iter_*.nc', 
                        concat_dim = 'niter', chunks = {'unit':100, 'shapes': 370})
 #ds = ds.sel(x = np.linspace(-50, 50, 2), method = 'nearest' )
 #ds = ds.sel(niter=np.linspace(0, da.coords['niter'].shape[0], 2),  
