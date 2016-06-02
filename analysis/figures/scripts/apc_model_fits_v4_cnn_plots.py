@@ -110,7 +110,7 @@ def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, xbins=None, ybins=None
 
     if np.max(u_count)>1:#check there are in fact overlapping  points
         counts_s = (counts/np.double(max(counts))*100.)
-        ax2.scatter(unique[:,0], unique[:,1], s=counts_s)
+        ax2.scatter(unique[:,0], unique[:,1], s=counts_s, alpha=0.7)
 
         u_count_s = np.sort(np.unique(counts_s))
 
@@ -332,7 +332,7 @@ plt.savefig(top_dir + 'analysis/figures/images/v4_apc_curv_brute.png')
 
 
 cor = alex.copy()
-rthresh=0.7
+rthresh = 0.55
 threshFits = cor[cor>rthresh]
 threshFits.coords['or_mean'] = ((threshFits.coords['or_mean'].values/(2*np.pi))*360)%360
 threshFits.coords['or_sd'] = ((threshFits.coords['or_sd'].values/(2*np.pi))*360)
