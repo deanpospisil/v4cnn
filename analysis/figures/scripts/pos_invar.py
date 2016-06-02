@@ -8,12 +8,12 @@ Created on Fri Apr 29 12:03:29 2016
 import numpy as  np
 import scipy.io as  l
 import os
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import itertools
 import sys
-#import matplotlib.ticker as mtick
+import matplotlib.ticker as mtick
 #
-#import matplotlib as mpl
+import matplotlib as mpl
 top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append(top_dir + 'xarray')
 top_dir = top_dir+ 'v4cnn/'
@@ -230,6 +230,9 @@ for cellind in r_ranked_cellinds:
     plt.tight_layout()
     plt.savefig(top_dir + 'analysis/figures/images/v4_posinvar_examplecell'+
                             str(fnum[cellind]) + '_' + str(np.round(best_r[cellind], 2))+'.png')
+
+r_da.to_dataset('ti').to_netcdf(top_dir + 'data/an_results/alex_TI_data.nc')
+xr.DataArray(best_r, dims= 'unit').to_dataset('ti').to_netcdf(top_dir + 'data/an_results/v4_TI_data.nc')
 
 '''
 def cell_to_xarray(resp, pos, rfd):

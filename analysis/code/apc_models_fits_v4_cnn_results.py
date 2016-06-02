@@ -150,8 +150,8 @@ da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shap
 #da = xr.DataArray(resp, dims=['shapes','unit'])
 #da = da1
 
-#daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
-#daa=daa.loc[:, 0, :]#without translation
+daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
+daa=daa.loc[:, 0, :]#without translation
 #daa.attrs['type'] = 'AlexNet'
 
 da.attrs['type'] = 'V4'
@@ -164,17 +164,17 @@ nMeans = 16; nSD = 16
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
 dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
                          maxAngSD, minAngSD, maxCurSD, minCurSD,
-                         prov_commit=False, save=True, replace_prev_model=True)
+                         prov_commit=False, save=True, replace_prev_model=False)
 
 #load the models you made, and fit them to the cells responses
 #models, modelParams = apc370models(nMeans=10, nSD=10)
-#dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
-#ds = {'v4':da, 'cnn':daa}
+dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
+ds = {'v4':da, 'cnn':daa}
 #ds = {'v4':da.copy()}
-#ds_list = apc_model_cors_and_nulls(ds, dmod)
-#with open(top_dir + 'data/models/ds_list_with_degent.p','wb') as f:
-#    pickle.dump(ds_list, f)
-#
+ds_list = apc_model_cors_and_nulls(ds, dmod)
+with open(top_dir + 'data/models/ds_list_with_degen.p','wb') as f:
+    pickle.dump(ds_list, f)
+
 #with open(top_dir + 'data/models/ds_list_with_degent.p', 'rb') as f:
 #    d_rec = pickle.load(f)
 #
