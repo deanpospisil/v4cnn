@@ -13,11 +13,11 @@ import sys
 import warnings
 
 #make the working directory two above this one
-top_dir = os.getcwd().split('net_code')[0]
+top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append( top_dir + '/xarray')
-top_dir = top_dir + 'net_code/'
+top_dir = top_dir + 'v4cnn'
 sys.path.append(top_dir)
-sys.path.append(top_dir +'common')
+sys.path.append(top_dir +'/common')
 
 sys.path.append('/home/dean/caffe/python')
 

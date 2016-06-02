@@ -13,6 +13,7 @@ plots of v4 APC params
 
 @author: dean
 """
+import copy
 import itertools
 from sklearn.utils.extmath import cartesian
 import copy
@@ -127,7 +128,7 @@ def apc_model_cors_and_nulls(ds, dmod, remove_degen=False):
 
         cor = ac.cor_resp_to_model(daa.chunk({'unit':100, 'shapes':370}),
                                    dmod, fit_over_dims=None, prov_commit=False)
-
+        cor.attrs['type'] = daa.attrs['type']
         shape_ind = range(daa['shapes'].count().values)
         for i in range(daa['unit'].count().values):
             np.random.shuffle(shape_ind)
@@ -152,13 +153,16 @@ da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shap
 
 daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
 daa=daa.loc[:, 0, :]#without translation
-#daa.attrs['type'] = 'AlexNet'
+
+daa.attrs['type'] = 'AlexNet'
 
 da.attrs['type'] = 'V4'
+
 shape_id = da.coords['shapes'].values
 shape_dict_list = [shape_dict_list[sn] for sn in shape_id.astype(int)]
 maxAngSD = np.deg2rad(171); minAngSD = np.deg2rad(23)
 maxCurSD = 0.98; minCurSD = 0.09;
+
 #maxCurSD = 0.98; minCurSD = 0.01
 nMeans = 16; nSD = 16
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
@@ -171,6 +175,7 @@ dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
 dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
 ds = {'v4':da, 'cnn':daa}
 #ds = {'v4':da.copy()}
+<<<<<<< HEAD
 ds_list = apc_model_cors_and_nulls(ds, dmod)
 with open(top_dir + 'data/models/ds_list_with_degen.p','wb') as f:
     pickle.dump(ds_list, f)
@@ -178,6 +183,43 @@ with open(top_dir + 'data/models/ds_list_with_degen.p','wb') as f:
 #with open(top_dir + 'data/models/ds_list_with_degent.p', 'rb') as f:
 #    d_rec = pickle.load(f)
 #
+=======
+#ds_list = apc_model_cors_and_nulls(ds, dmod)
+#with open(top_dir + 'data/models/ds_list_with_degent.p','wb') as f:s
+#    pickle.dump(ds_list, f)
+
+nMeans = 16; nSD = 10
+dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
+                         maxAngSD, minAngSD, maxCurSD, minCurSD,
+                         prov_commit=False, save=False, replace_prev_model=True)
+
+ds_list = apc_model_cors_and_nulls(ds, dam)
+with open(top_dir + 'data/models/degen_16x10.p','wb') as f:
+    pickle.dump(ds_list, f)
+
+ds_list = apc_model_cors_and_nulls(ds, dam, remove_degen=True)
+with open(top_dir + 'data/models/no_degen_16x10.p','wb') as f:
+    pickle.dump(ds_list, f)
+
+
+nMeans = 16; nSD = 16
+dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
+                         maxAngSD, minAngSD, maxCurSD, minCurSD,
+                         prov_commit=False, save=False, replace_prev_model=True)
+
+ds_list = apc_model_cors_and_nulls(ds, dam)
+with open(top_dir + 'data/models/degen_16x16.p','wb') as f:
+    pickle.dump(ds_list, f)
+
+ds_list = apc_model_cors_and_nulls(ds, dam, remove_degen=True)
+with open(top_dir + 'data/models/no_degen_16x16.p','wb') as f:
+    pickle.dump(ds_list, f)
+
+
+
+
+
+>>>>>>> a6c6dec9908d76844221ab1e2105a32419754507
 
 #nMeans = 2; nSD = 1
 #dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
@@ -208,6 +250,7 @@ with open(top_dir + 'data/models/ds_list_with_degen.p','wb') as f:
 #
 #
 #
+
 
 
 
