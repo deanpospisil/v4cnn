@@ -239,13 +239,15 @@ def imgStackTransform(imgDict, shape_img):
             trans_img = fft_gauss_blur_img( trans_img, imgDict['blur'][ind], std_cut_off = 5 )
 
         if 'scale' in imgDict:
-            #trans_img = fftDilateImg( trans_img, imgDict['scale'][ind] )
-            orig_size = trans_img.shape[0]
-            trans_img = zoom(trans_img, imgDict['scale'][ind])
-            trans_img = centeredPad(trans_img, orig_size , orig_size )
+            if 1 < imgDict['scale'][ind]:
+                trans_img = fftDilateImg(trans_img, imgDict['scale'][ind])
+            else:
+                orig_size = trans_img.shape[0]
+                trans_img = zoom(trans_img, imgDict['scale'][ind])
+                trans_img = centeredPad(trans_img, orig_size, orig_size)
 
         if 'rot' in imgDict:
-            trans_img = scipy.misc.imrotate( trans_img, imgDict['rot'][ind], interp='bilinear')
+            trans_img = scipy.misc.imrotate(trans_img, imgDict['rot'][ind], interp='bilinear')
 
         if 'x' and 'y' in imgDict:
             x = imgDict['x'][ind]
