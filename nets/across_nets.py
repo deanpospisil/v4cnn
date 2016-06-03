@@ -23,8 +23,6 @@ ann_fn = 'caffenet_train_iter_'
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(370),
                                                              blur=None,
                                                              scale =(0.45,0.45,1),
-                                                             #x=(-7, 7, 15),
-                                                             x=(-50, 50, 1),
                                                              y=None,
                                                              rotation = None)
 
