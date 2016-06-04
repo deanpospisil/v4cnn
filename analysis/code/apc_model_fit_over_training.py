@@ -27,17 +27,20 @@ dmod = xr.open_dataset(top_dir + data + 'models/apc_models_362_16X16.nc',
 #ds = ds.sel(niter=np.linspace(0, da.coords['niter'].shape[0], 2),  
 #                                method = 'nearest')
 #ds = ds.sel(unit=range(10), method='nearest')
-all_iter = dm.list_files('/data/dean_data/responses/' +'iter_*.nc')
-
-for i, itername in enumerate(all_iter):
-    print(itername)
-#    da_c = ds.sel(niter=iterind)['resp']
-    da_c = xr.open_dataset(itername,chunks = {'unit':100,'shapes': 370}  )['resp']
-    da_c = da_c.sel(x=2).chunk({'unit':100,'shapes': 370} )
-#    cor = ac.cor_resp_to_model(da_c, dmod, fit_over_dims=('x',))
-    cor = ac.cor_resp_to_model(da_c, dmod)
-    cor.to_dataset(name='r').to_netcdf(top_dir + 'v4cnn/data/an_results/noTI_r_' 
-    + itername.split('responses/')[1])
-
-#ds = xr.open_mfdataset(top_dir + 'analysis/data/an_results/r_iter_*.nc', concat_dim = 'niter')
-#ds.to_netcdf(top_dir + 'analysis/data/r_iter_total_' + str(da.niter.shape[0]) + '.nc')
+                       
+substrings = ['iter_large_few*.nc', 'iter_small_trans*.nc']  
+for substring in substrings:  
+    all_iter = dm.list_files('/data/dean_data/responses/' + substring)
+    
+    for i, itername in enumerate(all_iter):
+        print(itername)
+        #    da_c = ds.sel(niter=iterind)['resp']
+        da_c = xr.open_dataset(itername)['resp']
+        da_c = da_c.sel(x=0, method='nearest').chunk({'unit':200,'shapes': 370} )
+        #    cor = ac.cor_resp_to_model(da_c, dmod, fit_over_dims=('x',))
+        cor = ac.cor_resp_to_model(da_c, dmod)
+        cor.to_dataset(name='r').to_netcdf(top_dir + 'v4cnn/data/an_results/noTI_r_' 
+        + itername.split('responses/')[1])
+    
+    #ds = xr.open_mfdataset(top_dir + 'analysis/data/an_results/r_iter_*.nc', concat_dim = 'niter')
+    #ds.to_netcdf(top_dir + 'analysis/data/r_iter_total_' + str(da.niter.shape[0]) + '.nc')
