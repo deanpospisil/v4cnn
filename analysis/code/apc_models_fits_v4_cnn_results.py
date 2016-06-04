@@ -175,7 +175,6 @@ dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
 dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
 ds = {'v4':da, 'cnn':daa}
 #ds = {'v4':da.copy()}
-<<<<<<< HEAD
 ds_list = apc_model_cors_and_nulls(ds, dmod)
 with open(top_dir + 'data/models/ds_list_with_degen.p','wb') as f:
     pickle.dump(ds_list, f)
@@ -183,43 +182,7 @@ with open(top_dir + 'data/models/ds_list_with_degen.p','wb') as f:
 #with open(top_dir + 'data/models/ds_list_with_degent.p', 'rb') as f:
 #    d_rec = pickle.load(f)
 #
-=======
-#ds_list = apc_model_cors_and_nulls(ds, dmod)
-#with open(top_dir + 'data/models/ds_list_with_degent.p','wb') as f:s
-#    pickle.dump(ds_list, f)
 
-nMeans = 16; nSD = 10
-dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
-                         maxAngSD, minAngSD, maxCurSD, minCurSD,
-                         prov_commit=False, save=False, replace_prev_model=True)
-
-ds_list = apc_model_cors_and_nulls(ds, dam)
-with open(top_dir + 'data/models/degen_16x10.p','wb') as f:
-    pickle.dump(ds_list, f)
-
-ds_list = apc_model_cors_and_nulls(ds, dam, remove_degen=True)
-with open(top_dir + 'data/models/no_degen_16x10.p','wb') as f:
-    pickle.dump(ds_list, f)
-
-
-nMeans = 16; nSD = 16
-dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
-                         maxAngSD, minAngSD, maxCurSD, minCurSD,
-                         prov_commit=False, save=False, replace_prev_model=True)
-
-ds_list = apc_model_cors_and_nulls(ds, dam)
-with open(top_dir + 'data/models/degen_16x16.p','wb') as f:
-    pickle.dump(ds_list, f)
-
-ds_list = apc_model_cors_and_nulls(ds, dam, remove_degen=True)
-with open(top_dir + 'data/models/no_degen_16x16.p','wb') as f:
-    pickle.dump(ds_list, f)
-
-
-
-
-
->>>>>>> a6c6dec9908d76844221ab1e2105a32419754507
 
 #nMeans = 2; nSD = 1
 #dam = ac.make_apc_models(copy.deepcopy(shape_dict_list), shape_id, fn, nMeans, nSD,
