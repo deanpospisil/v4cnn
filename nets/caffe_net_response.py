@@ -78,7 +78,7 @@ def get_indices_for_net_unit_vec(net, layer_names = None):
 
     return resp_descriptor_dict
 
-def identity_preserving_transform_resp(img_stack, stim_trans_cart_dict, net, nimgs_per_pass=100):
+def identity_preserving_transform_resp(img_stack, stim_trans_cart_dict, net, nimgs_per_pass=150):
     #takes stim_trans_cart_dict, pulls from img_stack and transform accordingly,
     #gets nets responses.
 
