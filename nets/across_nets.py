@@ -20,31 +20,26 @@ base_image_nm = baseImageList[0]
 ann_fn = 'caffenet_train_iter_'
 
 #
-stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(370),
-                                                             blur=None,
-                                                             scale =None,
-                                                             x=(-7, 7, 15),
-                                                             #x=(-50, 50, 1),
-                                                             y=None,
-                                                             rotation = None)
-                                                             #
-#stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(370),
-#                                                             blur=None,
-#                                                             scale =(0.45,0.45,1),
-#                                                             x=(-50, 48, 50),
-#                                                             #x=(-50, 50, 1),
-#                                                             y=None,
-#                                                             rotation = None)
 
+trans= [(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+scales = [1, 0.45, 1, 0.45]
 
-all_iter = dm.list_files(ann_dir + '_iter*.caffe*')
+for x, scale in zip(trans,scales):
+    stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(370),
+                                                         blur=None,
+                                                         scale=(scale, scale,1),
+                                                         x=x,
+                                                         y=None,
+                                                         rotation = None)
 
-for fn in all_iter:
-
-    da = cf.get_net_resp(base_image_nm, ann_dir, fn.split('stages/')[1].split('.')[0], 
-                         stim_trans_cart_dict, stim_trans_dict, require_provenance=True)
-    tn = int(fn.split('iter_')[1].split('.')[0])   
-    da.attrs['train']= tn
-    ds = da.to_dataset(name ='resp')
-    ds.to_netcdf('/data/dean_data/responses/iter_large_few_trans' + str(tn) + '.nc')
-
+    all_iter = dm.list_files(ann_dir + '_iter*.caffe*')
+    
+    for fn in all_iter:
+    
+        da = cf.get_net_resp(base_image_nm, ann_dir, fn.split('stages/')[1].split('.')[0], 
+                             stim_trans_cart_dict, stim_trans_dict, require_provenance=True)
+        tn = int(fn.split('iter_')[1].split('.')[0])   
+        da.attrs['train'] = tn
+        ds = da.to_dataset(name='resp')
+        ds.to_netcdf('/data/dean_data/responses/iter_' +str(scale)+'_'+ str(x)+ '_'+ str(tn) + '.nc')
+    

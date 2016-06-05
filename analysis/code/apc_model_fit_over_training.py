@@ -17,7 +17,7 @@ data = 'v4cnn/data/'
 
 
 dmod = xr.open_dataset(top_dir + data + 'models/apc_models_362_16X16.nc',
-                       chunks = {'models': 1000, 'shapes': 370}  )['resp']
+                       chunks = {'models': 500, 'shapes': 370}  )['resp']
 #dmod = dmod.sel(models = range(10), method = 'nearest' )
 #ds = xr.open_mfdataset(top_dir + data + 'responses/' +'iter_*.nc', 
 #                       concat_dim = 'niter', chunks = {'unit':100, 'shapes': 370})
@@ -28,7 +28,7 @@ dmod = xr.open_dataset(top_dir + data + 'models/apc_models_362_16X16.nc',
 #                                method = 'nearest')
 #ds = ds.sel(unit=range(10), method='nearest')
                        
-substrings = ['iter_large_few*.nc', 'iter_small_trans*.nc']  
+substrings = [ 'iter_small_trans*.nc']  
 for substring in substrings:  
     all_iter = dm.list_files('/data/dean_data/responses/' + substring)
     
@@ -36,7 +36,7 @@ for substring in substrings:
         print(itername)
         #    da_c = ds.sel(niter=iterind)['resp']
         da_c = xr.open_dataset(itername)['resp']
-        da_c = da_c.sel(x=0, method='nearest').chunk({'unit':200,'shapes': 370} )
+        da_c = da_c.sel(x=0, method='nearest').squeeze().chunk({'unit':50,'shapes': 370})
         #    cor = ac.cor_resp_to_model(da_c, dmod, fit_over_dims=('x',))
         cor = ac.cor_resp_to_model(da_c, dmod)
         cor.to_dataset(name='r').to_netcdf(top_dir + 'v4cnn/data/an_results/noTI_r_' 
