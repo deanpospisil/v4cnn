@@ -13,7 +13,7 @@ sys.path.append( top_dir + 'xarray/')
 top_dir = top_dir + 'v4cnn/'
 sys.path.append(top_dir + 'common')
 sys.path.append(top_dir + 'img_gen')
-
+import xarray as xr
 f = open(top_dir + '/data/image_net/imagenet_log_May_21.txt', 'r')
 log = f.readlines()
 
@@ -31,7 +31,13 @@ lr = np.array([float(re.split(' = ', line[0])[1]) for line in
 
 acc = np.array([np.double(re.split(' = ', line[0])[1]) for line in
                 [re.findall('accuracy = \d+.\d+', line) for line in log]
-                if not line==[]])
+                if not line==[]]):
+
+
 plt.plot(iteration, (loss-np.mean(loss))/10)
 plt.plot(iteration, lr*10)
 plt.plot(np.arange(0,len(acc)*1000, 1000), acc)
+
+trans= [(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+scales = [1, 0.45, 1, 0.45]
+for x, scale in zip(trans,scales):
