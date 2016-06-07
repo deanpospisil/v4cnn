@@ -31,8 +31,8 @@ iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
 save_inds = [0, len(all_iter)]
 
-trans= [(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
-scales = [1, 0.45, 1, 0.45]
+trans= [(-7, 7, 2),(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+scales = [1, 1, 0.45, 1, 0.45]
 
 
 for x, scale in zip(trans, scales):
@@ -45,6 +45,7 @@ for x, scale in zip(trans, scales):
                                                          rotation = None)
 
     for i, iter_name in enumerate(all_iter):
+        print('Total Progress')
         print(i/float(len(all_iter)))
         #get response and save
         da = cf.get_net_resp(base_image_nm, ann_dir, iter_name.split('stages/')[1].split('.')[0],
