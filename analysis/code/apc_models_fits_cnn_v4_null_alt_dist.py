@@ -172,6 +172,7 @@ ds_list = apc_model_cors_and_nulls(ds, dmod)
 with open(top_dir + 'data/an_results/ds_list_with_degen.p','wb') as f:
     pickle.dump(ds_list, f)
 
+
 #with open(top_dir + 'data/models/ds_list_with_degent.p', 'rb') as f:
 #    d_rec = pickle.load(f)
 #
