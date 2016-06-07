@@ -31,11 +31,11 @@ iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
 save_inds = [0, len(all_iter)]
 
-trans= [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [0.45, 1, 0.45, 1]
 
 
-for x, scale in zip(trans, scales):
+for x, scale in zip(trans_x, scales):
     stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(
                                                          shapes=range(370),
                                                          blur=None,
