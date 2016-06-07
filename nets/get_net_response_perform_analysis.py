@@ -31,11 +31,11 @@ iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
 save_inds = [0, len(all_iter)]
 
-trans= [(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
-scales = [1, 0.45, 1, 0.45]
+trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+scales = [0.45, 1, 0.45, 1]
 
 
-for x, scale in zip(trans, scales):
+for x, scale in zip(trans_x, scales):
     stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(
                                                          shapes=range(370),
                                                          blur=None,
@@ -45,6 +45,7 @@ for x, scale in zip(trans, scales):
                                                          rotation = None)
 
     for i, iter_name in enumerate(all_iter):
+        print('Total Progress')
         print(i/float(len(all_iter)))
         #get response and save
         da = cf.get_net_resp(base_image_nm, ann_dir, iter_name.split('stages/')[1].split('.')[0],
@@ -62,19 +63,20 @@ for x, scale in zip(trans, scales):
             best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
             ti = xr.DataArray(best_r_alex).reindex_like(da.sel(x=0, method='nearest'))
 
-            ti.to_dataset(name='ti').to_netcdf(top_dir + 'v4cnn/data/an_results/ti_'
-            + iter_name.split('responses/')[1])
+            ti.to_dataset(name='ti').to_netcdf(top_dir + 'data/an_results/ti_'
+            + iter_name.split('net_stages/')[1])
 
         if fit_apc_model:
             #apc model fit
             if 'dmod' not in locals():
-                dmod = xr.open_dataset(top_dir + 'v4cnn/data/models/apc_models_362_16X16.nc',
+                dmod = xr.open_dataset(top_dir + 'data/models/apc_models_362_16X16.nc',
                                chunks = {'models': 500, 'shapes': 370}  )['resp']
 
             da = da.sel(x=0, method='nearest').squeeze().chunk({'unit':50,'shapes': 370})
             cor = ac.cor_resp_to_model(da, dmod)
-            cor.to_dataset(name='r').to_netcdf(top_dir + 'v4cnn/data/an_results/noTI_r_'
-            + iter_name.split('responses/')[1])
+            cor.to_dataset(name='r').to_netcdf(top_dir + 'data/an_results/noTI_r_'
+            + iter_name.split('net_stages/')[1])
 
         if i not in save_inds:
             os.remove(response_file)
+            
