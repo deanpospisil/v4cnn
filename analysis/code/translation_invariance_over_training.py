@@ -20,7 +20,7 @@ all_iter = dm.list_files('/data/dean_data/responses/' +'iter_*.nc')
 for i, itername in enumerate(all_iter):
     print(itername)
 #    da_c = ds.sel(niter=iterind)['resp']
-    da_c = xr.open_dataset(itername,chunks = {'unit':100,'shapes': 370}  )['resp']
+    da_c = xr.open_dataset(itername, chunks = {'unit':100,'shapes': 370}  )['resp']
     da_c = da_c - da_c.mean(['shapes'])
     s = np.linalg.svd(da_c.values.T, compute_uv=0)
     best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
