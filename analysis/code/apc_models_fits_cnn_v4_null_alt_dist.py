@@ -130,6 +130,7 @@ def apc_model_cors_and_nulls(ds, dmod, remove_degen=False):
                                    dmod, fit_over_dims=None, prov_commit=False)
         cor.attrs['type'] = daa.attrs['type']
         shape_ind = range(daa['shapes'].count().values)
+        
         for i in range(daa['unit'].count().values):
             np.random.shuffle(shape_ind)
             daa[:, i] = daa[shape_ind, i].values

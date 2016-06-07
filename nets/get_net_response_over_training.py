@@ -21,7 +21,7 @@ ann_fn = 'caffenet_train_iter_'
 
 #
 
-trans= [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+trans= [(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [1, 0.45, 1, 0.45]
 
 for x, scale in zip(trans,scales):
@@ -41,5 +41,5 @@ for x, scale in zip(trans,scales):
         tn = int(fn.split('iter_')[1].split('.')[0])   
         da.attrs['train'] = tn
         ds = da.to_dataset(name='resp')
-        ds.to_netcdf('/data/dean_data/responses/iter_' +str(scale)+'_'+ str(x)+ '_'+ str(tn) + '.nc')
+        ds.to_netcdf('/data/dean_data/responses/iter_scale_' +str(scale)+'_pos_'+ str(x)+ '_'+ str(tn) + '.nc')
     
