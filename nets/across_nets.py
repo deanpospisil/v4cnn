@@ -21,7 +21,7 @@ ann_fn = 'caffenet_train_iter_'
 
 #
 
-trans= [(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+trans= [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [1, 0.45, 1, 0.45]
 
 for x, scale in zip(trans,scales):
