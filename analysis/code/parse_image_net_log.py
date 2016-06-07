@@ -31,7 +31,7 @@ lr = np.array([float(re.split(' = ', line[0])[1]) for line in
 
 acc = np.array([np.double(re.split(' = ', line[0])[1]) for line in
                 [re.findall('accuracy = \d+.\d+', line) for line in log]
-                if not line==[]]):
+                if not line==[]])
 
 
 plt.plot(iteration, (loss-np.mean(loss))/10)

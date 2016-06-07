@@ -26,7 +26,8 @@ for i, itername in enumerate(all_iter):
     best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
     ti = xr.DataArray(best_r_alex).reindex_like(da_c.sel(x=0, method='nearest'))
 
-    ti.to_dataset(name='ti').to_netcdf(top_dir + 'v4cnn/data/an_results/translation_invariance_'
+    ti.to_dataset(name='ti').to_netcdf(top_dir +
+    'v4cnn/data/an_results/translation_invariance_'
     + itername.split('responses/')[1])
 
 #ds = xr.open_mfdataset(top_dir + 'analysis/data/an_results/r_iter_*.nc', concat_dim = 'niter')
