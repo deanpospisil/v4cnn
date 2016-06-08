@@ -46,9 +46,10 @@ all_iter = dm.list_files(ann_dir + '_iter*.caffe*')
 #get iterations in order
 iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
-subset = [len(all_iter)-1,] + range(0, len(all_iter), 49)
-all_iter = [all_iter[ind] for ind in subset]
-save_inds = range(0, len(all_iter))
+#subset = [len(all_iter)-1,] + range(0, len(all_iter), 49)
+#all_iter = [all_iter[ind] for ind in subset]
+#save_inds = range(0, len(all_iter))
+save_inds = [0, len('all_iter')-1]
 
 trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [0.45, 1, 0.45, 1]
