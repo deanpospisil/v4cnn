@@ -61,8 +61,8 @@ for x, scale in zip(trans_x, scales):
 
         #get response and save
         iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
-        response_file = ('/data/dean_data/responses/iter_scale_' + str(scale) +
-        '_pos_' + str(x) + '_' + str(iteration_number) + '.nc')
+        response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + '_iter_' + str(iteration_number) + '.nc'
+        response_file = ('/data/dean_data/responses/' + response_description)
         if  not os.path.isfile(response_file):
             da = cf.get_net_resp(base_image_nm, ann_dir, iter_name.split('stages/')[1].split('.')[0],
                                  stim_trans_cart_dict, stim_trans_dict, require_provenance=True)
@@ -72,9 +72,9 @@ for x, scale in zip(trans_x, scales):
 
             
         da = xr.open_dataset(response_file, chunks={'unit':100,'shapes': 370}  )['resp']
-
         
-        ti_name = top_dir + 'data/an_results/ti_'+ iter_name.split('net_stages/')[1]
+        
+        ti_name = top_dir + 'data/an_results/ti_'+ response_description
         if get_translation_invariance and not os.path.isfile(ti_name):
             
             da_ms = da - da.mean(['shapes'])
@@ -84,7 +84,9 @@ for x, scale in zip(trans_x, scales):
             ti.to_dataset(name='ti').to_netcdf(ti_name)
 
         da = da.sel(x=0, method='nearest').squeeze().chunk({'unit':50,'shapes': 370})
-        fit_apc_model_name = top_dir + 'data/an_results/noTI_r_'+ iter_name.split('net_stages/')[1]
+        
+
+        fit_apc_model_name = top_dir + 'data/an_results/apc_pos_0_'+ response_description
 
         if fit_apc_model and not os.path.isfile(fit_apc_model_name):
             #apc model fit
@@ -93,7 +95,7 @@ for x, scale in zip(trans_x, scales):
             cor = ac.cor_resp_to_model(da, dmod.copy().chunk({'models': 500, 'shapes': 370}))
             cor.to_dataset(name='r').to_netcdf(fit_apc_model_name)
         
-        sparsity_name = top_dir + 'data/an_results/sparsity_'+ iter_name.split('net_stages/')[1]       
+        sparsity_name = top_dir + 'data/an_results/sparsity_pos_0_'+response_description  
         if get_sparsity and not os.path.isfile(sparsity_name):
             sparsity = da_coef_var(da.load().copy())
             sparsity.to_dataset(name='spar').to_netcdf(sparsity_name)
