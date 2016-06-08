@@ -63,18 +63,22 @@ for x, scale in zip(trans_x, scales):
         iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
         response_file = ('/data/dean_data/responses/iter_scale_' + str(scale) +
         '_pos_' + str(x) + '_' + str(iteration_number) + '.nc')
-        if -os.path.isfile(response_file):
+        if  not os.path.isfile(response_file):
             da = cf.get_net_resp(base_image_nm, ann_dir, iter_name.split('stages/')[1].split('.')[0],
                                  stim_trans_cart_dict, stim_trans_dict, require_provenance=True)
             da.attrs['train'] = iteration_number
             ds = da.to_dataset(name='resp')
             ds.to_netcdf(response_file)
 
+            
+        da = xr.open_dataset(response_file, chunks={'unit':100,'shapes': 370}  )['resp']
+
+        
         ti_name = top_dir + 'data/an_results/ti_'+ iter_name.split('net_stages/')[1]
-        if get_translation_invariance and -os.path.isfile(ti_name):
-            da = xr.open_dataset(response_file, chunks={'unit':100,'shapes': 370}  )['resp']
-            da = da - da.mean(['shapes'])
-            s = np.linalg.svd(da.values.T, compute_uv=0)
+        if get_translation_invariance and not os.path.isfile(ti_name):
+            
+            da_ms = da - da.mean(['shapes'])
+            s = np.linalg.svd(da_ms.values.T, compute_uv=0)
             best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
             ti = xr.DataArray(best_r_alex).reindex_like(da.sel(x=0, method='nearest'))
             ti.to_dataset(name='ti').to_netcdf(ti_name)
@@ -82,7 +86,7 @@ for x, scale in zip(trans_x, scales):
         da = da.sel(x=0, method='nearest').squeeze().chunk({'unit':50,'shapes': 370})
         fit_apc_model_name = top_dir + 'data/an_results/noTI_r_'+ iter_name.split('net_stages/')[1]
 
-        if fit_apc_model and -os.path.isfile(fit_apc_model_name):
+        if fit_apc_model and not os.path.isfile(fit_apc_model_name):
             #apc model fit
             if 'dmod' not in locals():
                 dmod = xr.open_dataset(top_dir + 'data/models/apc_models_362_16X16.nc',
@@ -91,9 +95,9 @@ for x, scale in zip(trans_x, scales):
             da = da.sel(x=0, method='nearest').squeeze().chunk({'unit':50,'shapes': 370})
             cor = ac.cor_resp_to_model(da, dmod)
             cor.to_dataset(name='r').to_netcdf(fit_apc_model_name)
-
-        sparsity_name = top_dir + 'data/an_results/sparsity_'+ iter_name.split('net_stages/')[1]
-        if get_sparsity and -os.path.isfile(sparsity_name):
+        
+        sparsity_name = top_dir + 'data/an_results/sparsity_'+ iter_name.split('net_stages/')[1]       
+        if get_sparsity and not os.path.isfile(sparsity_name):
             sparsity = da_coef_var(da)
             sparsity.to_dataset(name='spar').to_netcdf(sparsity_name)
 
