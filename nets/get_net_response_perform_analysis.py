@@ -89,9 +89,8 @@ for x, scale in zip(trans_x, scales):
         if fit_apc_model and not os.path.isfile(fit_apc_model_name):
             #apc model fit
             if 'dmod' not in locals():
-                dmod = xr.open_dataset(top_dir + 'data/models/apc_models_362_16X16.nc',
-                               chunks = {'models': 500, 'shapes': 370}  )['resp']
-            cor = ac.cor_resp_to_model(da, dmod)
+                dmod = xr.open_dataset(top_dir + 'data/models/apc_models_362_16X16.nc')['resp']
+            cor = ac.cor_resp_to_model(da, dmod.copy().chunk({'models': 500, 'shapes': 370}))
             cor.to_dataset(name='r').to_netcdf(fit_apc_model_name)
         
         sparsity_name = top_dir + 'data/an_results/sparsity_'+ iter_name.split('net_stages/')[1]       
