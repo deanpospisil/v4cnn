@@ -91,14 +91,12 @@ for x, scale in zip(trans_x, scales):
             if 'dmod' not in locals():
                 dmod = xr.open_dataset(top_dir + 'data/models/apc_models_362_16X16.nc',
                                chunks = {'models': 500, 'shapes': 370}  )['resp']
-
-            da = da.sel(x=0, method='nearest').squeeze().chunk({'unit':50,'shapes': 370})
             cor = ac.cor_resp_to_model(da, dmod)
             cor.to_dataset(name='r').to_netcdf(fit_apc_model_name)
         
         sparsity_name = top_dir + 'data/an_results/sparsity_'+ iter_name.split('net_stages/')[1]       
         if get_sparsity and not os.path.isfile(sparsity_name):
-            sparsity = da_coef_var(da)
+            sparsity = da_coef_var(da.load().copy())
             sparsity.to_dataset(name='spar').to_netcdf(sparsity_name)
 
         if i not in save_inds:
