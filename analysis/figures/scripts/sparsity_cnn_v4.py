@@ -29,8 +29,8 @@ da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shap
 daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
 daa = daa.sel(x=0)
 
-inds = degen(daa).values
-indsv = degen(da).values
+#inds = degen(daa).values
+#indsv = degen(da).values
 
 def softmax(w):
 
