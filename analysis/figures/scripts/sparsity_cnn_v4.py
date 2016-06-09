@@ -19,6 +19,8 @@ sys.path.append(top_dir + 'img_gen')
 import xarray as xr
 
 def da_coef_var(da):
+    da_min_resps = da.min('shapes')
+    da[:,da_min_resps<0] = da[:,da_min_resps<0] - da_min_resps[da_min_resps<0]
     mu = da.mean('shapes')
     sig = da.reduce(np.std, dim='shapes')
     return 1./(((mu/sig)**2)+1)
@@ -29,20 +31,22 @@ da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shap
 daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
 daa = daa.sel(x=0)
 
+dam = daa.min('shapes')
+daa[:,dam<0] = daa[:,dam<0] - dam[dam<0]
+
 #inds = degen(daa).values
 #indsv = degen(da).values
-
-def softmax(w):
-
-    return np.exp(w)/np.sum(np.exp(w))
+#def softmax(w):
+#
+#    return np.exp(w)/np.sum(np.exp(w))
 
 print('trolls')
 
-plt.close('all')
+
 #make all positive
-fc8 = daa.coords['layer_label']=='fc8'
-daa[:,fc8] = daa[:,fc8] - daa[:,fc8].min()
-#daa[:,fc8] = abs(daa[:,fc8])
+#fc8 = daa.coords['layer_label']=='fc8'
+#daa[:,fc8] = daa[:,fc8] - daa[:,fc8].min()
+##daa[:,fc8] = abs(daa[:,fc8])
 
 prob =  daa.coords['layer_label']=='prob'
 daa = daa[:,-prob]
@@ -50,6 +54,7 @@ daa = daa[:,-prob]
 v4 = da_coef_var(da)
 alex = da_coef_var(daa)
 
+plt.close('all')
 plt.subplot(212)
 plt.title('Normalized Histogram Sparsity Values')
 plt.hist(alex.values, range=(0,1), normed=True, color ='blue', alpha=0.5, bins=100)
@@ -73,7 +78,7 @@ plt.savefig(top_dir + 'analysis/figures/images/sparsity_measure_plot.eps')
 v4 = da_coef_var(da)
 alex = da_coef_var(daa)
 v4.to_dataset('spar').to_netcdf(top_dir + 'data/an_results/spar_v4.nc')
-alex.to_dataset('spar').to_netcdf(top_dir + 'data/an_results/spar_alex.nc')
+alex.to_dataset('spar').to_netcdf(top_dir + 'data/an_results/spar_alex_last.nc')
 
 
 '''
