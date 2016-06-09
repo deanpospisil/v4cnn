@@ -148,7 +148,7 @@ with open(top_dir + 'data/models/PC370_params.p', 'rb') as f:
 da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
 daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
 daa = xr.open_dataset(top_dir + 'data/responses/APC362_scale_0.45_pos_(-7, 7, 15)_iter_450000.nc')['resp']
-daa=daa.loc[:, 0, :]#without translation
+daa=daa.loc[:, :, 0, :]#without translation
 
 daa.attrs['type'] = 'AlexNet'
 da.attrs['type'] = 'V4'
