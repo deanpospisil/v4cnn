@@ -64,7 +64,7 @@ for x, scale in zip(trans_x, scales):
                                                          y=None,
                                                          rotation = None)
 
-    for i, iter_name in enumerate(all_iter):
+    for i, iter_name in enumerate(reversed(all_iter)):
         print('Total Progress')
         print(i/float(len(all_iter)))
 
