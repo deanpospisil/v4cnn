@@ -54,8 +54,8 @@ all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',]
 
 trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [0.45, 1, 0.45, 1]
-trans_x = [(-7, 7, 15)]
-scales = [0.45,]
+trans_x = [(-7, 7, 15), (-50, 48, 50)]
+scales = [0.45, 0.45]
 
 
 for x, scale in zip(trans_x, scales):
@@ -93,9 +93,11 @@ for x, scale in zip(trans_x, scales):
         
         if get_translation_invariance and not os.path.isfile(ti_name):
             
-            da_ms = da - da.mean(['shapes'])
+            da_ms = (da - da.mean(['shapes'])).squeeze()
+
             s = np.linalg.svd(da_ms.values.T, compute_uv=0)
             best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
+            
             ti = xr.DataArray(np.squeeze(best_r_alex), dims='unit')
             ti = take_intersecting_1d_index(ti, da)
             #ti.attrs['resp_coords'] = da_ms.coords.values
