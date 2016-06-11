@@ -183,7 +183,7 @@ def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
 
     import caffe
     caffe.set_mode_gpu()
-    net = caffe.Net(ann_dir + 'deploy.prototxt', ann_dir + ann_fn + '.caffemodel', caffe.TEST)
+    net = caffe.Net(ann_dir + 'deploy_relu_not_saved_old.prototxt', ann_dir + ann_fn + '.caffemodel', caffe.TEST)
 
     net_resp = identity_preserving_transform_resp(base_stack, stim_trans_cart_dict, net)
     indices_for_net_unit_vec = get_indices_for_net_unit_vec(net)
