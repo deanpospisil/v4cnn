@@ -54,8 +54,7 @@ all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',]
 
 trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [0.45, 1, 0.45, 1]
-trans_x = [(-7, 7, 15), (-50, 48, 50)]
-scales = [0.45, 0.45]
+
 
 
 for x, scale in zip(trans_x, scales):
