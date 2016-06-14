@@ -41,18 +41,20 @@ get_translation_invariance = True
 fit_apc_model = True
 get_sparsity = True
 
-all_iter = dm.list_files(ann_dir + '_iter*.caffe*')
+all_iter = dm.list_files(ann_dir + '*_iter*.caffe*')
 
 #get iterations in order
 iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
-#subset = [len(all_iter)-1,] + range(0, len(all_iter), 49)
-#all_iter = [all_iter[ind] for ind in subset]
-#save_inds = range(0, len(all_iter))
-save_inds = [0, len('all_iter')-1]
+subset = [len(all_iter)-1, 0] 
+all_iter = [all_iter[ind] for ind in subset]
+save_inds = range(0, len(all_iter))
+#save_inds = [0, len('all_iter')-1]
+#all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',]
 
 trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [0.45, 1, 0.45, 1]
+
 
 
 for x, scale in zip(trans_x, scales):
@@ -64,13 +66,14 @@ for x, scale in zip(trans_x, scales):
                                                          y=None,
                                                          rotation = None)
 
-    for i, iter_name in enumerate(all_iter):
+    for i, iter_name in enumerate(reversed(all_iter)):
         print('Total Progress')
         print(i/float(len(all_iter)))
 
         #get response and save
+        iter_subname = iter_name.split('/')[-1].split('.')[0]
         iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
-        response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + '_iter_' + str(iteration_number) + '.nc'
+        response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + iter_subname + '.nc'
         response_file = ('/data/dean_data/responses/' + response_description)
         
         ti_name = top_dir + 'data/an_results/ti_'+ response_description
@@ -88,13 +91,13 @@ for x, scale in zip(trans_x, scales):
         elif not_all_files_made:   
             da = xr.open_dataset(response_file, chunks={'unit':100,'shapes': 370}  )['resp']
         
-        
-        
         if get_translation_invariance and not os.path.isfile(ti_name):
             
-            da_ms = da - da.mean(['shapes'])
+            da_ms = (da - da.mean(['shapes'])).squeeze()
+
             s = np.linalg.svd(da_ms.values.T, compute_uv=0)
             best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
+            
             ti = xr.DataArray(np.squeeze(best_r_alex), dims='unit')
             ti = take_intersecting_1d_index(ti, da)
             #ti.attrs['resp_coords'] = da_ms.coords.values
