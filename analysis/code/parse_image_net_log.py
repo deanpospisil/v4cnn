@@ -37,7 +37,3 @@ acc = np.array([np.double(re.split(' = ', line[0])[1]) for line in
 plt.plot(iteration, (loss-np.mean(loss))/10)
 plt.plot(iteration, lr*10)
 plt.plot(np.arange(0,len(acc)*1000, 1000), acc)
-
-trans= [(-7, 7, 15), (7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
-scales = [1, 0.45, 1, 0.45]
-for x, scale in zip(trans,scales):

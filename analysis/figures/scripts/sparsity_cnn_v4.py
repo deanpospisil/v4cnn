@@ -17,44 +17,54 @@ sys.path.append(top_dir + 'common')
 sys.path.append(top_dir + 'img_gen')
 
 import xarray as xr
-
+import d_misc as dm
+import re
 def da_coef_var(da):
     da_min_resps = da.min('shapes')
-    da[:,da_min_resps<0] = da[:,da_min_resps<0] - da_min_resps[da_min_resps<0]
+    if ((da<0).values).any():
+        da[:,da_min_resps<0] = da[:,da_min_resps<0] - da_min_resps[da_min_resps<0]
     mu = da.mean('shapes')
     sig = da.reduce(np.std, dim='shapes')
     return 1./(((mu/sig)**2)+1)
 
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
-dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
-da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
-daa = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
-daa = daa.sel(x=0)
-
-dam = daa.min('shapes')
-daa[:,dam<0] = daa[:,dam<0] - dam[dam<0]
+#dmod = xr.open_dataset(fn, chunks={'models': 100, 'shapes': 370}  )['resp']
+#daa = xr.open_dataset(top_dir + 'data/an_res/APC362_scale_1_pos_(-7, 7, 15)_iter_450000.nc')['resp']
+#daa = daa.sel(x=0)
+#
+#dam = daa.min('shapes')
+#daa[:,dam<0] = daa[:,dam<0] - dam[dam<0]
 
 #inds = degen(daa).values
 #indsv = degen(da).values
 #def softmax(w):
 #
 #    return np.exp(w)/np.sum(np.exp(w))
-
-print('trolls')
-
-
 #make all positive
 #fc8 = daa.coords['layer_label']=='fc8'
 #daa[:,fc8] = daa[:,fc8] - daa[:,fc8].min()
 ##daa[:,fc8] = abs(daa[:,fc8])
+#prob =  daa.coords['layer_label']=='prob'
+#daa = daa[:,-prob]
+#
+#alex = da_coef_var(daa)
+all_iter = dm.list_files(top_dir + 'data/an_results/sparsity_APC*.nc')
+iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
+all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
+spar_iter = [xr.open_dataset(name) for name in all_iter]
+spar_all = xr.concat(spar_iter, xr.DataArray(np.sort(iter_numbers), dims='iter', name='iter'))
+spar_all.attrs['fn'] = all_iter[0]
 
-prob =  daa.coords['layer_label']=='prob'
-daa = daa[:,-prob]
 
+
+da = xr.open_dataset(top_dir + 'data/responses/V4_362PC2001.nc', chunks = {'shapes':370})['resp']
 v4 = da_coef_var(da)
-alex = da_coef_var(daa)
+alex = spar_all.isel(iter=-1)['spar']
+#alex = xr.open_dataset(top_dir + 'data/an_results/sparsity_APC362_scale_1_pos_(-50, 48, 50)_iter_450000.nc')['spar']
+
 
 plt.close('all')
+plt.figure()
 plt.subplot(212)
 plt.title('Normalized Histogram Sparsity Values')
 plt.hist(alex.values, range=(0,1), normed=True, color ='blue', alpha=0.5, bins=100)
@@ -76,66 +86,6 @@ plt.tight_layout()
 plt.savefig(top_dir + 'analysis/figures/images/sparsity_measure_plot.eps')
 
 v4 = da_coef_var(da)
-alex = da_coef_var(daa)
 v4.to_dataset('spar').to_netcdf(top_dir + 'data/an_results/spar_v4.nc')
 alex.to_dataset('spar').to_netcdf(top_dir + 'data/an_results/spar_alex_last.nc')
 
-
-'''
-#kurtosis: doesnt work with out negatives
-k = st.kurtosis(da.values)
-plt.scatter(2*np.ones(np.shape(k)), k)
-print(np.min(k))
-print(np.max(k))
-
-k = st.kurtosis(daa.T)
-plt.scatter(np.ones(np.shape(k)), k)
-print(np.min(k))
-print(np.max(k))
-
-#gini
-s=1
-plt.close('all')
-plt.subplot(211)
-print('gini')
-kv = map(gini, da.values)
-k = np.array(map(gini, daa.T.values))
-plt.hist(k[np.logical_not(np.isnan(k))], range=(-100,100), normed=True, color ='blue', edgecolor='blue', alpha=0.5, bins=1000, log=True)
-plt.hist(kv, normed=True, color ='red',edgecolor='red', alpha=0.5, bins=20, log=True)
-plt.legend(['Alex', 'V4'])
-
-overlap = ((k<np.nanmax(kv))*(k>np.nanmin(kv)))
-
-
-plt.title('Gini Coef : ' + str(np.sum( (k<np.nanmax(kv))*(k>np.nanmin(kv)) ))
-+' / '+ str(len(k))+ ' units left, and ' + str(np.sum(overlap*-inds)) + ' / ' +str(np.sum(overlap)) + ' with 50% frac var req')
-
-print('Number AN units within range of V4 sparsity by Gini')
-print(np.sum( (k<np.nanmax(kv))*(k>np.nanmin(kv)) ))
-
-
-
-def degen(daa):
-    minfracvar = 0.5
-    _ = (daa**2)
-    tot_var = _.sum('shapes')
-    non_zero = tot_var<1e-16
-    just_one_shape = (_.max('shapes')/tot_var)>minfracvar
-    degen_inds = just_one_shape + non_zero
-    return degen_inds
-
-def gini(list_of_values):
-    sorted_list = sorted(list_of_values)
-    height, area = 0, 0
-    for value in sorted_list:
-        height += value
-        area += height - value / 2.
-    fair_area = height * len(list_of_values) / 2.
-    return (fair_area - area) / fair_area
-
-def coef_var(x):
-    mu = np.nanmean(x)
-    sig = np.nanstd(x)
-
-    return 1./((mu/sig)**2+1)
-'''
