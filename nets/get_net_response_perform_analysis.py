@@ -41,16 +41,16 @@ get_translation_invariance = True
 fit_apc_model = True
 get_sparsity = True
 
-all_iter = dm.list_files(ann_dir + '_iter*.caffe*')
+all_iter = dm.list_files(ann_dir + '*_iter*.caffe*')
 
 #get iterations in order
 iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
-subset = [len(all_iter)-1,] + range(0, len(all_iter), 49)
+subset = [len(all_iter)-1, 0] 
 all_iter = [all_iter[ind] for ind in subset]
 #save_inds = range(0, len(all_iter))
 save_inds = [0, len('all_iter')-1]
-all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',]
+#all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',]
 
 trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 scales = [0.45, 1, 0.45, 1]
