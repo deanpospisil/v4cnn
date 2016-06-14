@@ -48,8 +48,8 @@ iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
 subset = [len(all_iter)-1, 0] 
 all_iter = [all_iter[ind] for ind in subset]
-#save_inds = range(0, len(all_iter))
-save_inds = [0, len('all_iter')-1]
+save_inds = range(0, len(all_iter))
+#save_inds = [0, len('all_iter')-1]
 #all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',]
 
 trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
@@ -71,8 +71,9 @@ for x, scale in zip(trans_x, scales):
         print(i/float(len(all_iter)))
 
         #get response and save
+        iter_subname = iter_name.split('/')[-1].split('.')[0]
         iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
-        response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + '_iter_' + str(iteration_number) + '.nc'
+        response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + iter_subname + '.nc'
         response_file = ('/data/dean_data/responses/' + response_description)
         
         ti_name = top_dir + 'data/an_results/ti_'+ response_description
