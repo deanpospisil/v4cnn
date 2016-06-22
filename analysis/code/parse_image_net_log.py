@@ -18,6 +18,7 @@ f = open(top_dir + '/data/image_net/imagenet_log_May_21.txt', 'r')
 f = open(top_dir + '/data/image_net/imagenet_log_training_June13.txt', 'r')
 f = open(top_dir + '/data/image_net/imagenet_log_training_June14.txt', 'r')
 
+#f = open(top_dir + '/data/image_net/imagenet_log_training_June19.txt', 'r')
 log = f.readlines()
 
 
@@ -37,7 +38,7 @@ acc = np.array([np.double(re.split(' = ', line[0])[1]) for line in
                 if not line==[]])
 
 
-plt.plot(iteration, loss)
+#plt.plot(iteration, loss)
 #plt.plot(iteration, lr)
 plt.plot(np.arange(0,len(acc)*1000, 1000), acc)
 plt.ylim(0,1)

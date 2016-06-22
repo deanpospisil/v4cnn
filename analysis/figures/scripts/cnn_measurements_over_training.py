@@ -82,13 +82,15 @@ all_iter = dm.list_files(top_dir + 'data/an_results/ti_APC*.nc')
 iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
 ti_iter = [xr.open_dataset(name)['tin'] for name in all_iter]
-ti_all = xr.concat(spar_iter, xr.DataArray(np.sort(iter_numbers), dims='iter', name='iter'))
+ti_all = xr.concat(ti_iter, xr.DataArray(np.sort(iter_numbers), dims='iter', name='iter'))
 
 all_iter = dm.list_files(top_dir + 'data/an_results/apc_APC*.nc')
 iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
-apc_iter = [xr.open_dataset(name)['r'] for name in all_iter]
-apc_all = xr.concat(spar_iter, xr.DataArray(np.sort(iter_numbers), dims='iter', name='iter'))
+apc_iter = [xr.open_dataset(name)['r'].reindex_like(spar_iter[0]) for name in all_iter]
+apc_all = xr.concat(apc_iter, xr.DataArray(np.sort(iter_numbers), dims='iter', name='iter'))
+
+
 apc_all = apc_all.reindex_like(spar_all)
 ti_all = ti_all.reindex_like(spar_all)
 
@@ -110,9 +112,16 @@ for iteration in spar_all.coords['iter'].values:
 all_vals = np.hstack(all_vals).T
 df = pd.DataFrame(all_vals,
               columns=['iteration', 'layer_label', 'layer', 'layer_unit',  'unit', 'perf', 'ti', 'apc', 'spar'])
-df = df.set_index(['iteration','layer_unit', 'layer_label', 'unit', 'layer'], drop=True)
+df = df.set_index(['iteration','layer_unit', 'layer_label', 'unit', 'layer'], drop=True).astype(np.double)
 
+apc_thresh = 0.5
+ti_thresh = 0.5
+spar_thresh = 0.8
 
+v4like = ((df.spar<spar_thresh)*(df.ti>ti_thresh)*(df.apc>apc_thresh))
+
+by_iter = v4like.sum(level='layer_label')
+plt.scatter(by_iter.index.values.astype(int), by_iter.values)
 
 #
 ##sort fits by iteration.
