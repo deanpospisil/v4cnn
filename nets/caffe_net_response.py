@@ -13,11 +13,11 @@ import sys
 import warnings
 
 #make the working directory two above this one
-top_dir = os.getcwd().split('net_code')[0]
+top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append( top_dir + '/xarray')
-top_dir = top_dir + 'net_code/'
+top_dir = top_dir + 'v4cnn'
 sys.path.append(top_dir)
-sys.path.append(top_dir +'common')
+sys.path.append(top_dir +'/common')
 
 sys.path.append('/home/dean/caffe/python')
 
@@ -78,7 +78,7 @@ def get_indices_for_net_unit_vec(net, layer_names = None):
 
     return resp_descriptor_dict
 
-def identity_preserving_transform_resp(img_stack, stim_trans_cart_dict, net, nimgs_per_pass=260):
+def identity_preserving_transform_resp(img_stack, stim_trans_cart_dict, net, nimgs_per_pass=150):
     #takes stim_trans_cart_dict, pulls from img_stack and transform accordingly,
     #gets nets responses.
 

@@ -4,6 +4,7 @@ Created on Thu Sep  3 10:02:26 2015
 
 @author: dean
 """
+from scipy.ndimage import zoom
 import scipy.signal as sig
 import os
 import scipy
@@ -20,7 +21,7 @@ def cart_to_polar_2d_angles(imsize, sample_rate_mult):
     npts_angle = int(np.pi * 2 * n_pix) * sample_rate_mult
     angles_vec = np.linspace(0, 2*np.pi, npts_angle)
     return angles_vec
-    
+
 def cart_to_polar_2d_lin(im, sample_rate_mult):
     #take an image, im, and unwrap it into polar coords
     x = np.arange(im.shape[1])
@@ -147,14 +148,12 @@ def centeredPad( img, new_height, new_width):
    right = int(np.floor(hDif))
    bottom = int(np.floor(vDif))
 
-
    pImg = np.pad(img, ( (left, right), (top, bottom) ) ,'constant')
    return pImg
 
 
 
 def centeredCrop(img, new_height, new_width):
-
    width =  np.size(img,1)
    height =  np.size(img,0)
 
@@ -163,7 +162,6 @@ def centeredCrop(img, new_height, new_width):
    top = np.ceil((height - new_height)/2.)
    right = np.floor((width + new_width)/2.)
    bottom = np.floor((height + new_height)/2.)
-
 
    cImg = img[top:bottom, left:right]
    return cImg
@@ -241,10 +239,15 @@ def imgStackTransform(imgDict, shape_img):
             trans_img = fft_gauss_blur_img( trans_img, imgDict['blur'][ind], std_cut_off = 5 )
 
         if 'scale' in imgDict:
-            trans_img = fftDilateImg( trans_img, imgDict['scale'][ind] )
+            if 1 < imgDict['scale'][ind]:
+                trans_img = fftDilateImg(trans_img, imgDict['scale'][ind])
+            else:
+                orig_size = trans_img.shape[0]
+                trans_img = zoom(trans_img, imgDict['scale'][ind])
+                trans_img = centeredPad(trans_img, orig_size, orig_size)
 
         if 'rot' in imgDict:
-            trans_img = scipy.misc.imrotate( trans_img, imgDict['rot'][ind], interp='bilinear')
+            trans_img = scipy.misc.imrotate(trans_img, imgDict['rot'][ind], interp='bilinear')
 
         if 'x' and 'y' in imgDict:
             x = imgDict['x'][ind]
@@ -310,5 +313,5 @@ def load_npy_img_dirs_into_stack( img_dir ):
 #
 #cImg = fftDilateImg(srImg, 0.2 )
 #plt.subplot(313)
-#plt.imshow(cImg, interpolation = 'none', cmap = plt.cm.Greys_r  )
+#plt.imshow(cImg, interpolation='none', cmap=plt.cm.Greys_r  )
 #plt.title('Shrunk Downsampled Image')
