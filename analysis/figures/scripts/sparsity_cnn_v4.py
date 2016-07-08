@@ -83,7 +83,7 @@ plt.legend([round(v4.min().values,2), round(v4.max().values,2)], title='Sparsity
 #+' / '+ str(len(k))+ ' units left, and ' + str(np.sum(overlap*-inds)) + ' / ' +str(np.sum(overlap)) +' with 50% frac var req')
 plt.tight_layout()
 
-plt.savefig(top_dir + 'analysis/figures/images/sparsity_measure_plot.eps')
+plt.savefig(top_dir + 'analysis/figures/images/sparsity_measure_plot.png')
 
 v4 = da_coef_var(da)
 v4.to_dataset('spar').to_netcdf(top_dir + 'data/an_results/spar_v4.nc')
