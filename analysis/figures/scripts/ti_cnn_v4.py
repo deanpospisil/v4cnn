@@ -9,7 +9,6 @@ import numpy as  np
 import scipy.io as  l
 import os
 import matplotlib.pyplot as plt
-import itertools
 import sys
 import matplotlib.ticker as mtick
 #
