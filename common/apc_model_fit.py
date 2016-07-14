@@ -86,11 +86,8 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
     if cart:
         orMeans = np.linspace(0, 2*np.pi - 2*np.pi / nMeans, nMeans)
         orSDs = np.logspace(np.log10( minAngSD ), np.log10( maxAngSD ), nSD )
-<<<<<<< HEAD
         curvMeans = np.linspace( -.5, 1., nMeans )
-=======
-        curvMeans = np.linspace( -0.5, 1, nMeans )
->>>>>>> 698ffa54443f8ab011d74eab8554432edd4facb5
+
         curvSDs = np.logspace( np.log10(minCurSD), np.log10(maxCurSD), nSD )
         model_params_dict = ord_d({'or_sd': orSDs, 'or_mean':orMeans,
                              'cur_mean' :curvMeans, 'cur_sd':curvSDs})
