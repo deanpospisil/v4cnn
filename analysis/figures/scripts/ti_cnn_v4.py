@@ -93,6 +93,7 @@ lsxr = [xr.DataArray(aresp, dims=['x','shapes']) for aresp in cell_resps]
 resp= xr.concat(xr.align(*lsxr, join='outer'), dim='cells')
 resp.to_dataset('resp').to_netcdf(top_dir + 'data/an_results/v4_ti_resp.nc')
 
+print([cell[2].shape==cell[0].shape for cell in resps])
 
 
 #acell = cell_resps[0]
