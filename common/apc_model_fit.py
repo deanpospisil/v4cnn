@@ -92,6 +92,10 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
         model_params_dict = ord_d({'or_sd': orSDs, 'or_mean':orMeans,
                              'cur_mean' :curvMeans, 'cur_sd':curvSDs})
         model_params_dict = dm.cartesian_prod_dicts_lists( model_params_dict )
+        
+    else:
+        'a'
+        
 
     if not (os.path.isfile(fn) and not replace_prev_model):
         model_resp = apc_models(shape_dict_list=shape_dict_list,

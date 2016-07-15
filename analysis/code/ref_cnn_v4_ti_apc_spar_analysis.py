@@ -90,7 +90,7 @@ shape_dict_list = [shape_dict_list[sn] for sn in shape_id.astype(int)]
 maxAngSD = np.deg2rad(171); minAngSD = np.deg2rad(23)
 maxCurSD = 0.98; minCurSD = 0.09;
 nMeans = 16; nSD = 16
-fn = top_dir + 'data/models/' + 'apc_models_362_16x16.nc'
+fn = top_dir + 'data/models/' + 'apc_models_362_16x12.nc'
 dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
                          maxAngSD, minAngSD, maxCurSD, minCurSD,
                          prov_commit=False, save=True, replace_prev_model=False)['resp']
@@ -108,11 +108,5 @@ alt_cor_v4 = ac.cor_resp_to_model(v4_resp_apc.chunk({'unit':100, 'shapes':370}),
                                      dam.chunk({'models':1000, 'shapes':370}), 
                                     fit_over_dims=None, prov_commit=False)  
 
-fn = top_dir + 'data/models/' + 'apc_models_362_10x10.nc'
-dam = ac.make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
-                         maxAngSD, minAngSD, maxCurSD, minCurSD,
-                         prov_commit=False, save=True, replace_prev_model=False)['resp']
-alt_cor_v4_10 = ac.cor_resp_to_model(v4_resp_apc.chunk({'unit':100, 'shapes':370}), 
-                                     dam.chunk({'models':1000, 'shapes':370}), 
-                                    fit_over_dims=None, prov_commit=False)      
+
     
