@@ -19,6 +19,7 @@ import xarray as xr
 #f = open(top_dir + '/data/image_net/imagenet_log_training_June19.txt', 'r')
 #f = open(top_dir + '/data/image_net/imagenet_log_training_June27.txt', 'r')
 #f = open(top_dir + '/data/image_net/imagenet_log_training_July11th_faithful.txt', 'r')
+
 filenames = ['imagenet_log_training_july13th_rep_scrib_aws.txt',
 #'imagenet_log_training_july13th_rep_scrib_aws2.txt',
 #'imagenet_log_training_july13th_rep_scrib.txt',
@@ -30,6 +31,7 @@ filenames = ['imagenet_log_training_july13th_rep_scrib_aws.txt',
 #'imagenet_log_training_June21_fromsnapshot.txt',
 'imagenet_log_training_June27.txt',
 'imagenet_log_May_21.txt']
+
 
 for filename in filenames:
     f = open(top_dir + '/data/image_net/' + filename, 'r')
@@ -58,6 +60,7 @@ for filename in filenames:
         acc_iter = acc_iter[:len(acc)]
     elif len(acc_iter)<len(acc):
         acc = acc[:len(acc_iter)]
+
 
     plt.plot(acc_iter, acc)
     plt.xlabel('Iterations')
