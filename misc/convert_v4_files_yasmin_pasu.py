@@ -34,7 +34,7 @@ resps = []
 rxl = [];ryl = []
 transPos = [];rfDiameter = []
 for f in fnum:
-    mat = l.loadmat('data/responses/PositionData_Yasmine/pos_'+ str(f)  +'.mat')
+    mat = l.loadmat(top_dir + 'data/responses/PositionData_Yasmine/pos_'+ str(f)  +'.mat')
 
     rxl.append(np.squeeze(mat['data'][0][0][0]))
     ryl.append(np.squeeze(mat['data'][0][0][1]))
