@@ -57,18 +57,20 @@ def take_intersecting_1d_index(indexee, indexer):
 
     return xr.DataArray(np.squeeze(indexee.values), new_coords, new_dims)
 
-#def translation_invariance(da)      :
+
 
 da = v4_resp_ti
-da = alex_resp.load().squeeze()
-da = da.transpose('unit', 'x', 'shapes')
-da_ms = (da - da.mean(['shapes'])).squeeze()
-no_na = [unit.dropna('shapes', how='all').dropna('x', how='all') for unit in da_ms ]
-s = [np.linalg.svd(unit.transpose('shapes', 'x').values, compute_uv=0) for unit in no_na]
-best_ti = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
+def translation_invariance(da):
+    da = alex_resp.load().squeeze()
+    da = da.transpose('unit', 'x', 'shapes')
+    da_ms = (da - da.mean(['shapes'])).squeeze()
+    no_na = [unit.dropna('shapes', how='all').dropna('x', how='all') for unit in da_ms ]
+    s = [np.linalg.svd(unit.transpose('shapes', 'x').values, compute_uv=0) for unit in no_na]
+    best_ti = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
+    ti = xr.DataArray(np.squeeze(best_ti), dims='unit')
+    ti = take_intersecting_1d_index(ti, da)
 
-ti = xr.DataArray(np.squeeze(best_ti), dims='unit')
-ti = take_intersecting_1d_index(ti, da)
+    return ti
 
 #need to transmit all the meta-data, turn this into a definition.
 
