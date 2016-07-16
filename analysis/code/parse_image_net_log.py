@@ -31,6 +31,30 @@ filenames = ['imagenet_log_training_july13th_rep_scrib_aws.txt',
 #'imagenet_log_training_June21_fromsnapshot.txt',
 'imagenet_log_training_June27.txt',
 'imagenet_log_May_21.txt']
+legstr = ['aws1','aws60 long','scrib100 long','june 14 scrib82',
+'june19th aws 227', 'June 27 aws 256', 'may21_scrib', 'ref']
+
+filenames = [
+#'imagenet_log_training_july13th_rep_scrib_aws.txt',
+#'imagenet_log_training_july13th_rep_scrib_aws2.txt',
+#'imagenet_log_training_july13th_rep_scrib.txt',
+#'imagenet_log_training_july13th_rep_scrib2.txt',
+#'imagenet_log_training_july13th_rep_scrib_aws2_long.txt',
+#'imagenet_log_training_july14th_rep_scrib_batch100.txt',
+'imagenet_log_training_June14.txt',
+'imagenet_log_training_June19.txt',
+#'imagenet_log_training_June21_fromsnapshot.txt',
+#'imagenet_log_training_June27.txt',
+#'imagenet_log_May_21.txt'
+]
+legstr = ['june 14 scrib 82','June 19 aws 227']
+
+def matchlen(a,b):
+    if len(a)>len(b):
+        a = a[:len(b)]
+    elif len(a)<len(b):
+        b = b[:len(a)]
+    return a, b
 
 
 for filename in filenames:
@@ -56,18 +80,19 @@ for filename in filenames:
     acc_iter = np.array([int(re.split(',', line[0])[0]) for line in
                     [re.findall('\d+, Testing net', line) for line in log]
                     if not line==[]])
-    if len(acc_iter)>len(acc):
-        acc_iter = acc_iter[:len(acc)]
-    elif len(acc_iter)<len(acc):
-        acc = acc[:len(acc_iter)]
 
-
+    iter_loss, loss = matchlen(iter_loss, loss)
+    acc_iter, acc = matchlen(acc_iter, acc)
+    plt.subplot(211)
     plt.plot(acc_iter, acc)
     plt.xlabel('Iterations')
     plt.ylabel('Performance')
     plt.ylim(0,1)
 
+    plt.subplot(212)
+    plt.plot(iteration, loss)
 
+plt.subplot(211)
 f = open(top_dir + '/data/image_net/bvlc_reference_alexnet_train_log.txt', 'r')
 log = f.readlines()
 acc = np.array([np.double(re.split(' ', line[0])[1]) for line in
@@ -76,5 +101,4 @@ acc = np.array([np.double(re.split(' ', line[0])[1]) for line in
 plt.plot(range(0,len(acc)*1000,1000), acc)
 
 #plt.legend(['aws1','aws2', 'scrib1', 'scrib2', 'aws60 long','scrib100 long','june 14 scrib82','june19th aws 227', 'june21 snap', 'may21_scrib', 'ref'])
-plt.legend(['aws1','aws60 long','scrib100 long','june 14 scrib82',
-'june19th aws 227', 'June 27 aws 256', 'may21_scrib', 'ref'], loc=0)
+plt.legend(legstr, loc=0)
