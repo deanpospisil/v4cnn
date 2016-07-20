@@ -40,11 +40,14 @@ def translation_invariance(da):
     da = da.transpose('unit', 'x', 'shapes')
 
     da_ms = (da - da.mean(['shapes'])).squeeze()
-    no_na = [unit.dropna('shapes', how='all').dropna('x', how='all') for unit in da_ms ]
+    if da_ms.isnull().sum()>0:
+    	no_na = [unit.dropna('shapes', how='all').dropna('x', how='all') for unit in da_ms ]
+    else: 
+	no_na = [unit for unit in da_ms]
     s = [np.linalg.svd(unit.transpose('shapes', 'x').values, compute_uv=0) for unit in no_na]
-    best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
+    best_r = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
 
-    ti = xr.DataArray(np.squeeze(best_r_alex), dims='unit')
+    ti = xr.DataArray(np.squeeze(best_r), dims='unit')
     ti = take_intersecting_1d_index(ti, da)
 
     return ti
@@ -57,7 +60,7 @@ cnn_names = ['APC362_scale_1_pos_(-50, 48, 50)_ref_iter_0',
 ]
 v4_name = 'V4_362PC2001'
 small_run = False
-nunits = 20
+nunits = 1000
 
 for cnn_name in cnn_names:
     print(cnn_name)
