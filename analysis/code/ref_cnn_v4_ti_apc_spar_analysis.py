@@ -15,7 +15,8 @@ sys.path.append( top_dir + 'common/')
 
 import xarray as xr
 import apc_model_fit as ac
-
+import pandas as pd
+import cPickle as pk
 def da_coef_var(da):
     #take xarray and return coefficient of variation
     #expects shapes X unit
@@ -53,10 +54,11 @@ def translation_invariance(da):
     return ti
 
 results_folder = top_dir + 'data/an_results/reference/'
-cnn_names = ['APC362_scale_1_pos_(-50, 48, 50)_ref_iter_0',
+cnn_names = [
 'APC362_scale_1_pos_(-7, 7, 15)_ref_iter_0',
+'APC362_scale_0.45_pos_(-7, 7, 15)_ref_iter_0'
 'APC362_scale_0.45_pos_(-50, 48, 50)_ref_iter_0',
-'APC362_scale_0.45_pos_(-7, 7, 15)_ref_iter_0',
+'APC362_scale_1_pos_(-50, 48, 50)_ref_iter_0',
 ]
 v4_name = 'V4_362PC2001'
 
@@ -77,6 +79,7 @@ for cnn_name in cnn_names:
 
     #########################
     #coefficient of variation
+    print('spar')
     v4_coef_var = da_coef_var(v4_resp_apc.load().copy())
     alex_coef_var = da_coef_var(alex_resp_0.load().copy())
 
@@ -86,6 +89,7 @@ for cnn_name in cnn_names:
 
     #########################
     #translation invariance
+    print('ti')
     v4_resp_ti = xr.open_dataset(top_dir + 'data/responses/v4_ti_resp.nc')['resp'].load()
 
     ti_v4 = translation_invariance(v4_resp_ti)
@@ -96,8 +100,9 @@ for cnn_name in cnn_names:
     ############
     #APC measurement
     import pickle
+    print('apc')
     with open(top_dir + 'data/models/PC370_params.p', 'rb') as f:
-        shape_dict_list = pickle.load(f)
+        shape_dict_list = pk.load(f)
     shape_id = v4_resp_apc.coords['shapes'].values
     shape_dict_list = [shape_dict_list[sn] for sn in shape_id.astype(int)]
 
@@ -130,10 +135,11 @@ for cnn_name in cnn_names:
                                          dam.chunk({'models':1000, 'shapes':370}),
                                         fit_over_dims=None, prov_commit=False)
     alex_coef_var, v4_coef_var, null_cor_v4, alt_cor_v4, ti_v4, ti_alex
-
+    
+ 
     ###########################
     #organize and save analysis
-    import pandas as pd
+    print('save')
     keys = [key for key in alex_resp_0['unit'].coords.keys()
             if not alex_resp_0['unit'].coords[key].values.shape==() and key!='unit']
     keys = ['layer_label', 'layer_unit']
@@ -168,7 +174,6 @@ for cnn_name in cnn_names:
     v4_ti = pd.DataFrame({'ti':ti_v4})
 
 
-    import cPickle as pk
     v4ness_alex_name = top_dir + 'data/an_results/reference/v4ness_' + cnn_name + '.p'
     pk.dump({'alex_all_measures':alex_all_measures, 'alex_apc_alt':alex_apc_alt, 'alex_apc_null':alex_apc_null},
             open(v4ness_alex_name, 'wb'))
