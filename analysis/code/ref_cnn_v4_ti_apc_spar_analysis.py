@@ -13,14 +13,12 @@ sys.path.append( top_dir + 'xarray')
 
 top_dir = top_dir + 'v4cnn/'
 sys.path.append( top_dir + 'common/')
-import d_misc as dm
 import xarray as xr
 import apc_model_fit as ac
 
 def da_coef_var(da):
     #take xarray and return coefficient of variation
     #expects shapes X unit
-    da = v4_resp_apc.load()
     da_min_resps = da.min('shapes')
     lessthanzero = da_min_resps<0
     if any(lessthanzero):
@@ -32,21 +30,22 @@ def da_coef_var(da):
 results_folder = top_dir + 'data/an_results/reference/'
 cnn_name = 'APC362_scale_0.45_pos_(-7, 7, 15)_iter_0.nc'
 v4_name = 'V4_362PC2001.nc'
-
+nunits = 20
 #load v4 data
 #load alex data
 v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name, chunks = {'shapes':370})['resp']
 v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
-alex_resp = xr.open_dataset(top_dir + 'data/responses/' + cnn_name, chunks = {'shapes':370})['resp']
+alex_resp = xr.open_dataset(top_dir + 'data/responses/' + cnn_name, chunks = {'shapes':370})['resp'].squeeze()
 alex_resp_0 = alex_resp.sel(x=0).squeeze()
+alex_resp_0  = alex_resp_0[:,:nunits]
 
 #########################
 #coefficient of variation
 v4_coef_var = da_coef_var(v4_resp_apc.load().copy())
 alex_coef_var = da_coef_var(alex_resp_0.load().copy())
 
-alex_coef_var.to_dataset(name='spar').to_netcdf(results_folder + 'spar_' + cnn_name)
 v4_coef_var.to_dataset(name='spar').to_netcdf(results_folder + 'spar_' + v4_name)
+alex_coef_var.to_dataset(name='spar').to_netcdf(results_folder + 'spar_' + cnn_name)
 
 
 #########################
@@ -61,8 +60,6 @@ def take_intersecting_1d_index(indexee, indexer):
 
     return xr.DataArray(np.squeeze(indexee.values), new_coords, new_dims)
 
-
-
 def translation_invariance(da):
     da = da.transpose('unit', 'x', 'shapes')
 
@@ -76,9 +73,9 @@ def translation_invariance(da):
 
     return ti
 
-#ti_v4 = translation_invariance(v4_resp_ti)
-#alex_resp = alex_resp.load().squeeze()[:, :, :]
-#ti_alex = translation_invariance(alex_resp)
+ti_v4 = translation_invariance(v4_resp_ti)
+alex_resp = alex_resp.load().squeeze()[:, :, :nunits]
+ti_alex = translation_invariance(alex_resp)
 
 ############
 #APC measurement
@@ -102,7 +99,6 @@ dam_n = dam.copy()
 _ = dam_n.values
 for ind in range(_.shape[1]):
     np.random.shuffle(_[:,ind])
-alex_resp_0  = alex_resp_0[:,:100]
 
 null_cor_v4 = ac.cor_resp_to_model(v4_resp_apc.chunk({'unit':100, 'shapes':370}),
                                      dam_n.chunk({'models':1000, 'shapes':370}),
@@ -117,3 +113,39 @@ null_cor_alex = ac.cor_resp_to_model(alex_resp_0.chunk({'unit':100, 'shapes':370
 alt_cor_alex = ac.cor_resp_to_model(alex_resp_0.chunk({'unit':100, 'shapes':370}),
                                      dam.chunk({'models':1000, 'shapes':370}),
                                     fit_over_dims=None, prov_commit=False)
+alex_coef_var, v4_coef_var, null_cor_v4, alt_cor_v4, ti_v4, ti_alex
+
+
+import pandas as pd
+keys = [key for key in alex_resp_0['unit'].coords.keys()
+        if not alex_resp_0['unit'].coords[key].values.shape==() and key!='unit']
+keys = ['layer_label', 'layer_unit']
+coord = [alex_resp_0['unit'].coords[key].values
+        for key in keys]
+index = pd.MultiIndex.from_arrays(coord, names=keys)
+
+alex_all_measures = pd.DataFrame({'spar':alex_coef_var, 'ti':ti_alex,
+              'alt_cor':alt_cor_alex, 'null_cor':null_cor_alex}, index=index)
+alex_apc_alt = pd.DataFrame({'alt_cor': alt_cor_alex,
+                         'm_cur': alt_cor_alex.coords['cur_mean'].values,
+                         'sd_cur': alt_cor_alex.coords['cur_sd'].values,
+                         'm_or': np.rad2deg(alt_cor_alex.coords['or_mean'].values),
+                         'sd_or': np.rad2deg(alt_cor_alex.coords['or_sd'].values)}, index=index)
+alex_apc_null = pd.DataFrame({'alt_cor': null_cor_alex,
+                         'm_cur':null_cor_alex.coords['cur_mean'].values,
+                         'sd_cur': null_cor_alex.coords['cur_sd'].values,
+                         'm_or': np.rad2deg(null_cor_alex.coords['or_mean'].values),
+                         'sd_or':np.rad2deg(null_cor_alex.coords['or_sd'].values)}, index=index)
+
+v4_apc_alt = pd.DataFrame({'alt_cor': alt_cor_v4,
+                         'm_cur': alt_cor_v4.coords['cur_mean'].values,
+                         'sd_cur': alt_cor_v4.coords['cur_sd'].values,
+                         'm_or': np.rad2deg(alt_cor_v4.coords['or_mean'].values),
+                         'sd_or': np.rad2deg(alt_cor_v4.coords['or_sd'].values)}, index=index)
+v4_apc_null = pd.DataFrame({'alt_cor': null_cor_v4,
+                         'm_cur':null_cor_v4.coords['cur_mean'].values,
+                         'sd_cur': null_cor_v4.coords['cur_sd'].values,
+                         'm_or': np.rad2deg(null_cor_v4.coords['or_mean'].values),
+                         'sd_or':np.rad2deg(null_cor_v4.coords['or_sd'].values)}, index=index)
+v4_spar = pd.DataFrame({'spar':v4_coef_var})
+v4_ti = pd.DataFrame({'ti':ti_v4})
