@@ -86,11 +86,16 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
     if cart:
         orMeans = np.linspace(0, 2*np.pi - 2*np.pi / nMeans, nMeans)
         orSDs = np.logspace(np.log10( minAngSD ), np.log10( maxAngSD ), nSD )
-        curvMeans = np.linspace( -0.5, 1, nMeans )
+        curvMeans = np.linspace( -.5, 1., nMeans )
+
         curvSDs = np.logspace( np.log10(minCurSD), np.log10(maxCurSD), nSD )
         model_params_dict = ord_d({'or_sd': orSDs, 'or_mean':orMeans,
                              'cur_mean' :curvMeans, 'cur_sd':curvSDs})
         model_params_dict = dm.cartesian_prod_dicts_lists( model_params_dict )
+        
+    else:
+        'a'
+        
 
     if not (os.path.isfile(fn) and not replace_prev_model):
         model_resp = apc_models(shape_dict_list=shape_dict_list,

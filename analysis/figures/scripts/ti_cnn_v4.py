@@ -9,7 +9,6 @@ import numpy as  np
 import scipy.io as  l
 import os
 import matplotlib.pyplot as plt
-import itertools
 import sys
 import matplotlib.ticker as mtick
 #
@@ -94,6 +93,7 @@ lsxr = [xr.DataArray(aresp, dims=['x','shapes']) for aresp in cell_resps]
 resp= xr.concat(xr.align(*lsxr, join='outer'), dim='cells')
 resp.to_dataset('resp').to_netcdf(top_dir + 'data/an_results/v4_ti_resp.nc')
 
+print([cell[2].shape==cell[0].shape for cell in resps])
 
 
 #acell = cell_resps[0]
@@ -127,32 +127,60 @@ mpl.rc('font', **font)
 ####################
 #plotting Alexnet SVD TI
 fig = plt.figure(figsize=[  7.1625,  10.2875])
-if not 'best_r_alex' in locals():
-    da = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
-    #ensure fraction of variance that can be explained by single translation
-    #or shape is not more than minfracvar
-    minfracvar = 0.5
-    _ = (da**2).sum('shapes')
-    just_one_trans = (_.max('x')/_.sum('x'))>minfracvar
-    _ = (da**2).sum('x')
-    just_one_shape = (_.max('shapes')/_.sum('shapes'))>minfracvar
-    degen = just_one_shape + just_one_trans
-    da = da[:,:,-degen]
+#if not 'best_r_alex' in locals():
+#    da = xr.open_dataset(top_dir + 'data/responses/PC370_shapes_0.0_369.0_370_x_-50.0_50.0_101.nc')['resp']
+#    #ensure fraction of variance that can be explained by single translation
+#    #or shape is not more than minfracvar
+#    minfracvar = 0.5
+#    _ = (da**2).sum('shapes')
+#    just_one_trans = (_.max('x')/_.sum('x'))>minfracvar
+#    _ = (da**2).sum('x')
+#    just_one_shape = (_.max('shapes')/_.sum('shapes'))>minfracvar
+#    degen = just_one_shape + just_one_trans
+#    da = da[:,:,-degen]
+#
+#    da = da - da.mean(['shapes'])
+#    s = np.linalg.svd(da.values.T, compute_uv=0)
+#    best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
+#
+##get layer names
+#_, index = np.unique(da.coords['layer_label'], return_index=True)
+#layer_labels = list(da.coords['layer_label'][np.sort(index)].values)
+#
+##plot all hist of this metric
+#nlayers = len(layer_labels)-1
+#for a in range(nlayers):
+#    best_r_t = best_r_alex[da.coords['layer'].values==a]
+#    ax = fig.add_subplot(nlayers+1, 1, a+1)
+#    ax.hist(best_r_t[-np.isnan(best_r_t)], bins=40)
+#    ax.axis([0,1, 0, ax.axis()[3]])
+#    ax.set_ylabel(layer_labels[a],ha='right')
+#    ax.yaxis.set_label_position("right")
+import re
+all_iter = dm.list_files(top_dir + 'data/an_results/ti_APC*.nc')
+iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
+all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
+ti_iter = [xr.open_dataset(name) for name in all_iter] #something wrong with the last one
+ti_all = xr.concat(ti_iter, xr.DataArray(np.sort(iter_numbers), dims='iter', name='iter'))
+ti_all.attrs['fn'] = all_iter[0]
+alex = ti_all.isel(iter=0)['tin']
+alex = xr.open_dataset(top_dir + 'data/an_results/ti_APC362_scale_0.45_pos_(-50, 48, 50)_iter_450000.nc')['tin']
 
-    da = da - da.mean(['shapes'])
-    s = np.linalg.svd(da.values.T, compute_uv=0)
-    best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
 
-#get layer names
-_, index = np.unique(da.coords['layer_label'], return_index=True)
-layer_labels = list(da.coords['layer_label'][np.sort(index)].values)
+_, index = np.unique(alex.coords['layer_label'], return_index=True)
+layer_labels = list(alex.coords['layer_label'][np.sort(index)].values)
+#da = xr.open_dataset('/Users/dean/Desktop/modules/v4cnn/data/responses/APC362_scale_1_pos_(-7, 7, 15)_iter_450000.nc')['resp']
+spar_alex = xr.open_dataset(top_dir + 'data/an_results/spar_alex_last.nc')['spar']
+spar_v4 = xr.open_dataset(top_dir + 'data/an_results/spar_v4.nc')['spar']
+spar_alex_b = spar_v4.max()>spar_alex
+spar_alex_b.groupby('layer_label').mean().to_pandas()
 
 #plot all hist of this metric
 nlayers = len(layer_labels)-1
 for a in range(nlayers):
-    best_r_t = best_r_alex[da.coords['layer'].values==a]
+    a_layer = alex[(alex.coords['layer']==a * spar_alex_b).values]
     ax = fig.add_subplot(nlayers+1, 1, a+1)
-    ax.hist(best_r_t[-np.isnan(best_r_t)], bins=40)
+    ax.hist(a_layer[-np.isnan(a_layer)], bins=40)
     ax.axis([0,1, 0, ax.axis()[3]])
     ax.set_ylabel(layer_labels[a],ha='right')
     ax.yaxis.set_label_position("right")
@@ -174,65 +202,67 @@ for i, ax in enumerate(fig.axes):
     if i!=len(fig.axes)-1:
         ax.set_xticks([])
 plt.show()
-plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=0.5)
+#plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=0.5)
 plt.savefig(top_dir + 'analysis/figures/images/alex_SI_translation_distribution.png')
 
-#investigate high TI values in low layers, fixed it by dividing sum(trans**2).max / tot_var
-plt.figure()
-r_da = xr.DataArray(best_r_alex, coords={'unit':da.coords['unit'].values})
-for name in da.coords['unit'].coords.keys():
-    r_da.coords[name] = da.coords['unit'].coords[name]
-name='prob'
-ind=int(r_da[r_da.coords['layer_label']==name].argmax())
-hi_unit=int(r_da[r_da.coords['layer_label']==name][ind].coords['unit'].values)
-hi_resp= da.loc[:,:,hi_unit]
-(np.linalg.svd(hi_resp.values, compute_uv=False)[0]**2)/(sum(np.linalg.svd(hi_resp.values, compute_uv=False)**2))
-plt.imshow(hi_resp.values)
-plt.colorbar()
 
-font = {'size' : 19}
-mpl.rc('font', **font)
-r_ranked_cellinds = list(reversed(np.argsort(best_r)))[0:80:20]
-for cellind in r_ranked_cellinds:
-    fig = plt.figure(figsize=(18, 6))
-#    cellind = np.argsort(best_r)[3]
-    thecell = cell_resps[cellind]
-    rfpos = np.round(transPos[cellind]/rfDiameter[cellind], 2)
-    #lets plot an example cell
-    plt.subplot(131)
-    mr = np.mean(thecell,1)
-    plt.stem(rfpos, mr/max(mr))
-    plt.title('V4 cell ' + str(fnum[cellind]) +' TI='+str(np.round(best_r[cellind], 2)))
-    plt.ylim([0,1.1])
-    plt.ylabel('Normalized Mean Response');plt.xlabel('Fraction RF from center');
 
-    plt.subplot(132)
-    cor=np.squeeze(np.corrcoef(thecell)[np.where(transPos[cellind]==0), :])
-    plt.stem(rfpos, cor)
-    plt.ylabel('Correlation')
-    plt.ylim([0,1.1])
-    nice_axes(plt.gcf().axes, xticks=transPos[cellind] / rfDiameter[cellind],
-              yticks=np.linspace(0, 1, 5))
-
-    plt.subplot(133, aspect='equal')
-    pos1 = np.argmax(cor)
-    pos2 = np.argsort(cor)[-2]
-    plt.scatter(thecell[pos1], thecell[pos2], facecolors='none', edgecolor='blue' )
-    plt.xlabel('Stimuli Position: 0');plt.ylabel('Stimuli Position: '+ str(rfpos[pos2]));
-    plt.xlim([-1,np.max(thecell)+1]); plt.ylim([-1,np.max(thecell)+1])
-    nice_axes([plt.gcf().axes[2],], xticks=np.linspace(0, np.max(thecell), 5),
-               yticks=np.linspace(0, np.max(thecell), 5))
-
-    x = min(plt.axis()[0:3:2])
-    y = max(plt.axis()[1::2])
-    plt.plot([x, y], [x, y], color='black')
-
-    plt.tight_layout()
-    plt.savefig(top_dir + 'analysis/figures/images/v4_posinvar_examplecell'+
-                            str(fnum[cellind]) + '_' + str(np.round(best_r[cellind], 2))+'.png')
-
-r_da.to_dataset('ti').to_netcdf(top_dir + 'data/an_results/alex_TI_data.nc')
-xr.DataArray(best_r, dims= 'unit').to_dataset('ti').to_netcdf(top_dir + 'data/an_results/v4_TI_data.nc')
+##investigate high TI values in low layers, fixed it by dividing sum(trans**2).max / tot_var
+#plt.figure()
+#r_da = xr.DataArray(best_r_alex, coords={'unit':da.coords['unit'].values})
+#for name in da.coords['unit'].coords.keys():
+#    r_da.coords[name] = da.coords['unit'].coords[name]
+#name='prob'
+#ind=int(r_da[r_da.coords['layer_label']==name].argmax())
+#hi_unit=int(r_da[r_da.coords['layer_label']==name][ind].coords['unit'].values)
+#hi_resp= da.loc[:,:,hi_unit]
+#(np.linalg.svd(hi_resp.values, compute_uv=False)[0]**2)/(sum(np.linalg.svd(hi_resp.values, compute_uv=False)**2))
+#plt.imshow(hi_resp.values)
+#plt.colorbar()
+#
+#font = {'size' : 19}
+#mpl.rc('font', **font)
+#r_ranked_cellinds = list(reversed(np.argsort(best_r)))[0:80:20]
+#for cellind in r_ranked_cellinds:
+#    fig = plt.figure(figsize=(18, 6))
+##    cellind = np.argsort(best_r)[3]
+#    thecell = cell_resps[cellind]
+#    rfpos = np.round(transPos[cellind]/rfDiameter[cellind], 2)
+#    #lets plot an example cell
+#    plt.subplot(131)
+#    mr = np.mean(thecell,1)
+#    plt.stem(rfpos, mr/max(mr))
+#    plt.title('V4 cell ' + str(fnum[cellind]) +' TI='+str(np.round(best_r[cellind], 2)))
+#    plt.ylim([0,1.1])
+#    plt.ylabel('Normalized Mean Response');plt.xlabel('Fraction RF from center');
+#
+#    plt.subplot(132)
+#    cor=np.squeeze(np.corrcoef(thecell)[np.where(transPos[cellind]==0), :])
+#    plt.stem(rfpos, cor)
+#    plt.ylabel('Correlation')
+#    plt.ylim([0,1.1])
+#    nice_axes(plt.gcf().axes, xticks=transPos[cellind] / rfDiameter[cellind],
+#              yticks=np.linspace(0, 1, 5))
+#
+#    plt.subplot(133, aspect='equal')
+#    pos1 = np.argmax(cor)
+#    pos2 = np.argsort(cor)[-2]
+#    plt.scatter(thecell[pos1], thecell[pos2], facecolors='none', edgecolor='blue' )
+#    plt.xlabel('Stimuli Position: 0');plt.ylabel('Stimuli Position: '+ str(rfpos[pos2]));
+#    plt.xlim([-1,np.max(thecell)+1]); plt.ylim([-1,np.max(thecell)+1])
+#    nice_axes([plt.gcf().axes[2],], xticks=np.linspace(0, np.max(thecell), 5),
+#               yticks=np.linspace(0, np.max(thecell), 5))
+#
+#    x = min(plt.axis()[0:3:2])
+#    y = max(plt.axis()[1::2])
+#    plt.plot([x, y], [x, y], color='black')
+#
+#    plt.tight_layout()
+#    plt.savefig(top_dir + 'analysis/figures/images/v4_posinvar_examplecell'+
+#                            str(fnum[cellind]) + '_' + str(np.round(best_r[cellind], 2))+'.png')
+#
+#r_da.to_dataset('ti').to_netcdf(top_dir + 'data/an_results/alex_TI_data.nc')
+#xr.DataArray(best_r, dims= 'unit').to_dataset('ti').to_netcdf(top_dir + 'data/an_results/v4_TI_data.nc')
 
 '''
 def cell_to_xarray(resp, pos, rfd):

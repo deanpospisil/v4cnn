@@ -21,7 +21,6 @@ top_dir = top_dir + 'v4cnn/'
 sys.path.append(top_dir + 'common')
 sys.path.append(top_dir + 'img_gen')
 
-
 import d_img_process as imp
 import xarray as xr
 
