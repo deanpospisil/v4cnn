@@ -42,7 +42,7 @@ def translation_invariance(da):
     da_ms = (da - da.mean(['shapes'])).squeeze()
     if da_ms.isnull().sum()>0:
     	no_na = [unit.dropna('shapes', how='all').dropna('x', how='all') for unit in da_ms ]
-    else: 
+    else:
 	no_na = [unit for unit in da_ms]
     s = [np.linalg.svd(unit.transpose('shapes', 'x').values, compute_uv=0) for unit in no_na]
     best_r = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
@@ -59,6 +59,7 @@ cnn_names = ['APC362_scale_1_pos_(-50, 48, 50)_ref_iter_0',
 'APC362_scale_0.45_pos_(-7, 7, 15)_ref_iter_0',
 ]
 v4_name = 'V4_362PC2001'
+
 small_run = False
 nunits = 1000
 
