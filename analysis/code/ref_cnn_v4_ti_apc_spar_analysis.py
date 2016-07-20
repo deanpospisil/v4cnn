@@ -69,9 +69,9 @@ for cnn_name in cnn_names:
     print(cnn_name)
     #load v4 data
     #load alex data
-    v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc', chunks = {'shapes':370})['resp']
+    v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
     v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
-    alex_resp = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc', chunks = {'shapes':370})['resp'].squeeze()
+    alex_resp = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].load()
     alex_resp_0 = alex_resp.sel(x=0).squeeze()
     if small_run:
         alex_resp_0  = alex_resp_0[:,:nunits]
@@ -95,11 +95,10 @@ for cnn_name in cnn_names:
     ti_v4 = translation_invariance(v4_resp_ti)
     if small_run:
         alex_resp = alex_resp.load().squeeze()[:, :, :nunits]
-    ti_alex = translation_invariance(alex_resp)
+    ti_alex = translation_invariance(alex_resp.load().copy().squeeze())
 
     ############
     #APC measurement
-    import pickle
     print('apc')
     with open(top_dir + 'data/models/PC370_params.p', 'rb') as f:
         shape_dict_list = pk.load(f)
@@ -135,8 +134,8 @@ for cnn_name in cnn_names:
                                          dam.chunk({'models':1000, 'shapes':370}),
                                         fit_over_dims=None, prov_commit=False)
     alex_coef_var, v4_coef_var, null_cor_v4, alt_cor_v4, ti_v4, ti_alex
-    
- 
+
+
     ###########################
     #organize and save analysis
     print('save')
