@@ -92,10 +92,10 @@ def make_apc_models(shape_dict_list, shape_id, fn, nMeans, nSD,
         model_params_dict = ord_d({'or_sd': orSDs, 'or_mean':orMeans,
                              'cur_mean' :curvMeans, 'cur_sd':curvSDs})
         model_params_dict = dm.cartesian_prod_dicts_lists( model_params_dict )
-        
+
     else:
         'a'
-        
+
 
     if not (os.path.isfile(fn) and not replace_prev_model):
         model_resp = apc_models(shape_dict_list=shape_dict_list,
@@ -145,12 +145,14 @@ def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
 
     all_cor = (proj_resp_on_model_var) / (resp_norm * (n_over**0.5))
     all_cor = all_cor.load()
-    all_cor = all_cor.dropna('unit')
+    all_cor = all_cor.fillna(-666)
 
 
     corarg = all_cor.argmax('models')
     model_fit_params = dmod.coords['models'][corarg]
-    cor = all_cor.max('models')
+    cor = all_cor.max('models', skipna=True)
+    cor[cor==-666] = np.nan
+
 
     for key in model_fit_params.coords.keys():
         cor[key] = ('unit', np.squeeze(model_fit_params[key]))
