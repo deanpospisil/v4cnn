@@ -57,9 +57,9 @@ cnn_names = ['APC362_scale_1_pos_(-50, 48, 50)_ref_iter_0',
 ]
 v4_name = 'V4_362PC2001'
 small_run = True
-nunits = 20
+nunits = 1000
 
-for cnn_name in cnn_names:
+for cnn_name in cnn_names[:1]:
 
     #load v4 data
     #load alex data
@@ -82,7 +82,7 @@ for cnn_name in cnn_names:
 
     #########################
     #translation invariance
-    v4_resp_ti = xr.open_dataset(top_dir + 'data/an_results/v4_ti_resp.nc')['resp'].load()
+    v4_resp_ti = xr.open_dataset(top_dir + 'data/responses/v4_ti_resp.nc')['resp'].load()
 
     ti_v4 = translation_invariance(v4_resp_ti)
     if small_run:
