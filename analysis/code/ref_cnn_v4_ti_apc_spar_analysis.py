@@ -141,11 +141,11 @@ v4_apc_alt = pd.DataFrame({'alt_cor': alt_cor_v4,
                          'm_cur': alt_cor_v4.coords['cur_mean'].values,
                          'sd_cur': alt_cor_v4.coords['cur_sd'].values,
                          'm_or': np.rad2deg(alt_cor_v4.coords['or_mean'].values),
-                         'sd_or': np.rad2deg(alt_cor_v4.coords['or_sd'].values)}, index=index)
+                         'sd_or': np.rad2deg(alt_cor_v4.coords['or_sd'].values)})
 v4_apc_null = pd.DataFrame({'alt_cor': null_cor_v4,
                          'm_cur':null_cor_v4.coords['cur_mean'].values,
                          'sd_cur': null_cor_v4.coords['cur_sd'].values,
                          'm_or': np.rad2deg(null_cor_v4.coords['or_mean'].values),
-                         'sd_or':np.rad2deg(null_cor_v4.coords['or_sd'].values)}, index=index)
+                         'sd_or':np.rad2deg(null_cor_v4.coords['or_sd'].values)})
 v4_spar = pd.DataFrame({'spar':v4_coef_var})
 v4_ti = pd.DataFrame({'ti':ti_v4})
