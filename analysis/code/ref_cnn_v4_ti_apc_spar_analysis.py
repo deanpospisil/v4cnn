@@ -56,10 +56,10 @@ cnn_names = ['APC362_scale_1_pos_(-50, 48, 50)_ref_iter_0',
 'APC362_scale_0.45_pos_(-7, 7, 15)_ref_iter_0',
 ]
 v4_name = 'V4_362PC2001'
-small_run = True
+small_run = False
 nunits = 1000
 
-for cnn_name in cnn_names[:1]:
+for cnn_name in cnn_names:
 
     #load v4 data
     #load alex data
