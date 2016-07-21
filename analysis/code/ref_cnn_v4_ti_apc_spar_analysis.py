@@ -39,6 +39,16 @@ def kurtosis(da):
     k = ((da - mu)**4).sum('shapes')
     return k
 
+def ill_conditioned_trans(da):
+    da = da.transpose('shapes','x', 'unit')
+    da_ms = (da - da.mean('shapes'))**2.
+    var_x = da_ms.sum('shapes')
+    var_shapes = da_ms.sum('x')
+    tot_var = var_shapes.sum('shapes')
+    max_frac_var_x = var_x.max('x')/tot_var	
+    max_frac_var_shapes = var_shapes.max('shapes')/tot_var
+    return max_frac_var_shapes, max_frac_var_x
+
 def take_intersecting_1d_index(indexee, indexer):
     drop_dims = set(indexer.dims) - set(indexee.dims)
     keep_dims = set(indexee.dims) & set(indexer.dims)
@@ -75,7 +85,7 @@ v4_name = 'V4_362PC2001'
 small_run = False
 nunits = 100
 
-for cnn_name in cnn_names[:1]:
+for cnn_name in cnn_names[1:]:
     print(cnn_name)
     #load v4 data
     #load alex data
@@ -108,7 +118,10 @@ for cnn_name in cnn_names[:1]:
     if small_run:
         alex_resp = alex_resp.load().squeeze()[:, :, :nunits]
     ti_alex = translation_invariance(alex_resp.load().copy().squeeze())
-
+    ##########
+    # translation ill conditioned
+    max_frac_var_shapes, max_frac_var_x = ill_conditioned_trans(alex_resp.load().copy().squeeze())
+    
     ############
     #APC measurement
     print('apc')
