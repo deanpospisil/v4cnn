@@ -21,13 +21,23 @@ def da_coef_var(da):
     #take xarray and return coefficient of variation
     #expects shapes X unit
     da = da.transpose('shapes', 'unit')
-    da_min_resps = da.min('shapes')
-    lessthanzero = da_min_resps<0
-    if any(lessthanzero):
-        da[:, da_min_resps<0] = da[:, da_min_resps<0] - da_min_resps[da_min_resps<0]
+#    da_min_resps = da.min('shapes')
+#    lessthanzero = da_min_resps<0
+#    if any(lessthanzero):
+#        da[:, da_min_resps<0] = da[:, da_min_resps<0] - da_min_resps[da_min_resps<0]
     mu = da.mean('shapes')
     sig = da.reduce(np.std, dim='shapes')
-    return 1./(((mu/sig)**2)+1)
+    return 1./(((sig/mu)**2)+1)
+
+def kurtosis(da):
+    #take xarray and return coefficient of variation
+    #expects shapes X unit
+    da = da.chunk({'shapes':370})
+    da = da/da.vnorm(('shapes'))
+    da = da.transpose('shapes', 'unit')
+    mu = da.mean('shapes')
+    k = ((da - mu)**4).sum('shapes')
+    return k
 
 def take_intersecting_1d_index(indexee, indexer):
     drop_dims = set(indexer.dims) - set(indexee.dims)
@@ -56,16 +66,16 @@ def translation_invariance(da):
 results_folder = top_dir + 'data/an_results/reference/'
 cnn_names = [
 'APC362_scale_1_pos_(-7, 7, 15)_ref_iter_0',
-'APC362_scale_0.45_pos_(-7, 7, 15)_ref_iter_0'
+'APC362_scale_0.45_pos_(-7, 7, 15)_ref_iter_0',
 'APC362_scale_0.45_pos_(-50, 48, 50)_ref_iter_0',
 'APC362_scale_1_pos_(-50, 48, 50)_ref_iter_0',
 ]
 v4_name = 'V4_362PC2001'
 
 small_run = False
-nunits = 1000
+nunits = 100
 
-for cnn_name in cnn_names:
+for cnn_name in cnn_names[:1]:
     print(cnn_name)
     #load v4 data
     #load alex data
@@ -83,9 +93,11 @@ for cnn_name in cnn_names:
     v4_coef_var = da_coef_var(v4_resp_apc.load().copy())
     alex_coef_var = da_coef_var(alex_resp_0.load().copy())
 
-    v4_coef_var.to_dataset(name='spar').to_netcdf(results_folder + 'spar_' + v4_name)
-    alex_coef_var.to_dataset(name='spar').to_netcdf(results_folder + 'spar_' + cnn_name)
-
+    #########################
+    #coefficient of variation
+    print('k')
+    v4_k = kurtosis(v4_resp_apc.load().copy())
+    alex_k = kurtosis(alex_resp_0.load().copy())
 
     #########################
     #translation invariance
@@ -146,7 +158,7 @@ for cnn_name in cnn_names:
             for key in keys]
     index = pd.MultiIndex.from_arrays(coord, names=keys)
 
-    alex_all_measures = pd.DataFrame({'spar':alex_coef_var, 'ti':ti_alex,
+    alex_all_measures = pd.DataFrame({'spar':alex_coef_var, 'ti':ti_alex, 'k':alex_k,
                   'alt_cor':alt_cor_alex, 'null_cor':null_cor_alex}, index=index)
     alex_apc_alt = pd.DataFrame({'alt_cor': alt_cor_alex,
                              'm_cur': alt_cor_alex.coords['cur_mean'].values,
@@ -169,7 +181,7 @@ for cnn_name in cnn_names:
                              'sd_cur': null_cor_v4.coords['cur_sd'].values,
                              'm_or': np.rad2deg(null_cor_v4.coords['or_mean'].values),
                              'sd_or':np.rad2deg(null_cor_v4.coords['or_sd'].values)})
-    v4_spar = pd.DataFrame({'spar':v4_coef_var})
+    v4_spar = pd.DataFrame({'spar':v4_coef_var, 'k':v4_k})
     v4_ti = pd.DataFrame({'ti':ti_v4})
 
 
@@ -181,5 +193,5 @@ for cnn_name in cnn_names:
     pk.dump({'v4_apc_alt':v4_apc_alt, 'v4_apc_null':v4_apc_null, 'v4_spar':v4_spar, 'v4_ti':v4_ti},
             open(v4ness_v4_name, 'wb'))
 
-    pk.load(open(v4ness_alex_name, 'rb'))
-    pk.load(open(v4ness_v4_name, 'rb'))
+#    pk.load(open(v4ness_alex_name, 'rb'))
+#    pk.load(open(v4ness_v4_name, 'rb'))
