@@ -104,7 +104,7 @@ do_apc = True
 
 
 
-for cnn_name in cnn_names[:1]:
+for cnn_name in cnn_names:
 
     print(cnn_name)
     #load v4 data
@@ -232,10 +232,10 @@ for cnn_name in cnn_names[:1]:
                                  'sd_cur': null_cor_v4.coords['cur_sd'].values,
                                  'm_or': np.rad2deg(null_cor_v4.coords['or_mean'].values),
                                  'sd_or':np.rad2deg(null_cor_v4.coords['or_sd'].values)})
-        apc_alex_name = top_dir + 'data/an_results/reference/apc_' + cnn_name + '.p'
+        apc_alex_name = top_dir + 'data/an_results/reference/apc_' + cnn_name
 #        pk.dump({'alex_all_measures':alex_all_measures, 'alex_apc_alt':alex_apc_alt, 'alex_apc_null':alex_apc_null},
 #            open(v4ness_alex_name, 'wb'))
-        apc_v4_name = top_dir + 'data/an_results/reference/apc_' + v4_name + '.p'
+        apc_v4_name = top_dir + 'data/an_results/reference/apc_' + v4_name
 #        pk.dump({'v4_apc_alt':v4_apc_alt, 'v4_apc_null':v4_apc_null}, open(apc_v4_name, 'wb'))
         pd.concat([v4_apc_alt, v4_apc_null],
                   axis=1, keys=['alt','null']).to_pickle(apc_v4_name)
