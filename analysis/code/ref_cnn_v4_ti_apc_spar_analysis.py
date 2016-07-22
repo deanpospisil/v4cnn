@@ -17,7 +17,7 @@ import xarray as xr
 import apc_model_fit as ac
 import pandas as pd
 import cPickle as pk
-
+from scipy.stats import kurtosis
 
 def da_coef_var(da):
     #take xarray and return coefficient of variation
@@ -34,11 +34,11 @@ def da_coef_var(da):
 def kurtosis(da):
     #take xarray and return coefficient of variation
     #expects shapes X unit
-    da = da.chunk({'shapes':370})
-    da = da/da.vnorm(('shapes'))
     da = da.transpose('shapes', 'unit')
     mu = da.mean('shapes')
-    k = ((da - mu)**4).sum('shapes')
+   # k = da.reduce(kurtosis,dim='shapes')
+    sig = da.reduce(np.var, dim='shapes')
+    k = (((da - mu)**4).sum('shapes')/da.shapes.shape[0])/(sig**2)
     return k
 
 def ill_conditioned_trans(da):
@@ -56,7 +56,7 @@ def ill_conditioned_shape_resp(da):
     dmod = dmod.chunk({'shapes':370})
     da = da.chunk({'shapes':370})
     eye_r2 = ac.cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False)
-    return eye_r2
+    return eye_r2**2
 
 
 def take_intersecting_1d_index(indexee, indexer):
@@ -95,12 +95,12 @@ v4_name = 'V4_362PC2001'
 small_run = False
 nunits = 10
 
-do_spar = True
-do_k = True
-do_ti = True
-do_eye_r2 = True
-do_trans_ill_cond = True
-do_apc = True
+do_spar = False
+do_k = 1
+do_ti = False
+do_eye_r2 = 0 
+do_trans_ill_cond = False
+do_apc = False
 
 
 
