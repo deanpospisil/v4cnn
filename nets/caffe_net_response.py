@@ -172,8 +172,9 @@ def net_resp_2d_to_xray_nd(net_resp, stim_trans_dict, indices_for_net_unit_vec):
 
 def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
                  stim_trans_dict, require_provenance=True):
-    img_dir = top_dir+'/images/baseimgs/'+base_image_nm+'/'
+    img_dir = top_dir+'/images/baseimgs/'+ base_image_nm + '/'
     base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)
+
     dir_filenames = os.listdir(img_dir)
     #get the current sha from the file
     for name in dir_filenames:
