@@ -21,7 +21,7 @@ base_image_nm = 'natural'
 net = '/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet'
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(362))
-da = cf.get_net_resp(base_image_nm, ann_dir, net.split('stages/')[1].split('.')[0],
+da = cf.get_net_resp(base_image_nm, ann_dir, net.split('net/')[1].split('.')[0],
                      stim_trans_cart_dict, stim_trans_dict, require_provenance=False)
 ds = da.to_dataset(name='resp')
 ds.to_netcdf(response_file)
