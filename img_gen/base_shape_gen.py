@@ -13,11 +13,11 @@ import matplotlib.pyplot as plt
 import os
 import pickle
 
-top_dir = os.getcwd().split('net_code')[0]
-sys.path.append(top_dir + 'net_code/common')
+top_dir = os.getcwd().split('v4cnn')[0]
+sys.path.append(top_dir + 'v4cnn/common')
 sys.path.append( top_dir + 'xarray/')
+top_dir = top_dir + 'v4cnn'
 
-import d_curve as dc
 import d_misc as dm
 import d_img_process as imp
 from scipy import ndimage
@@ -44,18 +44,18 @@ def center_boundary(s):
 def scale_center_boundary_for_mat(s, n_pix_per_side, frac_of_image, max_ext):
     scale = (n_pix_per_side*frac_of_image)/(max_ext*2.)
     tr = np.round(s*scale)
-    
+
     cx, cy = get_center_boundary(tr[:, 0], tr[:, 1])
     tr[:, 0] = tr[:, 0] + n_pix_per_side/2.- cx + 1
     tr[:, 1] = tr[:, 1] + n_pix_per_side/2.- cy + 1
-    
+
     return tr
 
 def boundary_to_mat_by_round(s, n_pix_per_side, frac_of_image, max_ext, fill=True):
     im = np.zeros((n_pix_per_side, n_pix_per_side))
     tr = scale_center_boundary_for_mat(s, n_pix_per_side, frac_of_image, max_ext)
-    tr = s.astype(int)
-        
+    tr = tr.astype(int)
+
     #conversion of x, y to row, col
     im[(n_pix_per_side-1)-tr[:, 1], tr[:, 0]] = 1
 
@@ -103,7 +103,7 @@ def boundary_to_mat_via_plot(boundary, n_pix_per_side=227, frac_of_img=1, fill=T
 
 def save_boundaries_as_image(imlist, save_dir, cwd, max_ext, n_pix_per_side=227,
                              fill=True, require_provenance=False,
-                             frac_of_image=1, use_round=True):
+                             frac_of_image=1, use_round=True, include_null=False):
     dir_filenames = os.listdir(save_dir)
     #remove existing files
     for name in dir_filenames:
@@ -123,11 +123,16 @@ def save_boundaries_as_image(imlist, save_dir, cwd, max_ext, n_pix_per_side=227,
             im = boundary_to_mat_via_plot(boundary, n_pix_per_side,
                                           frac_of_image, fill=fill)
         else:
-            im = boundary_to_mat_by_round(boundary, n_pix_per_side,
+            im = 255*boundary_to_mat_by_round(boundary, n_pix_per_side,
                                           frac_of_image, max_ext, fill=fill)
 
         sc.misc.imsave(save_dir + str(n_boundary) + '.bmp', im)
         np.save(save_dir + str(n_boundary), im)
+    if include_null:
+        im = np.zeros(im.shape)
+        sc.misc.imsave(save_dir + str(-1) + '.bmp', im)
+        np.save(save_dir + str(-1), im)
+
 
 def scaleBoundary(s, fracOfImage):
     if fracOfImage>1:
@@ -204,24 +209,25 @@ def trace_edge(im, scale, radius, npts = 100, maxlen = 1000):
 #im = stack[0,:,:]
 
 #generate base images
-'''
-saveDir = top_dir + 'net_code/images/baseimgs/'
+
+saveDir = top_dir + '/images/baseimgs/'
 dm.ifNoDirMakeDir(saveDir)
 
 baseImageList = [ 'PC370', 'formlet', 'PCunique', 'natShapes']
 baseImage = baseImageList[0]
 
-frac_of_image = 1
+frac_of_image = 0.5
 dm.ifNoDirMakeDir(saveDir + baseImage +'/')
 
 if baseImage is baseImageList[0]:
 
 #    os.chdir( saveDir + baseImageList[0])
-    mat = l.loadmat(top_dir + 'net_code/img_gen/'+ 'PC3702001ShapeVerts.mat')
+    mat = l.loadmat(top_dir + '/img_gen/PC3702001ShapeVerts.mat')
     s = np.array(mat['shapes'][0])
 
 elif baseImage is baseImageList[1]:
     nPts = 1000
+    import d_curve as dc
     s = dc.make_n_natural_formlets(n=1000,
                 nPts=nPts, radius=1, nFormlets=32, meanFormDir=np.pi,
                 stdFormDir=2*np.pi, meanFormDist=1, stdFormDist=0.1,
@@ -229,7 +235,7 @@ elif baseImage is baseImageList[1]:
                 frac_image=frac_of_image)
 elif baseImage is baseImageList[2]:
     #    os.chdir( saveDir + baseImageList[0])
-    mat = l.loadmat(top_dir + 'net_code' + '/img_gen/'+ 'PC3702001ShapeVerts.mat')
+    mat = l.loadmat(top_dir + '/PC3702001ShapeVerts.mat')
     s = np.array(mat['shapes'][0])
     #adjustment for repeats [ 14, 15, 16,17, 318, 319, 320, 321]
     a = np.hstack((range(14), range(18,318)))
@@ -238,17 +244,17 @@ elif baseImage is baseImageList[2]:
 
 elif baseImage is baseImageList[3]:
     print('to do')
-
+    raise ValueError('shape not bounded')
 
 s = center_boundary(s)
 max_ext = np.max([np.max(np.abs(a_s)) for a_s in s])
 
 save_boundaries_as_image(s, saveDir + baseImage + '/', top_dir, max_ext,
                          n_pix_per_side=227, fill=True, require_provenance=False,
-                         frac_of_image=frac_of_image, use_round=True)
+                         frac_of_image=frac_of_image, use_round=True, include_null=True)
 
 
-
+'''
 ashape = s[0]
 
 

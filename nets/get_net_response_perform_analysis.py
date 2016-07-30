@@ -22,7 +22,7 @@ def da_coef_var(da):
     mu = da.mean('shapes')
     sig = da.reduce(np.std, dim='shapes')
     return 1./(((mu/sig)**2)+1)
-    
+
 def take_intersecting_1d_index(indexee, indexer):
 
     drop_dims = set(indexer.dims) - set(indexee.dims)
@@ -37,32 +37,35 @@ base_image_nm = baseImageList[0]
 
 ann_fn = 'caffenet_train_iter_'
 
-get_translation_invariance = True
-fit_apc_model = True
-get_sparsity = True
+get_translation_invariance = False
+fit_apc_model = False
+get_sparsity = False
 
 all_iter = dm.list_files(ann_dir + '*_iter*.caffe*')
 
 #get iterations in order
 iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
 all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
-subset = [len(all_iter)-1, 0] 
+subset = [len(all_iter)-1, 0]
 all_iter = [all_iter[ind] for ind in subset]
 
 #save_inds = [0, len('all_iter')-1]
-all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',
-'/data/dean_data/net_stages/_ref_iter_0.caffemodel',
-'/data/dean_data/net_stages/_iter_1.caffemodel']
+#all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',
+#'/data/dean_data/net_stages/_ref_iter_0.caffemodel',
+#'/data/dean_data/net_stages/_iter_1.caffemodel']
+
+all_iter = ['/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel']
 save_inds = range(0, len(all_iter))
 
-trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
-scales = [0.45, 1, 0.45, 1]
-
+#trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
+#scales = [0.45, 1, 0.45, 1]
+trans_x = [(-99, 96, 66)]
+scales = [1,]
 
 
 for x, scale in zip(trans_x, scales):
     stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(
-                                                         shapes=range(370),
+                                                         shapes=range(-1,370),
                                                          blur=None,
                                                          scale=(scale, scale,1),
                                                          x=x,
@@ -78,11 +81,11 @@ for x, scale in zip(trans_x, scales):
         iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
         response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + iter_subname + '.nc'
         response_file = ('/data/dean_data/responses/' + response_description)
-        
+
         ti_name = top_dir + 'data/an_results/ti_'+ response_description
         fit_apc_model_name = top_dir + 'data/an_results/apc_'+ response_description
-        sparsity_name = top_dir + 'data/an_results/sparsity_'+response_description  
-        
+        sparsity_name = top_dir + 'data/an_results/sparsity_'+response_description
+
         not_all_files_made = not all([os.path.isfile(ti_name), os.path.isfile(fit_apc_model_name), os.path.isfile(sparsity_name)])
         if  not os.path.isfile(response_file) and not_all_files_made:
             da = cf.get_net_resp(base_image_nm, ann_dir, iter_name.split('stages/')[1].split('.')[0],
@@ -91,24 +94,24 @@ for x, scale in zip(trans_x, scales):
             ds = da.to_dataset(name='resp')
             ds.to_netcdf(response_file)
 
-        elif not_all_files_made:   
+        elif not_all_files_made:
             da = xr.open_dataset(response_file, chunks={'unit':100,'shapes': 370}  )['resp']
-        
+
         if get_translation_invariance and not os.path.isfile(ti_name):
-            
+
             da_ms = (da - da.mean(['shapes'])).squeeze()
 
             s = np.linalg.svd(da_ms.values.T, compute_uv=0)
             best_r_alex = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
-            
+
             ti = xr.DataArray(np.squeeze(best_r_alex), dims='unit')
             ti = take_intersecting_1d_index(ti, da)
             #ti.attrs['resp_coords'] = da_ms.coords.values
             ti.to_dataset(name='tin').to_netcdf(ti_name)
-        
+
         if not_all_files_made:
             da = da.sel(x=0, method='nearest').squeeze().chunk({'unit':50,'shapes': 370})
-        
+
         if fit_apc_model and not os.path.isfile(fit_apc_model_name):
             #apc model fit
             if 'dmod' not in locals():
@@ -116,7 +119,7 @@ for x, scale in zip(trans_x, scales):
             cor = ac.cor_resp_to_model(da, dmod.copy().chunk({'models': 500, 'shapes': 370}))
             #cor.attrs['resp_coords'] = da.coords.values
             cor.to_dataset(name='r').to_netcdf(fit_apc_model_name)
-        
+
         if get_sparsity and not os.path.isfile(sparsity_name):
             sparsity = da_coef_var(da.load().copy())
             #sparsity.attrs['resp_coords'] = da.coords.values

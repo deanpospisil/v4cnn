@@ -98,7 +98,6 @@ def identity_preserving_transform_resp(img_stack, stim_trans_cart_dict, net, nim
 
         #produce those images
         trans_img_stack = imp.imgStackTransform( stim_trans_cart_dict_sect, img_stack )
-
         #run then and append them
         all_net_resp.append(net_imgstack_response( net, trans_img_stack ))
 
