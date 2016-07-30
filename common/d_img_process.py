@@ -52,8 +52,6 @@ def cart_to_polar_2d_lin_broad(im, sample_rate_mult):
     return cut
 
 def circ_cor(pol1, pol2, sample_rate_mult=2):
-
-
     cross_cor = np.fft.ifft(np.fft.fft(pol1, axis=1) *
                         np.fft.fft(np.fliplr(pol2), axis=1),
                         axis=1)
@@ -264,6 +262,7 @@ def imgStackTransform(imgDict, shape_img):
 
         trans_stack.append(trans_img)
     trans_stack = np.array(trans_stack)
+    trans_stack[trans_stack<1.] = 0
     return trans_stack
 
 
@@ -271,7 +270,7 @@ def load_sorted_dir_numbered_fnms_with_particular_extension(the_dir, extension):
     #takes a directory and an extension, and loads up all file names with that extension,
     #attempting to sort them by number, gives back all the sorted file names
     dir_filenames = os.listdir(the_dir)
-    file_names = [ file_name for file_name in dir_filenames if file_name.split('.')[-1] == extension ]
+    file_names = [file_name for file_name in dir_filenames if file_name.split('.')[-1] == extension]
 
     file_names = sorted( file_names, key = lambda num : int(num.split('.')[0]) )
 
