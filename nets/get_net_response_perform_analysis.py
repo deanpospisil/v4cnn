@@ -44,10 +44,10 @@ get_sparsity = False
 all_iter = dm.list_files(ann_dir + '*_iter*.caffe*')
 
 #get iterations in order
-iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
-all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
-subset = [len(all_iter)-1, 0]
-all_iter = [all_iter[ind] for ind in subset]
+#iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
+#all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
+#subset = [len(all_iter)-1, 0]
+#all_iter = [all_iter[ind] for ind in subset]
 
 #save_inds = [0, len('all_iter')-1]
 #all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',
@@ -61,7 +61,7 @@ save_inds = range(0, len(all_iter))
 #scales = [0.45, 1, 0.45, 1]
 trans_x = [(-99, 96, 66)]
 scales = [1,]
-
+ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 
 for x, scale in zip(trans_x, scales):
     stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(
@@ -78,8 +78,10 @@ for x, scale in zip(trans_x, scales):
 
         #get response and save
         iter_subname = iter_name.split('/')[-1].split('.')[0]
-        iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
-        response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + iter_subname + '.nc'
+       # iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
+        
+        iteration_number = 'reference_caffe'
+	response_description = 'APC362_scale_' + str(scale) + '_pos_' + str(x) + iter_subname + '.nc'
         response_file = ('/data/dean_data/responses/' + response_description)
 
         ti_name = top_dir + 'data/an_results/ti_'+ response_description
@@ -88,7 +90,7 @@ for x, scale in zip(trans_x, scales):
 
         not_all_files_made = not all([os.path.isfile(ti_name), os.path.isfile(fit_apc_model_name), os.path.isfile(sparsity_name)])
         if  not os.path.isfile(response_file) and not_all_files_made:
-            da = cf.get_net_resp(base_image_nm, ann_dir, iter_name.split('stages/')[1].split('.')[0],
+            da = cf.get_net_resp(base_image_nm, ann_dir,'bvlc_reference_caffenet',
                                  stim_trans_cart_dict, stim_trans_dict, require_provenance=True)
             da.attrs['train'] = iteration_number
             ds = da.to_dataset(name='resp')
