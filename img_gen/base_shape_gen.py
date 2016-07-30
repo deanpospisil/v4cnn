@@ -18,7 +18,6 @@ sys.path.append(top_dir + 'v4cnn/common')
 sys.path.append( top_dir + 'xarray/')
 top_dir = top_dir + 'v4cnn'
 
-import d_curve as dc
 import d_misc as dm
 import d_img_process as imp
 from scipy import ndimage
@@ -228,6 +227,7 @@ if baseImage is baseImageList[0]:
 
 elif baseImage is baseImageList[1]:
     nPts = 1000
+    import d_curve as dc
     s = dc.make_n_natural_formlets(n=1000,
                 nPts=nPts, radius=1, nFormlets=32, meanFormDir=np.pi,
                 stdFormDir=2*np.pi, meanFormDist=1, stdFormDist=0.1,
