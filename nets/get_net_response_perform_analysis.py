@@ -91,7 +91,7 @@ for x, scale in zip(trans_x, scales):
         not_all_files_made = not all([os.path.isfile(ti_name), os.path.isfile(fit_apc_model_name), os.path.isfile(sparsity_name)])
         if  not os.path.isfile(response_file) and not_all_files_made:
             da = cf.get_net_resp(base_image_nm, ann_dir,'bvlc_reference_caffenet',
-                                 stim_trans_cart_dict, stim_trans_dict, require_provenance=True)
+                                 stim_trans_cart_dict, stim_trans_dict, require_provenance=False)
             da.attrs['train'] = iteration_number
             ds = da.to_dataset(name='resp')
             ds.to_netcdf(response_file)
