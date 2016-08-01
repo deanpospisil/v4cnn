@@ -15,12 +15,12 @@ sys.path.append( top_dir + 'xarray')
 sys.path.append( top_dir + 'common')
 top_dir = top_dir + 'v4cnn/'
 
-response_file = top_dir + '/data/responses/nat_image_resp.nc'
+response_file = top_dir + '/data/responses/nat_image_resp_981.nc'
 
 base_image_nm = 'natural'
 net = '/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet'
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
-stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(362))
+stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(981))
 da = cf.get_net_resp(base_image_nm, ann_dir, net.split('net/')[1].split('.')[0],
                      stim_trans_cart_dict, stim_trans_dict, require_provenance=False)
 ds = da.to_dataset(name='resp')
