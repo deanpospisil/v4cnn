@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append(top_dir+ 'v4cnn/')
 sys.path.append( top_dir + 'xarray')
-top_dir = top_dir + '/v4cnn/'
+top_dir = top_dir + 'v4cnn/'
 sys.path.append( top_dir + 'common')
 sys.path.append( top_dir + 'nets')
 import xarray as xr
@@ -65,7 +65,7 @@ im_info = pd.DataFrame(img_vars, columns=var_names, index=range(370))
 
 smallest_width = (im_info['right'] - im_info['left']).min()
 widest_width = (im_info['right'] - im_info['left']).max()
-
+w
 left_most_ind = im_info.left.argmin()
 left_shift_lim = -im_info['left'][left_most_ind]
 
@@ -77,5 +77,5 @@ steps = np.arange(left_shift_lim, right_shift_lim, smallest_width/2.)
 import matplotlib.cm as cm
 
 for ind, img in enumerate(base_stack[:25]):
-    plt.subplot(5,5, ind)
+    plt.subplot(5,5, ind+1)
     plt.imshow(img.squeeze(), interpolation='nearest', cmap = cm.Greys_r)
