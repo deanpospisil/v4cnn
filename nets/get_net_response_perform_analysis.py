@@ -3,6 +3,8 @@
 
 import caffe_net_response as cf
 ann_dir = '/data/dean_data/net_stages/'
+ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
+
 import os
 import sys
 import re
@@ -58,7 +60,7 @@ get_sparsity = False
 #'/data/dean_data/net_stages/_iter_1.caffemodel']
 
 all_iter = ['/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel',
-            '/data/dean_data/net_stages/_ref_iter_0.caffemodel']
+]
 save_inds = range(0, len(all_iter))
 
 img_n_pix = 227
@@ -99,7 +101,7 @@ for i, iter_name in enumerate(reversed(all_iter)):
     if  not os.path.isfile(response_file) and not_all_files_made:
         da = cf.get_net_resp(base_image_nm,
                              ann_dir,
-                             iter_name.split('stages/')[1].split('.')[0],
+                             iter_name.split('net/')[1].split('.')[0],
                              stim_trans_cart_dict,
                              stim_trans_dict,
                              require_provenance=True,
