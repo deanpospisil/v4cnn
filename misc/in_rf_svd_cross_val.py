@@ -15,8 +15,11 @@ sys.path.append( top_dir + 'common/')
 import xarray as xr
 import apc_model_fit as ac
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.cm as cm
+except:
+    print('no plot')
 def kurtosis(da):
     #take xarray and return coefficient of variation
     #expects shapes X unit
@@ -110,21 +113,23 @@ for unit_resp, unit_in_rf in zip(resp, in_rf):
         break
 
         
-
-    type_change = np.where(np.diff(alex_var.coords['layer'].values))[0]
-    type_label = alex_var.coords['layer_label'].values[type_change].astype(str)
-    x_pos = list(range(0, n_steps, 6))
-    x_label = alex_var.coords['x'].values[0:-1:6]
-    plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
-    
+type_change = np.where(np.diff(alex_var.coords['layer'].values))[0]
+type_label = alex_var.coords['layer_label'].values[type_change].astype(str)
+x_pos = list(range(0, n_steps, 6))
+x_label = alex_var.coords['x'].values[0:-1:6]
+try:
+    plt.xticks(type_change, type_label, rotation='vertical', size = 'small')   
     plt.plot(np.array(ti_est_all))
     plt.title('leave one position out cross validation R^2')
+except:
+    print('no plot')
 
 
 import pandas as pd
 
 fn = top_dir + 'data/an_results/reference/apc_' + cnn_name
 pd.DataFrame(ti_est_all).to_pickle(fn)
+
 '''
 #something wrong here but fuck it.
 #beg= 0
