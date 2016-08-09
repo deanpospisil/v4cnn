@@ -54,7 +54,8 @@ all_iter = [all_iter[ind] for ind in subset]
 #'/data/dean_data/net_stages/_ref_iter_0.caffemodel',
 #'/data/dean_data/net_stages/_iter_1.caffemodel']
 
-all_iter = ['/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel']
+all_iter = ['/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel',
+            '/data/dean_data/net_stages/_ref_iter_0.caffemodel']
 save_inds = range(0, len(all_iter))
 
 #trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]

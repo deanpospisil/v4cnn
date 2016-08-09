@@ -78,7 +78,7 @@ def get_indices_for_net_unit_vec(net, layer_names = None):
 
     return resp_descriptor_dict
 
-def identity_preserving_transform_resp(img_stack, stim_trans_cart_dict, net, nimgs_per_pass=150):
+def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, nimgs_per_pass=150):
     #takes stim_trans_cart_dict, pulls from img_stack and transform accordingly,
     #gets nets responses.
 
@@ -94,12 +94,17 @@ def identity_preserving_transform_resp(img_stack, stim_trans_cart_dict, net, nim
 
         #load up a chunk of transformations
         for key in stim_trans_cart_dict:
-            stim_trans_cart_dict_sect[key] = stim_trans_cart_dict[key][ stack_ind[0] : stack_ind[1] ]
+            stim_trans_cart_dict_sect[key] = stim_trans_cart_dict[key][stack_ind[0]:stack_ind[1]]
 
         #produce those images
-        trans_img_stack = imp.imgStackTransform( stim_trans_cart_dict_sect, img_stack )
+        if 2 in shape_stack[0].shape:
+            trans_img_stack = imp.imgStackTransform(stim_trans_cart_dict_sect, shape_stack)
+        else:
+            trans_img_stack = imp.boundary_stack_transform(stim_trans_cart_dict_sect, shape_stack)
+
+
         #run then and append them
-        all_net_resp.append(net_imgstack_response( net, trans_img_stack ))
+        all_net_resp.append(net_imgstack_response(net, trans_img_stack))
 
     #stack up all these responses
     response = np.vstack(all_net_resp)

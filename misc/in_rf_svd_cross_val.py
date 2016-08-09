@@ -33,7 +33,7 @@ if 'alex_resp' not in locals():
     cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
     alex_resp = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].load().squeeze()
     alex_resp.coords['layer_label'] = alex_resp.coords['layer_label'].astype('str')
-    for drop_name in drop:    
+    for drop_name in drop:
         alex_resp = alex_resp[:,:,(alex_resp.coords['layer_label'] != drop_name)]
     base_line = alex_resp.sel(shapes=0)[0]
     alex_resp = alex_resp.drop(0, dim='shapes')
@@ -47,15 +47,15 @@ if 'alex_resp' not in locals():
     #add this to the right alt, and subtract it from the left alt
     step_in = w/2.
     min_steps = int(np.ceil(w / step_width))
-    
-    
+
+
     in_rf = np.zeros(had_resp.T.values.shape)
     n_steps = len(alex_var.coords['x'].values)
     rf_pos_all = []
     rf_pos = []
     beg_pos = None
     for n_unit, unit in enumerate(had_resp.T.values):
-        
+
         if sum(unit)<n_steps:
             for i, x in enumerate(unit):
                 if x and type(beg_pos)==type(None):
@@ -69,23 +69,22 @@ if 'alex_resp' not in locals():
                 end_pos = i
                 if (end_pos-beg_pos)>(min_steps*2):
                     rf_pos = rf_pos + list(range(beg_pos+min_steps, n_steps-min_steps))
-            
+
         else:
             rf_pos = list(range(min_steps, n_steps-min_steps))
-            
-        
+
+
         in_rf[n_unit, rf_pos] = 1
         rf_pos_all.append(rf_pos)
         beg_pos = None
         rf_pos = []
-    
 
 from sklearn.cross_validation import LeaveOneOut
-units_todo = 50000
+units_todo = 10
 alex_resp= alex_resp.transpose('unit', 'x', 'shapes')
 ti_est = []
 ti_est_all = []
-counter =0
+counter = 0
 frac_var_explained = []
 alex_resp = alex_resp - alex_resp.mean('shapes')
 resp = alex_resp.values
@@ -99,7 +98,7 @@ for unit_resp, unit_in_rf in zip(resp, in_rf):
         loo = LeaveOneOut(unit_resp.shape[0])
         for train, test in loo:
             u, s, v = np.linalg.svd(unit_resp[train])
-            ti_est = ti_est + [sum((np.dot(v[0], unit_resp[test].T))**2),]          
+            ti_est = ti_est + [sum((np.dot(v[0], unit_resp[test].T))**2),]
             tot_var = (unit_resp**2).sum()
         ti_est = np.sum(np.array(ti_est)/tot_var)
         ti_est_all.append(ti_est)
@@ -109,28 +108,28 @@ for unit_resp, unit_in_rf in zip(resp, in_rf):
     if counter>units_todo:
         break
 
-        
+
 
     type_change = np.where(np.diff(alex_var.coords['layer'].values))[0]
     type_label = alex_var.coords['layer_label'].values[type_change].astype(str)
     x_pos = list(range(0, n_steps, 6))
     x_label = alex_var.coords['x'].values[0:-1:6]
     plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
-    
+
     plt.plot(np.array(ti_est_all))
     plt.title('leave one position out cross validation R^2')
 
 
 import pandas as pd
-
-fn = top_dir + 'data/an_results/reference/apc_' + cnn_name
-pd.DataFrame(ti_est_all).to_pickle(fn)
+#
+#fn = top_dir + 'data/an_results/reference/apc_' + cnn_name
+#pd.DataFrame(ti_est_all).to_pickle(fn)
 '''
 #something wrong here but fuck it.
 #beg= 0
 #fin = 1000
 #alex_k = kurtosis(alex_resp)
-#alex_k_mask = alex_k.where(alex_k != np.inf) 
+#alex_k_mask = alex_k.where(alex_k != np.inf)
 #
 #plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
 #plt.yticks(x_pos, x_label, size = 'small')
@@ -158,8 +157,8 @@ plt.ylabel('shape center pos')
 
 plt.imshow(norm_resp, interpolation ='nearest', aspect='auto',cmap = cm.viridis)
 
-       
-     
+
+
 
 plt.subplot(311)
 plt.title('Normalized response power. Widest shape: ' + str(w) + ' shape step: ' + str(step_width))

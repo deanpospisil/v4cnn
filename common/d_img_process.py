@@ -189,7 +189,7 @@ def fft_resample_img(img, nPix, std_cut_off = None):
 
     return sr
 
-def fft_gauss_blur_img( img, scale, std_cut_off = 5):
+def fft_gauss_blur_img(img, scale, std_cut_off=5):
 
     old_img_size = img.shape[0]
     new_img_size = np.round( img.shape[0]*scale )
@@ -262,7 +262,7 @@ def imgStackTransform(imgDict, shape_img):
 
         trans_stack.append(trans_img)
     trans_stack = np.array(trans_stack)
-    trans_stack[trans_stack<1.] = 0
+    #trans_stack[trans_stack<1.] = 0
     return trans_stack
 
 
