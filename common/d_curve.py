@@ -17,6 +17,16 @@ def get_center_boundary(x, y):
     cy = normalize * np.sum((y[minusone] + y[:]) * (x[minusone]*y[:] - x[:]*y[minusone]))
     return cx, cy
 
+def center_boundary(s):
+    #centroid, center of mass, https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
+    for ind in range(len(s)):
+        y = s[ind][:, 1]
+        x = s[ind][:, 0]
+        cx, cy = get_center_boundary(x,y)
+        s[ind][:, 0] = x - cx
+        s[ind][:, 1] = y - cy
+    return s
+
 def curveDists(cShape):
     nPts=np.size(cShape)
     dists=np.ones([nPts])*100j

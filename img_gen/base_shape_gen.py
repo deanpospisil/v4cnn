@@ -41,23 +41,23 @@ def center_boundary(s):
 
     return s
 
-def scale_center_boundary_for_mat(s, n_pix_per_side, frac_of_image, max_ext):
-    scale = (n_pix_per_side*frac_of_image)/(max_ext*2.)
+def scale_center_boundary_for_mat(s, img_n_pix, frac_of_image, max_ext):
+    scale = (img_n_pix*frac_of_image)/(max_ext*2.)
     tr = np.round(s*scale)
 
     cx, cy = get_center_boundary(tr[:, 0], tr[:, 1])
-    tr[:, 0] = tr[:, 0] + n_pix_per_side/2.- cx + 1
-    tr[:, 1] = tr[:, 1] + n_pix_per_side/2.- cy + 1
+    tr[:, 0] = tr[:, 0] + img_n_pix/2.- cx + 1
+    tr[:, 1] = tr[:, 1] + img_n_pix/2.- cy + 1
 
     return tr
 
-def boundary_to_mat_by_round(s, n_pix_per_side, frac_of_image, max_ext, fill=True):
-    im = np.zeros((n_pix_per_side, n_pix_per_side))
-    tr = scale_center_boundary_for_mat(s, n_pix_per_side, frac_of_image, max_ext)
+def boundary_to_mat_by_round(s, img_n_pix, frac_of_image, max_ext, fill=True):
+    im = np.zeros((img_n_pix, img_n_pix))
+    tr = scale_center_boundary_for_mat(s, img_n_pix, frac_of_image, max_ext)
     tr = tr.astype(int)
 
     #conversion of x, y to row, col
-    im[(n_pix_per_side-1)-tr[:, 1], tr[:, 0]] = 1
+    im[(img_n_pix-1)-tr[:, 1], tr[:, 0]] = 1
 
     if fill:
         im = ndimage.binary_fill_holes(im).astype(int)
@@ -67,13 +67,13 @@ def boundary_to_mat_by_round(s, n_pix_per_side, frac_of_image, max_ext, fill=Tru
     return im
 
 
-def boundary_to_mat_via_plot(boundary, n_pix_per_side=227, frac_of_img=1, fill=True):
-    n_pix_per_side_old = n_pix_per_side
+def boundary_to_mat_via_plot(boundary, img_n_pix=227, frac_of_img=1, fill=True):
+    img_n_pix_old = img_n_pix
     if frac_of_img > 1:
-        n_pix_per_side = round(n_pix_per_side * frac_of_img)
+        img_n_pix = round(img_n_pix * frac_of_img)
     plt.close('all')
     inchOverPix = 2.84/227. #this happens to work because of the dpi of my current screen. 1920X1080
-    inches = inchOverPix*n_pix_per_side
+    inches = inchOverPix*img_n_pix
     if inches<0.81:
         print( 'inches < 0.81, needed to resize')
         tooSmall = True
@@ -94,14 +94,14 @@ def boundary_to_mat_via_plot(boundary, n_pix_per_side=227, frac_of_img=1, fill=T
 
     data2[data2 == data2[0,0,0]] = 255
     ima = - (data2 - 255)[:,:,0]
-    ima = imp.centeredCrop(ima, n_pix_per_side_old, n_pix_per_side_old)
-    if (not np.size( ima, 0 ) == n_pix_per_side_old) or (not np.size(ima,1 ) == n_pix_per_side_old):
+    ima = imp.centeredCrop(ima, img_n_pix_old, img_n_pix_old)
+    if (not np.size( ima, 0 ) == img_n_pix_old) or (not np.size(ima,1 ) == img_n_pix_old):
         print('had to resize')
-        ima = scipy.misc.imresize(ima, (n_pix_per_side_old, n_pix_per_side_old), interp='cubic', mode=None)
+        ima = scipy.misc.imresize(ima, (img_n_pix_old, img_n_pix_old), interp='cubic', mode=None)
     return ima
 
 
-def save_boundaries_as_image(imlist, save_dir, cwd, max_ext, n_pix_per_side=227,
+def save_boundaries_as_image(imlist, save_dir, cwd, max_ext, img_n_pix=227,
                              fill=True, require_provenance=False,
                              frac_of_image=1, use_round=True, include_null=False):
     dir_filenames = os.listdir(save_dir)
@@ -120,10 +120,10 @@ def save_boundaries_as_image(imlist, save_dir, cwd, max_ext, n_pix_per_side=227,
     for n_boundary, boundary in enumerate(imlist):
         print(n_boundary)
         if not use_round:
-            im = boundary_to_mat_via_plot(boundary, n_pix_per_side,
+            im = boundary_to_mat_via_plot(boundary, img_n_pix,
                                           frac_of_image, fill=fill)
         else:
-            im = 255*boundary_to_mat_by_round(boundary, n_pix_per_side,
+            im = 255*boundary_to_mat_by_round(boundary, img_n_pix,
                                           frac_of_image, max_ext, fill=fill)
 
         sc.misc.imsave(save_dir + str(n_boundary) + '.bmp', im)
@@ -216,7 +216,7 @@ dm.ifNoDirMakeDir(saveDir)
 baseImageList = [ 'PC370', 'formlet', 'PCunique', 'natShapes']
 baseImage = baseImageList[0]
 
-frac_of_image = 0.5
+frac_of_image = 1
 dm.ifNoDirMakeDir(saveDir + baseImage +'/')
 
 if baseImage is baseImageList[0]:
@@ -250,7 +250,7 @@ s = center_boundary(s)
 max_ext = np.max([np.max(np.abs(a_s)) for a_s in s])
 
 save_boundaries_as_image(s, saveDir + baseImage + '/', top_dir, max_ext,
-                         n_pix_per_side=227, fill=True, require_provenance=False,
+                         img_n_pix=227, fill=True, require_provenance=False,
                          frac_of_image=frac_of_image, use_round=True, include_null=True)
 
 
@@ -263,12 +263,12 @@ y = s[0][:, 1]
 plt.close('all')
 plt.plot(x, y)
 max_ext = np.max(np.abs(s[0]))
-n_pix_per_side = 16.
+img_n_pix = 16.
 frac_of_image = 0.5
 dists = np.sum((np.diff(s[0].T))**2, axis=0)**0.5
 
-#s = scale_center_boundary_for_mat(s.T, n_pix_per_side, frac_of_image, max_ext)
-scale = (n_pix_per_side*frac_of_image)/(max_ext*2.)
+#s = scale_center_boundary_for_mat(s.T, img_n_pix, frac_of_image, max_ext)
+scale = (img_n_pix*frac_of_image)/(max_ext*2.)
 dx = np.median(dists)*scale
 freqs = np.fft.fftfreq(len(x), dx)
 low_pass = np.zeros(np.shape(s[0]))*1j
@@ -281,16 +281,16 @@ plt.plot(lp[:, 0], lp[:, 1])
 
 lp = lp * scale
 cx, cy = get_center_boundary(lp[:,1], lp[:,0])
-lp[:, 1] = lp[:, 1] + (n_pix_per_side/2.0 - cx)
-lp[:, 0] = lp[:, 0] + (n_pix_per_side/2.0 - cy)
+lp[:, 1] = lp[:, 1] + (img_n_pix/2.0 - cx)
+lp[:, 0] = lp[:, 0] + (img_n_pix/2.0 - cy)
 
 u_scale = 500
 im = boundary_to_mat_by_round(s[0], u_scale, frac_of_image, max_ext)
-ims = imp.fft_resample_img(im, n_pix_per_side)
+ims = imp.fft_resample_img(im, img_n_pix)
 ims = imp.fft_resample_img(ims, u_scale)
 import matplotlib.cm as cm
 plt.imshow(ims, cmap = cm.Greys_r, interpolation = 'none')
-plt.plot(lp[:, 0] * (u_scale/n_pix_per_side), lp[:, 1] * (u_scale/n_pix_per_side),  '#FA8072', linewidth=1.0)
+plt.plot(lp[:, 0] * (u_scale/img_n_pix), lp[:, 1] * (u_scale/img_n_pix),  '#FA8072', linewidth=1.0)
 '''
 
 '''
@@ -310,13 +310,13 @@ s = center_boundary(s)
 s = scaleBoundary (s, fracOfImage)
 
 max_ext = np.max(np.abs(s))
-n_pix_per_side = 256.
+img_n_pix = 256.
 frac_of_image = 0.5
-ashape = scale_center_boundary_for_mat(ashape, n_pix_per_side, frac_of_image, max_ext)
+ashape = scale_center_boundary_for_mat(ashape, img_n_pix, frac_of_image, max_ext)
 
 '''
 
-#im = boundary_to_mat_by_round(ashape, n_pix_per_side, frac_of_image, max_ext)
+#im = boundary_to_mat_by_round(ashape, img_n_pix, frac_of_image, max_ext)
 
 
 '''
@@ -330,9 +330,9 @@ scale = 2*256/64.
 radius = 5
 effective_radius = radius/scale
 arclen = 2*np.arcsin(effective_radius)
-n_pix_per_side = 64.
+img_n_pix = 64.
 frac_of_image = 0.5
-ims = imp.fft_resample_img(im, n_pix_per_side, std_cut_off = None)
+ims = imp.fft_resample_img(im, img_n_pix, std_cut_off = None)
 line, d = trace_edge(ims, scale, radius, arclen, npts, maxlen)
 d_line.append(np.array(line))
 d_img.append(d)

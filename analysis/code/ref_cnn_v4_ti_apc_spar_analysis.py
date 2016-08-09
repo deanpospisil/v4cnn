@@ -17,7 +17,7 @@ import xarray as xr
 import apc_model_fit as ac
 import pandas as pd
 import cPickle as pk
-from scipy.stats import kurtosis
+#from scipy.stats import kurtosis
 
 def da_coef_var(da):
     #take xarray and return coefficient of variation
@@ -98,7 +98,7 @@ nunits = 10
 do_spar = False
 do_k = 1
 do_ti = False
-do_eye_r2 = 0 
+do_eye_r2 = 0
 do_trans_ill_cond = False
 do_apc = False
 

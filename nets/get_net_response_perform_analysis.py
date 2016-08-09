@@ -54,9 +54,28 @@ all_iter = dm.list_files(ann_dir + '*_iter*.caffe*')
 #'/data/dean_data/net_stages/_ref_iter_0.caffemodel',
 #'/data/dean_data/net_stages/_iter_1.caffemodel']
 
-all_iter = ['/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel']
+all_iter = ['/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel',
+            '/data/dean_data/net_stages/_ref_iter_0.caffemodel']
 save_inds = range(0, len(all_iter))
 
+img_n_pix = 227
+max_pix_width = 51.
+#boundaries = boundaries * (max_pix_width/biggest_x_y_diff(boundaries))
+#biggest_diff = biggest_x_y_diff(boundaries)
+#boundaries = boundaries + img_n_pix/2.
+mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
+s = np.array(mat['shapes'][0])
+boundaries = imp.center_boundary(s)
+#just save this as pickle.
+
+scale = (max_pix_width/biggest_x_y_diff(boundaries))
+shape_ids = range(-1, 370)
+stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(
+                                                 shapes=shape_ids,
+                                                 blur=None,
+                                                 scale=(scale, scale, 1),
+                                                 x=(img_n_pix/2., img_n_pix/2., 1),
+                                                 y=(img_n_pix/2., img_n_pix/2., 1))
 #trans_x = [(-7, 7, 15), (-7, 7, 15), (-50, 48, 50), (-50, 48, 50)]
 #scales = [0.45, 1, 0.45, 1]
 trans_x = [(-99, 96, 66)]
