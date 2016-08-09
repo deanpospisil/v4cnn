@@ -14,13 +14,17 @@ import os
 import pickle
 
 top_dir = os.getcwd().split('v4cnn')[0]
-sys.path.append(top_dir + 'v4cnn/common')
+sys.path.append(top_dir + 'v4cnn/common/')
+sys.path.append(top_dir + 'v4cnn/nets/')
+
 sys.path.append( top_dir + 'xarray/')
 top_dir = top_dir + 'v4cnn/'
 
+import caffe_net_response as cf
 import d_misc as dm
 import d_img_process as imp
 from scipy import ndimage
+import pandas as pd
 
 def get_center_boundary(x, y):
     minusone = np.arange(-1, np.size(x)-1)
@@ -64,45 +68,37 @@ def boundary_to_mat_by_round(s, img_n_pix, fill=True):
 
 
 def imgStackTransform(imgDict, shape_boundary):
-
+    base_stack = []
     n_imgs = np.size(imgDict['shapes'], 0)
-    trans_stack = []
-    for ind in range(n_imgs):
-
-        transformed_boundary = shape_boundary[imgDict['shapes'][ind]]
-
-#        if 'blur' in imgDict:
-#            transformed_boundary = fft_gauss_blur_img( transformed_boundary, imgDict['blur'][ind], std_cut_off = 5 )
-
-        if 'scale' in imgDict:
-            if 1 < imgDict['scale'][ind]:
-                transformed_boundary = fftDilateImg(transformed_boundary, imgDict['scale'][ind])
-            else:
-                orig_size = transformed_boundary.shape[0]
-                transformed_boundary = zoom(transformed_boundary, imgDict['scale'][ind])
-                transformed_boundary = centeredPad(transformed_boundary, orig_size, orig_size)
-
-#        if 'rot' in imgDict:
-#            transformed_boundary = scipy.misc.imrotate(transformed_boundary, imgDict['rot'][ind], interp='bilinear')
-
-        if 'x' and 'y' in imgDict:
-            x = imgDict['x'][ind]
-            y = imgDict['y'][ind]
-            transformed_boundary = translateByPixels(transformed_boundary, x, y)
-
-        elif 'x'  in imgDict:
-            x = imgDict['x'][ind]
-            transformed_boundary = translateByPixels(transformed_boundary, x, np.zeros(np.shape(x)))
-
-        elif 'y'  in imgDict:
-            y = imgDict['y'][ind]
-            transformed_boundary = translateByPixels(transformed_boundary, x, np.zeros(np.shape(x)))
-
-        transformed_boundary
-
-        trans_stack.append(transformed_boundary)
-    trans_stack = np.array(trans_stack)
-    return trans_stack
+    for ind in range(n_imgs):       
+        if imgDict['shapes'][ind] !=-1:
+            
+            transformed_boundary = shape_boundary[imgDict['shapes'][ind]]
+            
+            if 'scale' in imgDict:
+                transformed_boundary = transformed_boundary * imgDict['scale'][ind]
+    #        if 'rot' in imgDict:
+    #            transformed_boundary = scipy.misc.imrotate(transformed_boundary, imgDict['rot'][ind], interp='bilinear')
+    
+            if 'x' and 'y' in imgDict:
+                x = imgDict['x'][ind]
+                y = imgDict['y'][ind]
+                transformed_boundary = transformed_boundary + [x, y]
+    
+            elif 'x'  in imgDict:
+                x = imgDict['x'][ind]
+                transformed_boundary = transformed_boundary + [x, 0]
+    
+            elif 'y'  in imgDict:
+                y = imgDict['y'][ind]
+                transformed_boundary = transformed_boundary + [0, y]
+    
+            base_stack.append(255. * boundary_to_mat_by_round(transformed_boundary,
+                                                              img_n_pix=227, fill=True))
+        else:
+            base_stack.append(np.zeros((227,227))) 
+        #trans_stack.append(transformed_boundary)
+    return base_stack
 #im_ids = [int(re.findall('\d+[.npy]', fn)[0][:-1]) for fn in stack_desc['img_paths']]
 def img_info(base_stack, shape_ids):
 
@@ -143,7 +139,7 @@ boundaries = center_boundary(s)
 
 
 img_n_pix = 227
-max_pix_width = 24.
+max_pix_width = 51.
 #boundaries = boundaries * (max_pix_width/biggest_x_y_diff(boundaries))
 #biggest_diff = biggest_x_y_diff(boundaries)
 #boundaries = boundaries + img_n_pix/2.
@@ -158,25 +154,16 @@ stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(
                                                  y=(img_n_pix/2., img_n_pix/2., 1))
 imgDict = stim_trans_cart_dict
 
-trans_stack = imgStackTransform(imgDict, boundaries)
+base_stack = imgStackTransform(imgDict, boundaries)
 
+shape_ids = range(0, 370)
+im_info = img_info(base_stack, shape_ids)
 
-base_stack=[]
-fill = True
-for n_boundary, boundary in enumerate(boundaries):
-    base_stack.append(255. * boundary_to_mat_by_round(boundary, img_n_pix,
-                                       fill=fill))
+smallest_width = (im_info['right'] - im_info['left']).min()
+widest_width = (im_info['right'] - im_info['left']).max()
+largest_row_extent = (im_info['down'].max() - im_info['up'].min())
+print(largest_row_extent)
 
+print(widest_width)
 
-
-#shape_ids = range(0, 370)
-#im_info = img_info(base_stack, shape_ids)
-#
-#smallest_width = (im_info['right'] - im_info['left']).min()
-#widest_width = (im_info['right'] - im_info['left']).max()
-#
-#largest_row_extent = (im_info['down'].max() - im_info['up'].min())
-#
-#print(widest_width)
-#
-#plt.imshow(base_stack[1][:,:].squeeze())
+plt.imshow(base_stack[100][:,:].squeeze())

@@ -290,6 +290,38 @@ def load_npy_img_dirs_into_stack( img_dir ):
 
     return stack, stack_descriptor_dict
 
+def boundary_stack_transform(imgDict, shape_boundary):
+    base_stack = []
+    n_imgs = np.size(imgDict['shapes'], 0)
+    for ind in range(n_imgs):       
+        if imgDict['shapes'][ind] !=-1:
+            
+            transformed_boundary = shape_boundary[imgDict['shapes'][ind]]
+            
+            if 'scale' in imgDict:
+                transformed_boundary = transformed_boundary * imgDict['scale'][ind]
+    #        if 'rot' in imgDict:
+    #            transformed_boundary = scipy.misc.imrotate(transformed_boundary, imgDict['rot'][ind], interp='bilinear')
+    
+            if 'x' and 'y' in imgDict:
+                x = imgDict['x'][ind]
+                y = imgDict['y'][ind]
+                transformed_boundary = transformed_boundary + [x, y]
+    
+            elif 'x'  in imgDict:
+                x = imgDict['x'][ind]
+                transformed_boundary = transformed_boundary + [x, 0]
+    
+            elif 'y'  in imgDict:
+                y = imgDict['y'][ind]
+                transformed_boundary = transformed_boundary + [0, y]
+    
+            base_stack.append(255. * boundary_to_mat_by_round(transformed_boundary,
+                                                              img_n_pix=227, fill=True))
+        else:
+            base_stack.append(np.zeros((227,227))) 
+        #trans_stack.append(transformed_boundary)
+    return base_stack
 
 ##check the dilation function
 #import matplotlib.pyplot as plt
