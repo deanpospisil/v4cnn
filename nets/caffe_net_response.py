@@ -15,7 +15,7 @@ import warnings
 #make the working directory two above this one
 top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append( top_dir + '/xarray')
-top_dir = top_dir + 'v4cnn'
+top_dir = top_dir + 'v4cnn/'
 sys.path.append(top_dir)
 sys.path.append(top_dir +'/common')
 
@@ -26,6 +26,8 @@ import d_misc as dm
 import pickle
 import xarray as xr
 import d_curve as dc
+import scipy.io as  l
+
 def net_imgstack_response(net, stack):
     #stack is expected to be nImages x RGB x rows x cols
 
@@ -60,7 +62,7 @@ def net_imgstack_response(net, stack):
     return response
 
 
-def get_indices_for_net_unit_vec(net, layer_names = None):
+def get_indices_for_net_unit_vec(net, layer_names=None):
     #this gives you a couple different indices for describing units in the net.
     if layer_names is None:
         layer_names = [ k for k in net.blobs.keys()][1:]#not including first layer, (data)
@@ -97,10 +99,11 @@ def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, n
             stim_trans_cart_dict_sect[key] = stim_trans_cart_dict[key][stack_ind[0]:stack_ind[1]]
 
         #produce those images
-        if 2 in shape_stack[0].shape:#check if it is just 2-d ie a boundary
+        if not 2 in shape_stack[0].shape:#check if it is just 2-d ie a boundary
             trans_img_stack = imp.imgStackTransform(stim_trans_cart_dict_sect, shape_stack)
         else:
-            trans_img_stack = imp.boundary_stack_transform(stim_trans_cart_dict_sect, shape_stack)
+            trans_img_stack = imp.boundary_stack_transform(stim_trans_cart_dict_sect,
+                                                           shape_stack, npixels=227)
 
 
         #run then and append them
@@ -112,8 +115,8 @@ def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, n
 
     return response
 
-def stim_trans_generator(shapes = None, blur= None, scale = None,
-                               x = None, y = None, rotation = None):
+def stim_trans_generator(shapes=None, blur=None, scale=None,
+                         x=None, y=None, rotation=None):
 #takes descrptions of ranges for different transformations (start, stop, npoints)
 #produces a cartesian dictionary of those.
     stim_trans_dict = ordDict()
@@ -124,8 +127,11 @@ def stim_trans_generator(shapes = None, blur= None, scale = None,
             stim_trans_dict['blur'] = np.linspace(*blur)
         else:
             stim_trans_dict['blur'] = blur
-    if not scale is None :
-        stim_trans_dict[ 'scale' ] = np.linspace(*scale)
+    if not scale is None:
+        if isinstance(scale, tuple):
+            stim_trans_dict[ 'scale' ] = np.linspace(*scale)
+        else:
+            stim_trans_dict[ 'scale' ] = scale
     if not x is None :
         stim_trans_dict['x'] = np.linspace(*x)
     if not y is None :
@@ -182,7 +188,7 @@ def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
     else:
         s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
         base_stack = dc.center_boundary(s)
-    
+
 
     dir_filenames = os.listdir(img_dir)
     #get the current sha from the file

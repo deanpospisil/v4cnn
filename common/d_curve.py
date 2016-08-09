@@ -168,4 +168,14 @@ def applyGaborFormlet(cShape, center, alpha, sigma):
 
    return newcShape
 
+def biggest_x_y_diff(shapes):
+    best_max = np.array([0, 0])
+    best_min = np.array([0, 0])
+    for n_boundary, boundary in enumerate(shapes):
+        max_candidate = boundary.max(axis=0)
+        best_max = np.max(np.vstack([best_max, max_candidate]), axis=0)
+
+        min_candidate = boundary.min(axis=0)
+        best_min = np.min(np.vstack([best_min, min_candidate]), axis=0)
+    return max(best_max-best_min)
 
