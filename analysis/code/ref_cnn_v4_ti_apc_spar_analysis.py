@@ -58,7 +58,6 @@ def ill_conditioned_shape_resp(da):
     eye_r2 = ac.cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False)
     return eye_r2**2
 
-
 def take_intersecting_1d_index(indexee, indexer):
     drop_dims = set(indexer.dims) - set(indexee.dims)
     keep_dims = set(indexee.dims) & set(indexer.dims)

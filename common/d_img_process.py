@@ -13,6 +13,8 @@ import numpy as np
 pi=np.pi
 import scipy as sc
 from scipy import interpolate
+from scipy import ndimage
+
 
 def cart_to_polar_2d_angles(imsize, sample_rate_mult):
 
@@ -62,14 +64,11 @@ def saveToPNGDir(directory, fileName, img):
     import os
     if not os.path.isdir(directory):
         os.mkdir(directory)
-
     sc.misc.imsave( directory  + fileName + '.png', img)
-
-
 
 def getfIndex(nSamps, fs):
 
-    f = np.fft.fftfreq( nSamps, 1./fs)
+    f = np.fft.fftfreq(nSamps, 1./fs)
 #    nSamps=np.double(nSamps)
 #    fs=np.double(fs)
 #    nyq = fs/2
@@ -289,38 +288,69 @@ def load_npy_img_dirs_into_stack( img_dir ):
     #stack_descriptor_dict['base_shape_gen_inputs'] = [ img_dir + img_name for img_name in img_names ]
 
     return stack, stack_descriptor_dict
+def get_center_boundary(x, y):
+    minusone = np.arange(-1, np.size(x)-1)
+    A = 0.5*np.sum(x[minusone]*y[:] - x[:]*y[minusone])
+    normalize= (1/(A*6.))
+    cx = normalize * np.sum( (x[minusone] + x[:] ) * (x[minusone]*y[:] - x[:]*y[minusone]) )
+    cy = normalize * np.sum( (y[minusone] + y[:] ) * (x[minusone]*y[:] - x[:]*y[minusone]) )
+    return cx, cy
 
-def boundary_stack_transform(imgDict, shape_boundary):
+def center_boundary(s):
+    #centroid, center of mass, https://en.wikipedia.org/wiki/Centroid#Centroid_of_polygon
+    for ind in range(len(s)):
+        y = s[ind][:, 1]
+        x = s[ind][:, 0]
+        cx, cy = get_center_boundary(x,y)
+        s[ind][:, 0] = x - cx
+        s[ind][:, 1] = y - cy
+
+    return s
+
+def boundary_to_mat_by_round(s, img_n_pix, fill=True):
+    im = np.zeros((img_n_pix, img_n_pix))
+    tr = s.astype(int)
+
+    #conversion of x, y to row, col
+    im[(img_n_pix-1)-tr[:, 1], tr[:, 0]] = 1
+
+    if fill:
+        im = ndimage.binary_fill_holes(im).astype(int)
+#        if not im[tuple(np.median(tr,0))] == 1:
+#            raise ValueError('shape not bounded')
+    return im
+
+def boundary_stack_transform(imgDict, shape_boundary, npixels):
     base_stack = []
     n_imgs = np.size(imgDict['shapes'], 0)
-    for ind in range(n_imgs):       
+    for ind in range(n_imgs):
         if imgDict['shapes'][ind] !=-1:
-            
+
             transformed_boundary = shape_boundary[imgDict['shapes'][ind]]
-            
+
             if 'scale' in imgDict:
                 transformed_boundary = transformed_boundary * imgDict['scale'][ind]
     #        if 'rot' in imgDict:
-    #            transformed_boundary = scipy.misc.imrotate(transformed_boundary, imgDict['rot'][ind], interp='bilinear')
-    
+
             if 'x' and 'y' in imgDict:
                 x = imgDict['x'][ind]
                 y = imgDict['y'][ind]
                 transformed_boundary = transformed_boundary + [x, y]
-    
+
             elif 'x'  in imgDict:
                 x = imgDict['x'][ind]
                 transformed_boundary = transformed_boundary + [x, 0]
-    
+
             elif 'y'  in imgDict:
                 y = imgDict['y'][ind]
                 transformed_boundary = transformed_boundary + [0, y]
-    
+
             base_stack.append(255. * boundary_to_mat_by_round(transformed_boundary,
-                                                              img_n_pix=227, fill=True))
+                                                              img_n_pix=npixels,
+                                                              fill=True))
         else:
-            base_stack.append(np.zeros((227,227))) 
-        #trans_stack.append(transformed_boundary)
+            base_stack.append(np.zeros((npixels, npixels)))
+
     return base_stack
 
 ##check the dilation function
