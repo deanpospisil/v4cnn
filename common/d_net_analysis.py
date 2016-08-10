@@ -106,6 +106,9 @@ def SVD_TI(da, rf=None):
     da = da.transpose('unit', 'x', 'shapes')
     if type(rf)==type(None):
         rf = np.ones(da.shape[1:])
+        no_rf = True
+    else:
+        no_rf = False
 
     ti_est_all = []
     counter = 0
@@ -114,11 +117,18 @@ def SVD_TI(da, rf=None):
     for unit_resp, unit_in_rf in zip(resp, rf):
         counter = counter + 1
         print(counter)
-        unit_resp = unit_resp[unit_in_rf.astype(bool), :]
+        if sum(unit_in_rf)>2:
+            if no_rf:
+                unit_resp = unit_resp
+            else:
+                 unit_resp = unit_resp[unit_in_rf.astype(bool), :]
 
-        singular_values = np.linalg.svd(unit_resp, compute_uv=False)
-        frac_var = (singular_values[0]**2)/(sum(singular_values**2))
-        ti_est_all.append(frac_var)
+    
+            singular_values = np.linalg.svd(unit_resp, compute_uv=False)
+            frac_var = (singular_values[0]**2)/(sum(singular_values**2))
+            ti_est_all.append(frac_var)
+        else:
+            ti_est_all.append(np.nan)
     return ti_est_all
 
 def cnn_measure_to_pandas(da, measures, measure_names):
@@ -130,10 +140,12 @@ def cnn_measure_to_pandas(da, measures, measure_names):
 
 cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
 da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp']
-da = da.sel(unit=slice(5094,5100)).load().squeeze()
-rf = in_rf(da, w=24)
-cv_ti = cross_val_SVD_TI(da, rf)
-ti = SVD_TI(da, rf)
+da = da.sel(unit=slice(1000, 5000)).load().squeeze()
+#rf = in_rf(da, w=24)
+#cv_ti = cross_val_SVD_TI(da, rf)
+#ti = SVD_TI(da, rf)
+ti_orf = SVD_TI(da)
+
 
 
 da_0 = da.sel(x=0)
@@ -142,6 +154,18 @@ k = list(kurtosis(da_0).values)
 
 
 
-measure_names=['ti','cv_ti','k']
-measures = [ti, cv_ti, k]
+#measure_names=['ti','cv_ti','k']
+#measures = [ti, cv_ti, k]
+#pda = cnn_measure_to_pandas(da_0, measures, measure_names)
+
+measure_names=['ti','ti_orf', 'k']
+measures = [ti,ti_orf,  k]
 pda = cnn_measure_to_pandas(da_0, measures, measure_names)
+
+type_change = np.where(np.diff(da.coords['layer'].values))[0]
+type_label = da.coords['layer_label'].values[type_change].astype(str)
+
+plt.scatter(range(len(ti)),ti)
+plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
+
+pda.plot.scatter('ti')
