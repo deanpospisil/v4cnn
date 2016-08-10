@@ -81,7 +81,7 @@ if 'alex_resp' not in locals():
         rf_pos_all.append(rf_pos)
         beg_pos = None
         rf_pos = []
-
+'''
 from sklearn.cross_validation import LeaveOneOut
 units_todo = 10
 alex_resp= alex_resp.transpose('unit', 'x', 'shapes')
@@ -111,13 +111,13 @@ for unit_resp, unit_in_rf in zip(resp, in_rf):
     if counter>units_todo:
         break
 
-        
+
 type_change = np.where(np.diff(alex_var.coords['layer'].values))[0]
 type_label = alex_var.coords['layer_label'].values[type_change].astype(str)
 x_pos = list(range(0, n_steps, 6))
 x_label = alex_var.coords['x'].values[0:-1:6]
 try:
-    plt.xticks(type_change, type_label, rotation='vertical', size = 'small')   
+    plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
     plt.plot(np.array(ti_est_all))
     plt.title('leave one position out cross validation R^2')
 except:
