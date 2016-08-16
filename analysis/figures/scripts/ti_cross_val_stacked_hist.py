@@ -52,7 +52,6 @@ def nice_axes(axes, xticks=None, yticks=None, nxticks=5, nyticks=2):
             an_axes.set_xticks([])
             an_axes.set_yticks([])
 
-
 def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False, bins=100):
     layers = cnn.index.get_level_values('layer_label').unique()
     if logx:
