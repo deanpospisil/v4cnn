@@ -140,14 +140,11 @@ def cnn_measure_to_pandas(da, measures, measure_names):
 
 cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
 da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp']
-da = da.sel(unit=slice(1000, 5000)).load().squeeze()
+da = da.sel(unit=slice(1000, 1100)).load().squeeze()
 #rf = in_rf(da, w=24)
 #cv_ti = cross_val_SVD_TI(da, rf)
 #ti = SVD_TI(da, rf)
 ti_orf = SVD_TI(da)
-
-
-
 da_0 = da.sel(x=0)
 k = list(kurtosis(da_0).values)
 
