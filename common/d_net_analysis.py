@@ -34,8 +34,12 @@ def kurtosis(da):
 
 def in_rf(da, w):
     da = da.transpose('shapes','x', 'unit')
-    base_line = da.sel(shapes=-1)[0]
-    da = da.drop(-1, dim='shapes')
+    try:
+        base_line = da.sel(shapes=-1)[0]
+        da = da.drop(-1, dim='shapes')
+    except:
+        base_line = 0
+
 
     da_bls = da - base_line#subtract off baseline
     da_var = ((da_bls)**2).sum('shapes')
@@ -80,6 +84,10 @@ def in_rf(da, w):
 def cross_val_SVD_TI(da, rf):
     from sklearn.cross_validation import KFold
     da = da.transpose('unit', 'x', 'shapes')
+    try:
+       da = da.drop(-1, dim='shapes')
+    except:
+        print('no baseline, ie no shape indexed as -1')
     ti_est = []
     ti_est_all = []
     counter = 0
@@ -105,6 +113,10 @@ def cross_val_SVD_TI(da, rf):
 
 def SVD_TI(da, rf=None):
     da = da.transpose('unit', 'x', 'shapes')
+    try:
+       da = da.drop(-1, dim='shapes')
+    except:
+        print('no baseline, ie no shape indexed as -1')
 
     if type(rf)==type(None):
         rf = np.ones(da.shape[:2])
@@ -190,56 +202,72 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False, bi
     if logx:
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
-#cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
-#cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(88.0, 138.0, 51)bvlc_reference_caffenet'
-if 'da_0' not in locals():
-    cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(63.0, 163.0, 101)bvlc_reference_caffenet'
-    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].isel(scale=0)
-    da = da.sel(unit=slice(0, None, 1000)).load().squeeze()
+import pickle
+#with open('/Users/dean/Desktop/ti_measures_scaled_big', 'rb') as f:
+#    pda = pickle.load(f)
+#
+#with open('/Users/dean/Desktop/ti_measures', 'rb') as f:
+#    pda = pickle.load(f)
 
+#open those responses, and build apc models for their shapes
+
+fn = top_dir + 'data/models/' + 'apc_models_362.nc'
+dmod = xr.open_dataset(fn, chunks={'models': 50, 'shapes': 370}  )['resp']
+cnn_names = ['APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(63.0, 163.0, 101)bvlc_reference_caffenet',
+            'APC362_scale_0.45_pos_(-50, 48, 50)_ref_iter_0']
+pdas = []
+cnns = [xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=2),
+        xr.open_dataset(top_dir + 'data/responses/' +  cnn_names[1] + '.nc')['resp'],   ]
+for da in cnns:
+    da = da.sel(unit=slice(0, None, 1000)).load().squeeze()
     drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
     for drop_name in drop:
         da = da[:,:, (da.coords['layer_label'] != drop_name)]
-    da_0 = da.sel(x=113)
+    da_0 = da.sel(x=da.coords['x'][np.round(len(da.coords['x'])/2.).astype(int)])
 
-no_response_mod = (da-da.mean('shapes')).sum(['shapes','x'])==0
-k = list(kurtosis(da_0).values)
+    cor = ac.cor_resp_to_model(da_0.chunk({'shapes': 370}), dmod, fit_over_dims=None, prov_commit=False)
 
-rf = in_rf(da, w=24.)
+    no_response_mod = (da-da.mean('shapes')).sum(['shapes','x'])==0
+    k = list(kurtosis(da_0).values)
 
-cv_ti = cross_val_SVD_TI(da, rf)
-ti = SVD_TI(da, rf)
-ti_orf = SVD_TI(da)
+    rf = in_rf(da, w=24.)
 
-measure_names=['ti', 'cv_ti', 'k']
-measures = [ti, cv_ti, k]
-measure_names=['ti', 'ti_orf', 'cv_ti', 'k', 'inrf', 'no_response_mod']
-measures = [ti, ti_orf,  cv_ti, k, np.sum(rf, 1), no_response_mod]
+    cv_ti = cross_val_SVD_TI(da, rf)
+    ti = SVD_TI(da, rf)
+    ti_orf = SVD_TI(da)
 
 
-keys = ['layer_label', 'unit']
-coord = [da_0.coords[key].values for key in keys]
-index = pd.MultiIndex.from_arrays(coord, names=keys)
-pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_names)
+    measure_names=['ti', 'cv_ti', 'k']
+    measures = [ti, cv_ti, k]
+    measure_names=['apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'inrf', 'no_response_mod']
+    measures = [cor , ti, ti_orf,  cv_ti, k, np.sum(rf, 1), no_response_mod]
 
+    keys = ['layer_label', 'unit']
+    coord = [da_0.coords[key].values for key in keys]
+    index = pd.MultiIndex.from_arrays(coord, names=keys)
+    pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_names)
+    pdas.append(pda)
+d = {key: value for (key, value) in zip(['new', 'old'], pdas)}
+pan = pd.Panel(d)
+pan.to_pickle(top_dir + 'data/an_results/ti_apc_spar_over_new_old.p')
 #pda = cnn_measure_to_pandas(da_0, measures, measure_names)
 
+'''
 type_change = np.where(np.diff(da.coords['layer'].values))[0]
 type_label = da.coords['layer_label'].values[type_change].astype(str)
-
-
-plt.scatter(range(len(ti)),ti)
 plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
 plt.figure()
-plt.scatter(pda[pda['k']<40]['cv_ti'], pda[pda['k']<40]['ti'], alpha=1, s=2)
+k_thresh = 40
+plt.scatter(pda[pda['k']<k_thresh]['cv_ti'], pda[pda['k']<40]['ti'], alpha=1, s=2)
 plt.plot([0,1],[0,1])
-plt.close('all')
+#plt.close('all')
 plt.figure()
-stacked_hist_layers(pda[pda['k']<40]['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+stacked_hist_layers(pda[pda['k']<k_thresh]['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
 plt.suptitle('cv ti in rf')
 plt.figure()
-stacked_hist_layers(pda[pda['k']<40]['ti_orf'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+stacked_hist_layers(pda[pda['k']<k_thresh]['ti_orf'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
 plt.suptitle('ti all pos')
 plt.figure()
-stacked_hist_layers(pda[pda['k']<40]['ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+stacked_hist_layers(pda[pda['k']<k_thresh]['ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
 plt.suptitle('ti in rf')
+'''
