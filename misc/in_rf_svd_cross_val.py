@@ -29,8 +29,9 @@ def kurtosis(da):
     sig = da.reduce(np.var, dim='shapes')
     k = (((da - mu)**4).sum('shapes')/da.shapes.shape[0])/(sig**2)
     return k
-drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
 
+
+drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
 
 if 'alex_resp' not in locals():
     cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
@@ -58,7 +59,6 @@ if 'alex_resp' not in locals():
     rf_pos = []
     beg_pos = None
     for n_unit, unit in enumerate(had_resp.T.values):
-
         if sum(unit)<n_steps:
             for i, x in enumerate(unit):
                 if x and type(beg_pos)==type(None):
@@ -111,13 +111,13 @@ for unit_resp, unit_in_rf in zip(resp, in_rf):
     if counter>units_todo:
         break
 
-        
+
 type_change = np.where(np.diff(alex_var.coords['layer'].values))[0]
 type_label = alex_var.coords['layer_label'].values[type_change].astype(str)
 x_pos = list(range(0, n_steps, 6))
 x_label = alex_var.coords['x'].values[0:-1:6]
 try:
-    plt.xticks(type_change, type_label, rotation='vertical', size = 'small')   
+    plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
     plt.plot(np.array(ti_est_all))
     plt.title('leave one position out cross validation R^2')
 except:
@@ -126,20 +126,18 @@ except:
 
 import pandas as pd
 
-#fn = top_dir + 'data/an_results/reference/apc_' + cnn_name
-#pd.DataFrame(ti_est_all).to_pickle(fn)
-#something wrong here but fuck it.
-#beg= 0
-#fin = 1000
-#alex_k = kurtosis(alex_resp)
-#alex_k_mask = alex_k.where(alex_k != np.inf)
-#
-#plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
-#plt.yticks(x_pos, x_label, size = 'small')
-#plt.ylabel('shape center pos')
-#plt.imshow((alex_k_mask[:,beg:fin].fillna(450)<40).plot(), interpolation ='nearest', aspect='auto',cmap = cm.viridis)
-#
+fn = top_dir + 'data/an_results/reference/apc_' + cnn_name
+pd.DataFrame(ti_est_all).to_pickle(fn)
+something wrong here but fuck it.
+beg= 0
+fin = 1000
+alex_k = kurtosis(alex_resp)
+alex_k_mask = alex_k.where(alex_k != np.inf)
 
+plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
+plt.yticks(x_pos, x_label, size = 'small')
+plt.ylabel('shape center pos')
+plt.imshow((alex_k_mask[:,beg:fin].fillna(450)<40).plot(), interpolation ='nearest', aspect='auto',cmap = cm.viridis)
 
 plt.figure()
 plt.subplot(211)
@@ -191,4 +189,4 @@ plt.imshow(in_rf.T[:, beg:fin], interpolation ='nearest', aspect='auto')
 
 
 plt.tight_layout()
-'''
+

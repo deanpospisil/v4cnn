@@ -52,7 +52,6 @@ def nice_axes(axes, xticks=None, yticks=None, nxticks=5, nyticks=2):
             an_axes.set_xticks([])
             an_axes.set_yticks([])
 
-
 def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False, bins=100):
     layers = cnn.index.get_level_values('layer_label').unique()
     if logx:
@@ -88,9 +87,9 @@ def translation_invariance(da):
 
     da_ms = (da - da.mean(['shapes'])).squeeze()
     if da_ms.isnull().sum()>0:
-    	no_na = [unit.dropna('shapes', how='all').dropna('x', how='all') for unit in da_ms ]
+        no_na = [unit.dropna('shapes', how='all').dropna('x', how='all') for unit in da_ms ]
     else:
-	no_na = [unit for unit in da_ms]
+        no_na = [unit for unit in da_ms]
     s = [np.linalg.svd(unit.transpose('shapes', 'x').values, compute_uv=0) for unit in no_na]
     best_r = np.array([(asingval[0]**2)/(sum(asingval**2)) for asingval in s])
 
