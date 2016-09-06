@@ -191,30 +191,33 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False, bi
     if logx:
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
-cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
+#cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
 cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(88.0, 138.0, 51)bvlc_reference_caffenet'
 cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(63.0, 163.0, 101)bvlc_reference_caffenet'
 da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].isel(scale=0)
-da = da.sel(unit=slice(0, None, None)).load().squeeze()
+da = da.sel(unit=slice(0, None, 1000)).load().squeeze()
+da.coords['layer_label'] = da.coords['layer_label'].values.astype(str)
 
 
 drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
 for drop_name in drop:
     da = da[:,:,(da.coords['layer_label'] != drop_name)]
 da_0 = da.sel(x=113)
+#da_0 = da.sel(x=0)
+
 k = list(kurtosis(da_0).values)
 
 rf = in_rf(da, w=24.)
-'''
+
 cv_ti = cross_val_SVD_TI(da, rf)
 ti = SVD_TI(da, rf)
 ti_orf = SVD_TI(da)
 
-measure_names=['ti','cv_ti','k']
+measure_names=['ti', 'cv_ti', 'k']
 measures = [ti, cv_ti, k]
 pda = cnn_measure_to_pandas(da_0, measures, measure_names)
 
-measure_names=['ti','ti_orf','cv_ti', 'k', 'inrf']
+measure_names=['ti', 'ti_orf', 'cv_ti', 'k', 'inrf']
 measures = [ti, ti_orf,  cv_ti, k, np.sum(rf, 1)]
 pda = cnn_measure_to_pandas(da_0, measures, measure_names)
 
@@ -237,4 +240,3 @@ plt.suptitle('ti all pos')
 plt.figure()
 stacked_hist_layers(pda[pda['k']<40]['ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
 plt.suptitle('ti in rf')
-'''
