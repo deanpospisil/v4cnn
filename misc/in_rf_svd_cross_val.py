@@ -128,7 +128,6 @@ import pandas as pd
 
 fn = top_dir + 'data/an_results/reference/apc_' + cnn_name
 pd.DataFrame(ti_est_all).to_pickle(fn)
-something wrong here but fuck it.
 beg= 0
 fin = 1000
 alex_k = kurtosis(alex_resp)
