@@ -86,9 +86,10 @@ def cross_val_SVD_TI(da, rf):
     da = da - da.mean('shapes')
     resp = da.values
     for unit_resp, unit_in_rf in zip(resp, rf):
-        if unit_in_rf.sum()>1:
+        if unit_in_rf.sum()>3:
             counter = counter + 1
-            print(counter)
+            if counter%100==0:
+                print(counter)
             unit_resp = unit_resp[unit_in_rf.astype(bool), :]
             loo = KFold(unit_resp.shape[0], shuffle=True, random_state=1)
             for train, test in loo:
@@ -100,7 +101,6 @@ def cross_val_SVD_TI(da, rf):
         else:
             ti_est_all.append(np.nan)
         ti_est = []
-
     return ti_est_all
 
 def SVD_TI(da, rf=None):
@@ -195,7 +195,7 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False, bi
 if 'da_0' not in locals():
     cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(63.0, 163.0, 101)bvlc_reference_caffenet'
     da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].isel(scale=0)
-    da = da.sel(unit=slice(0, None, None)).load().squeeze()
+    da = da.sel(unit=slice(0, None, 1000)).load().squeeze()
 
     drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
     for drop_name in drop:
