@@ -194,8 +194,8 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False, bi
 #cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(88.0, 138.0, 51)bvlc_reference_caffenet'
 if 'da_0' not in locals():
     cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(63.0, 163.0, 101)bvlc_reference_caffenet'
-    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].isel(scale=0)
-    da = da.sel(unit=slice(0, None, 1000)).load().squeeze()
+    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].isel(scale=2)
+    da = da.sel(unit=slice(0, None, None)).load().squeeze()
 
     drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
     for drop_name in drop:
@@ -226,7 +226,7 @@ pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_names)
 
 type_change = np.where(np.diff(da.coords['layer'].values))[0]
 type_label = da.coords['layer_label'].values[type_change].astype(str)
-
+pda.to_pickle(top_dir+'ti_measures_scaled_big')
 
 plt.scatter(range(len(ti)),ti)
 plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
