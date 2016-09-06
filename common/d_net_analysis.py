@@ -78,7 +78,7 @@ def in_rf(da, w):
     return in_rf
 
 def cross_val_SVD_TI(da, rf):
-    from sklearn.cross_validation import LeaveOneOut
+    from sklearn.cross_validation import KFold
     da = da.transpose('unit', 'x', 'shapes')
     ti_est = []
     ti_est_all = []
@@ -90,7 +90,7 @@ def cross_val_SVD_TI(da, rf):
             counter = counter + 1
             print(counter)
             unit_resp = unit_resp[unit_in_rf.astype(bool), :]
-            loo = LeaveOneOut(unit_resp.shape[0])
+            loo = KFold(unit_resp.shape[0], shuffle=True, random_state=1)
             for train, test in loo:
                 u, s, v = np.linalg.svd(unit_resp[train])
                 ti_est = ti_est + [sum((np.dot(v[0], unit_resp[test].T))**2),]
@@ -121,11 +121,8 @@ def SVD_TI(da, rf=None):
         counter = counter + 1
         print(counter)
         if sum(unit_in_rf)>2:
-            if no_rf:
-                unit_resp = unit_resp
-            else:
+            if not no_rf:
                  unit_resp = unit_resp[unit_in_rf.astype(bool), :]
-
 
             singular_values = np.linalg.svd(unit_resp, compute_uv=False)
             frac_var = (singular_values[0]**2)/(sum(singular_values**2))
@@ -136,9 +133,11 @@ def SVD_TI(da, rf=None):
 
 def cnn_measure_to_pandas(da, measures, measure_names):
     keys = ['layer_label', 'unit']
-    coord = [da['unit'].coords[key].values for key in keys]
+    coord = [da.coords[key].values for key in keys]
     index = pd.MultiIndex.from_arrays(coord, names=keys)
     pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_names)
+
+
     return pda
 def tick_format_d(x, pos):
     if x==0:
@@ -192,19 +191,18 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False, bi
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
 #cnn_name = 'APC362_scale_1_pos_(-99, 96, 66)bvlc_reference_caffenet'
-cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(88.0, 138.0, 51)bvlc_reference_caffenet'
-cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(63.0, 163.0, 101)bvlc_reference_caffenet'
-da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].isel(scale=0)
-da = da.sel(unit=slice(0, None, 1000)).load().squeeze()
-da.coords['layer_label'] = da.coords['layer_label'].values.astype(str)
+#cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(88.0, 138.0, 51)bvlc_reference_caffenet'
+if 'da_0' not in locals():
+    cnn_name = 'APC362_maxpixwidth_[24.0, 32.0, 48.0]_pos_(63.0, 163.0, 101)bvlc_reference_caffenet'
+    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp'].isel(scale=0)
+    da = da.sel(unit=slice(0, None, None)).load().squeeze()
 
+    drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
+    for drop_name in drop:
+        da = da[:,:, (da.coords['layer_label'] != drop_name)]
+    da_0 = da.sel(x=113)
 
-drop = ['conv4_conv4_0_split_0', 'conv4_conv4_0_split_1']
-for drop_name in drop:
-    da = da[:,:,(da.coords['layer_label'] != drop_name)]
-da_0 = da.sel(x=113)
-#da_0 = da.sel(x=0)
-
+no_response_mod = (da-da.mean('shapes')).sum(['shapes','x'])==0
 k = list(kurtosis(da_0).values)
 
 rf = in_rf(da, w=24.)
@@ -215,21 +213,26 @@ ti_orf = SVD_TI(da)
 
 measure_names=['ti', 'cv_ti', 'k']
 measures = [ti, cv_ti, k]
-pda = cnn_measure_to_pandas(da_0, measures, measure_names)
+measure_names=['ti', 'ti_orf', 'cv_ti', 'k', 'inrf', 'no_response_mod']
+measures = [ti, ti_orf,  cv_ti, k, np.sum(rf, 1), no_response_mod]
 
-measure_names=['ti', 'ti_orf', 'cv_ti', 'k', 'inrf']
-measures = [ti, ti_orf,  cv_ti, k, np.sum(rf, 1)]
-pda = cnn_measure_to_pandas(da_0, measures, measure_names)
+
+keys = ['layer_label', 'unit']
+coord = [da_0.coords[key].values for key in keys]
+index = pd.MultiIndex.from_arrays(coord, names=keys)
+pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_names)
+
+#pda = cnn_measure_to_pandas(da_0, measures, measure_names)
 
 type_change = np.where(np.diff(da.coords['layer'].values))[0]
 type_label = da.coords['layer_label'].values[type_change].astype(str)
 
 
-#plt.scatter(range(len(ti)),ti)
-#plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
-#plt.figure()
-#plt.scatter(pda[pda['k']<40]['cv_ti'], pda[pda['k']<40]['ti'], alpha=1, s=2)
-#plt.plot([0,1],[0,1])
+plt.scatter(range(len(ti)),ti)
+plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
+plt.figure()
+plt.scatter(pda[pda['k']<40]['cv_ti'], pda[pda['k']<40]['ti'], alpha=1, s=2)
+plt.plot([0,1],[0,1])
 plt.close('all')
 plt.figure()
 stacked_hist_layers(pda[pda['k']<40]['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
