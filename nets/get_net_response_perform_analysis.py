@@ -75,14 +75,14 @@ boundaries = imp.center_boundary(s)
 
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 shape_ids = range(-1, 370)
-center_image = round(img_n_pix/2)
-x = (center_image-25, center_image+25, 51)
+center_image = round(img_n_pix/2.)
+x = (center_image-50, center_image+50, 101)
 y = (center_image, center_image, 1)
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
                                                                 scale=scale,
                                                                 x=x,
                                                                 y=y)
-
+'''
 for i, iter_name in enumerate(reversed(all_iter)):
     print('Total Progress')
     print(i/float(len(all_iter)))
@@ -104,7 +104,7 @@ for i, iter_name in enumerate(reversed(all_iter)):
                              iter_name.split('net/')[1].split('.')[0],
                              stim_trans_cart_dict,
                              stim_trans_dict,
-                             require_provenance=True,
+                             require_provenance=False,
                              use_boundary=True)
         #da.attrs['train'] = iteration_number
         ds = da.to_dataset(name='resp')
@@ -143,3 +143,4 @@ for i, iter_name in enumerate(reversed(all_iter)):
 
     if i not in save_inds and os.path.isfile(response_file):
         os.remove(response_file)
+'''
