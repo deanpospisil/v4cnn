@@ -46,25 +46,15 @@ get_translation_invariance = False
 fit_apc_model = False
 get_sparsity = False
 
-#all_iter = dm.list_files(ann_dir + '*_iter*.caffe*')
-#
-##get iterations in order
-#iter_numbers = [int(re.findall('\d+', line)[-1]) for line in all_iter]
-#all_iter = [all_iter[sort_i] for sort_i in np.argsort(iter_numbers)]
-#subset = [len(all_iter)-1, 0]
-#all_iter = [all_iter[ind] for ind in subset]
-
-#save_inds = [0, len('all_iter')-1]
-#all_iter = ['/data/dean_data/net_stages/_iter_450000.caffemodel',
-#'/data/dean_data/net_stages/_ref_iter_0.caffemodel',
-#'/data/dean_data/net_stages/_iter_1.caffemodel']
-
-all_iter = ['/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel',
+all_iter = [
+'/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel',
 ]
-save_inds = range(0, len(all_iter))
+deploys = [
+'deploy_fixing_relu_saved.prototxt',
+]
 
 img_n_pix = 227
-max_pix_width = [24., 32., 48.]
+max_pix_width = [24. , 48.,]
 #boundaries = boundaries * (max_pix_width/biggest_x_y_diff(boundaries))
 #biggest_diff = biggest_x_y_diff(boundaries)
 #boundaries = boundaries + img_n_pix/2.
@@ -74,24 +64,27 @@ boundaries = imp.center_boundary(s)
 #just save this as pickle.
 
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
+#scale=[0.45,]
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-x = (center_image-50, center_image+50, 101)
+x = (center_image-50, center_image+50, 51)
 y = (center_image, center_image, 1)
+
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
                                                                 scale=scale,
                                                                 x=x,
                                                                 y=y)
-'''
-for i, iter_name in enumerate(reversed(all_iter)):
-    print('Total Progress')
-    print(i/float(len(all_iter)))
+
+for  iter_name, deploy  in zip(all_iter,deploys):
+    print(iter_name)
 
     #get response and save
     iter_subname = iter_name.split('/')[-1].split('.')[0]
     #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
-    response_description = 'APC362_maxpixwidth_' + str(max_pix_width) + '_pos_' + str(x) + iter_subname + '.nc'
-    response_file = ('/data/dean_data/responses/' + response_description)
+   
+    response_description = 'APC362_'+deploy +'_fixed_even_pix_width'+ str(max_pix_width) + '_pos_' + str(x) + iter_subname + '.nc'
+
+    response_file = ('/home/dean/Desktop/v4cnn/data/responses/' + response_description)
 
     ti_name = top_dir + 'data/an_results/ti_'+ response_description
     fit_apc_model_name = top_dir + 'data/an_results/apc_'+ response_description
@@ -105,8 +98,8 @@ for i, iter_name in enumerate(reversed(all_iter)):
                              stim_trans_cart_dict,
                              stim_trans_dict,
                              require_provenance=False,
-                             use_boundary=True)
-        #da.attrs['train'] = iteration_number
+                             use_boundary=True,
+			     deploy=deploy)
         ds = da.to_dataset(name='resp')
         ds.to_netcdf(response_file)
 
@@ -143,4 +136,3 @@ for i, iter_name in enumerate(reversed(all_iter)):
 
     if i not in save_inds and os.path.isfile(response_file):
         os.remove(response_file)
-'''

@@ -181,7 +181,7 @@ def net_resp_2d_to_xray_nd(net_resp, stim_trans_dict, indices_for_net_unit_vec):
     return da
 
 def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
-                 stim_trans_dict, require_provenance=True, use_boundary=True):
+                 stim_trans_dict, require_provenance=True, use_boundary=True, deploy='deploy.prototxt'):
     img_dir = top_dir+'/images/baseimgs/'+ base_image_nm + '/'
     if not use_boundary:
         base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)
@@ -199,7 +199,7 @@ def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
 
     import caffe
     caffe.set_mode_gpu()
-    net = caffe.Net(ann_dir + 'deploy.prototxt', ann_dir + ann_fn + '.caffemodel', caffe.TEST)
+    net = caffe.Net(ann_dir + deploy, ann_dir + ann_fn + '.caffemodel', caffe.TEST)
 
     net_resp = identity_preserving_transform_resp(base_stack, stim_trans_cart_dict, net)
     indices_for_net_unit_vec = get_indices_for_net_unit_vec(net)
