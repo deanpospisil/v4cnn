@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri Sep  9 20:41:01 2016
+
+@author: dean
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Aug  9 15:06:55 2016
 
 @author: dean
@@ -222,71 +229,132 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
 
-import pickle
 
-measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
-#measure_list =['ti', 'k', 'inrf', 'no_response_mod']
-fn = top_dir + 'data/models/' + 'apc_models_362.nc'
-dmod = xr.open_dataset(fn, chunks={'models': 50, 'shapes': 370}  )['resp']
-cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 48.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet' ] 
+cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 48.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet' ]
 pdas = []
-cnns = [ xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=0) , 
-         xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=1) , 
-]
-null=True
+da = xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=0)
+da_0 = da.sel(x=da.coords['x'][np.round(len(da.coords['x'])/2.).astype(int)])
 
-for da in cnns:
-    np.random.seed(1)
-    da = da.sel(unit=slice(0, None, None)).load().squeeze()
-    if null:
-        for  x in range(len(da.coords['x'])):
-            for unit in range(len(da.coords['unit'])):
-                da[:,x,unit] = np.random.permutation(da[:,x,unit].values)
 
-    da_0 = da.sel(x=da.coords['x'][np.round(len(da.coords['x'])/2.).astype(int)])
-    rf = in_rf(da, w=24.)
-    measures = []
-    if 'apc' in measure_list:	
-        measures.append(ac.cor_resp_to_model(da_0.chunk({'shapes': 370}), dmod, fit_over_dims=None, prov_commit=False).values)
-    if 'ti' in measure_list:
-        measures.append(SVD_TI(da, rf))
-    if 'ti_orf' in measure_list:
-        measures.append(SVD_TI(da))
-    if 'cv_ti' in measure_list:
-        measures.append(cross_val_SVD_TI(da, rf))
-    if 'k' in measure_list:		
-        measures.append(list(kurtosis(da_0).values))
-    if 'in_rf' in measure_list:
-        measures.append(np.sum(rf,1))
-    if 'no_response_mod' in measure_list:
-        measures.append((((da-da.mean('shapes'))**2).sum(['shapes','x'])==0).values)
+if 'dmod' not in locals():
+    fn = top_dir + 'data/models/' + 'apc_models_362.nc'
+    dmod = xr.open_dataset(fn, chunks={'models': 50, 'shapes': 370}  )['resp'].load()
 
-    keys = ['layer_label', 'unit']
-    coord = [da_0.coords[key].values for key in keys]
-    index = pd.MultiIndex.from_arrays(coord, names=keys)
-    pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_list)
-    pdas.append(pda)
-d = {key: value for (key, value) in zip(['24','48' ], pdas)}
-pan = pd.Panel(d)
-pan.to_pickle(top_dir + 'data/an_results/null_fixed_relu_saved_24_48_pix.p')
+# now I need to tack on V4
+v4_name = 'V4_362PC2001'
+v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
+v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
+v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
+v4_resp_ti = xr.open_dataset(top_dir + 'data/responses/v4_ti_resp.nc')['resp'].load()
 
-'''
-type_change = np.where(np.diff(da.coords['layer'].values))[0]
-type_label = da.coords['layer_label'].values[type_change].astype(str)
-plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
+cv_ti = cross_val_SVD_TI(v4_resp_ti, rf=None)
+ti = SVD_TI(v4_resp_ti, rf=None)
+apc = ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), dmod.chunk({}), fit_over_dims=None, prov_commit=False)
+k_apc = list(kurtosis(v4_resp_apc).values)
+k_ti = list(kurtosis(v4_resp_ti.mean('x')).values)
+
+keys = ['layer_label', 'unit']
+index = pd.MultiIndex.from_arrays([np.array(['v4']*len(ti)),np.arange(len(ti))], names=keys)
+v4pdti  = pd.DataFrame(np.array([ti, cv_ti, k_ti]).T, index=index, columns=['ti', 'cv_ti', 'k'])
+
+index = pd.MultiIndex.from_arrays([np.array(['v4']*len(apc)),np.arange(len(apc))], names=keys)
+v4pdapc  = pd.DataFrame(np.array([apc.values, k_apc]).T, index=index, columns=['apc', 'k'])
+
+v4 = pd.concat([v4pdti,v4pdapc])
+figure_folder = top_dir + 'analysis/figures/images/'
+import pickle
+plt.close('all')
+with open(top_dir + 'data/an_results/fixed_relu_saved_24_48_pix.p', 'rb') as f:
+    pan = pickle.load(f)
+names = ['24', '48']
+df = pan['24']
+df = df[df.index.get_level_values('layer_label')!='prob']
+all_layers = pd.concat([df, v4])
+
 plt.figure()
-k_thresh = 40
-plt.scatter(pda[pda['k']<k_thresh]['cv_ti'], pda[pda['k']<40]['ti'], alpha=1, s=2)
-plt.plot([0,1],[0,1])
-#plt.close('all')
-plt.figure()
-stacked_hist_layers(pda[pda['k']<k_thresh]['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
-plt.suptitle('cv ti in rf')
-plt.figure()
-stacked_hist_layers(pda[pda['k']<k_thresh]['ti_orf'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
-plt.suptitle('ti all pos')
-plt.figure()
-stacked_hist_layers(pda[pda['k']<k_thresh]['ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
-plt.suptitle('ti in rf')
-'''
+k_thresh = 30
+stacked_hist_layers((all_layers[all_layers['k']<k_thresh])['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+plt.suptitle('3-fold Cross-Validated TI measured in receptive field.' )
+plt.xlabel('Fraction Variance Explained by TI Model')
+plt.savefig(figure_folder + 'ti_frac_var_24pix.eps')
 
+plt.figure()
+stacked_hist_layers((((all_layers[all_layers['k']<k_thresh])['apc'])**1).dropna(),
+                    logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+plt.suptitle('Fit to APC model measured in center of receptive field.' )
+plt.xlabel('Correlation with APC Model')
+plt.savefig(figure_folder + 'apc_correlation_24pix.eps')
+
+
+plt.figure(figsize=(7,12))
+stacked_hist_layers(((all_layers['k'])).dropna(), logx=False, logy=True, xlim=[0,370], maxlim=False, bins=100)
+plt.suptitle('Sparsity of Layers.' )
+plt.xlabel('Kurtosis')
+plt.savefig(figure_folder + 'sparsity_loghist.eps')
+
+kts = all_layers[all_layers['k']<k_thresh]
+kts['cv_ti'] = kts['cv_ti']**2
+kts_c = kts[kts.index.get_level_values('layer_label')!='v4']
+kts_v = kts[kts.index.get_level_values('layer_label')=='v4']
+ti_m_prob, ti_m_value = np.histogram(kts_v['cv_ti'].dropna(), normed=True, bins=20)
+apc_m_prob, apc_m_value  = np.histogram(kts_v['apc'].dropna(), normed=True, bins=20)
+
+joint_v4ness = apc_m_prob.reshape(1,20)*ti_m_prob.reshape(20,1)
+apc_val, ti_val = np.meshgrid(apc_m_value[1:], ti_m_value[1:])
+dist_v4 = ((1- apc_val)**2 + (1- ti_val)**2)**0.5
+plt.figure(figsize=(7,3))
+n, bins, patches = plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(),
+                            bins=100, range=[0,1], normed=True, histtype='step',
+                            cumulative=True)
+plt.close('all')
+plt.figure(figsize=(7,3))
+plt.gca().xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(), bins=20,
+                            range=[0, 2**0.5], normed=True, histtype='step', cumulative=False)
+plt.plot([bins[n>.5][0],]*2, np.array(plt.gca().get_ylim()), color='red')
+plt.ylim(plt.gca().get_ylim())
+plt.xlim([0,2**0.5],)
+
+plt.title('Assume independence of TI and APC measurements in V4.')
+plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
+nice_axes(plt.gcf().axes, xticks=None, yticks=None, nxticks=5, nyticks=2)
+plt.tight_layout()
+plt.savefig(figure_folder + 'v4ness_ofV4_assuming_independence.eps')
+
+
+plt.close('all')
+plt.figure(figsize=(7,3))
+plt.gca().xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(),bins=50,
+                            range=[0, 2**0.5], normed=True, histtype='step', cumulative=True)
+plt.plot([bins[n>.5][0],]*2, np.array((0,1.1)), color='red')
+plt.ylim([0, 1.1])
+plt.xlim([0,2**0.5],)
+plt.title('Assume independence of TI and APC measurements in V4.')
+plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
+nice_axes(plt.gcf().axes, xticks=None, yticks=None, nxticks=5, nyticks=2)
+plt.tight_layout()
+plt.savefig(figure_folder + 'v4ness_ofV4_assuming_independence_cumu.eps')
+
+dist = ((1- kts_c['cv_ti'])**2 + (1- kts_c['apc'])**2)**0.5
+plt.figure(figsize=(7,12))
+stacked_hist_layers((dist).dropna(), logx=False, logy=False,
+                    maxlim=False, xlim=[0, 2**0.5], bins=100, cumulative=False, normed=True)
+plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
+plt.savefig(figure_folder + 'v4ness_of_caffenet.eps')
+
+plt.figure(figsize=(7,12))
+stacked_hist_layers((dist).dropna(), logx=False, logy=False, xlim=[0, 2**0.5],
+                    maxlim=False, bins=100, cumulative=True, normed=True)
+plt.xlim(0,2**0.5)
+plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
+plt.savefig(figure_folder + 'v4ness_of_caffenet_cumu.eps')
+
+
+
+for name in names:
+    pda = pan[name]
+    plt.figure()
+    stacked_hist_layers((pda[pda['k']<k_thresh])['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+    plt.suptitle('3-fold Cross-Validated TI. Stimuli width: ' + name )
+    plt.savefig('3-fold Cross-Validated TI. Stimuli width: ' + name + '.eps')

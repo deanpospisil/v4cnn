@@ -61,6 +61,10 @@ plt.close('all')
 plt.imshow(trans_stack[1,:,:],cmap = cm.Greys_r, interpolation = 'nearest')
 
 a = trans_stack[1,:,:]
+
+s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
+base_stack = dc.center_boundary(s)
+
 #
 #b = zoom(a, 0.5)
 #
