@@ -205,17 +205,18 @@ def nice_axes(axes, xticks=None, yticks=None, nxticks=5, nyticks=2):
             an_axes.set_yticks([])
 
 def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
-                        bins=100, cumulative=False, normed=False):
+                        bins=100, cumulative=False, normed=False, extra_subplot=False):
     layers = cnn.index.get_level_values('layer_label').unique()
     if logx:
-        cnn = np.log(cnn.dropna())
+        cnn = np.log10(cnn.dropna())
+        xlim = np.log10(xlim)
     if maxlim:
         xlim = [np.min(cnn.dropna().values), np.max(cnn.dropna().values)]
+
+    n_subplot = len(layers)+extra_subplot
     for i, layer in enumerate(layers):
-        plt.subplot(len(layers), 1, i+1)
+        plt.subplot(n_subplot, 1, i+1)
         vals = cnn.loc[layer].dropna().values.flatten()
-
-
         plt.hist(vals, log=logy, bins=bins, histtype='step',
                  range=xlim, normed=normed, cumulative=cumulative)
         if cumulative:
@@ -227,6 +228,7 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
 
     if logx:
         plt.xlabel('log')
+
     nice_axes(plt.gcf().axes)
 
 
@@ -267,88 +269,111 @@ plt.close('all')
 with open(top_dir + 'data/an_results/fixed_relu_saved_24_48_pix.p', 'rb') as f:
     pan = pickle.load(f)
 names = ['24', '48']
-df = pan['24']
-df = df[df.index.get_level_values('layer_label')!='prob']
-all_layers = pd.concat([df, v4])
-
-plt.figure()
-k_thresh = 30
-stacked_hist_layers((all_layers[all_layers['k']<k_thresh])['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
-plt.suptitle('3-fold Cross-Validated TI measured in receptive field.' )
-plt.xlabel('Fraction Variance Explained by TI Model')
-plt.savefig(figure_folder + 'ti_frac_var_24pix.eps')
-
-plt.figure()
-stacked_hist_layers((((all_layers[all_layers['k']<k_thresh])['apc'])**1).dropna(),
-                    logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
-plt.suptitle('Fit to APC model measured in center of receptive field.' )
-plt.xlabel('Correlation with APC Model')
-plt.savefig(figure_folder + 'apc_correlation_24pix.eps')
 
 
-plt.figure(figsize=(7,12))
-stacked_hist_layers(((all_layers['k'])).dropna(), logx=False, logy=True, xlim=[0,370], maxlim=False, bins=100)
-plt.suptitle('Sparsity of Layers.' )
-plt.xlabel('Kurtosis')
-plt.savefig(figure_folder + 'sparsity_loghist.eps')
+for name in names:
+    plt.close('all')
+    df = pan[name]
+    df = df[df.index.get_level_values('layer_label')!='prob']
+    all_layers = pd.concat([df, v4])
+    all_layers['apc'] = all_layers['apc']**2 #square here to get frac var for apc
 
-kts = all_layers[all_layers['k']<k_thresh]
-kts['cv_ti'] = kts['cv_ti']**2
-kts_c = kts[kts.index.get_level_values('layer_label')!='v4']
-kts_v = kts[kts.index.get_level_values('layer_label')=='v4']
-ti_m_prob, ti_m_value = np.histogram(kts_v['cv_ti'].dropna(), normed=True, bins=20)
-apc_m_prob, apc_m_value  = np.histogram(kts_v['apc'].dropna(), normed=True, bins=20)
-
-joint_v4ness = apc_m_prob.reshape(1,20)*ti_m_prob.reshape(20,1)
-apc_val, ti_val = np.meshgrid(apc_m_value[1:], ti_m_value[1:])
-dist_v4 = ((1- apc_val)**2 + (1- ti_val)**2)**0.5
-plt.figure(figsize=(7,3))
-n, bins, patches = plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(),
-                            bins=100, range=[0,1], normed=True, histtype='step',
-                            cumulative=True)
-plt.close('all')
-plt.figure(figsize=(7,3))
-plt.gca().xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
-plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(), bins=20,
-                            range=[0, 2**0.5], normed=True, histtype='step', cumulative=False)
-plt.plot([bins[n>.5][0],]*2, np.array(plt.gca().get_ylim()), color='red')
-plt.ylim(plt.gca().get_ylim())
-plt.xlim([0,2**0.5],)
-
-plt.title('Assume independence of TI and APC measurements in V4.')
-plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
-nice_axes(plt.gcf().axes, xticks=None, yticks=None, nxticks=5, nyticks=2)
-plt.tight_layout()
-plt.savefig(figure_folder + 'v4ness_ofV4_assuming_independence.eps')
+    plt.scatter(df['cv_ti'][df['k']<40],df['ti'][df['k']<40], s=0.1, alpha =0.5)
+    plt.title('3-fold CV SVD vs SVD' + name +' pixel')
+    plt.plot([0,1],[0,1]);plt.xlim((0,1));plt.ylim((0,1))
+    plt.xlabel('3-fold CV TI');plt.ylabel('TI')
+    plt.savefig(figure_folder + name +'cv_vs_non_cv_ti.png')
+    plt.savefig(figure_folder + name +'cv_vs_non_cv_ti.eps')
+    plt.close('all')
 
 
-plt.close('all')
-plt.figure(figsize=(7,3))
-plt.gca().xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
-plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(),bins=50,
-                            range=[0, 2**0.5], normed=True, histtype='step', cumulative=True)
-plt.plot([bins[n>.5][0],]*2, np.array((0,1.1)), color='red')
-plt.ylim([0, 1.1])
-plt.xlim([0,2**0.5],)
-plt.title('Assume independence of TI and APC measurements in V4.')
-plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
-nice_axes(plt.gcf().axes, xticks=None, yticks=None, nxticks=5, nyticks=2)
-plt.tight_layout()
-plt.savefig(figure_folder + 'v4ness_ofV4_assuming_independence_cumu.eps')
+    plt.figure()
+    k_thresh = 40
+    stacked_hist_layers((all_layers[all_layers['k']<k_thresh])['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+    plt.suptitle('3-fold Cross-Validated TI measured in receptive field.'+name +' pixel' )
+    plt.xlabel('Fraction Variance Explained by TI Model')
+    plt.savefig(figure_folder +name + 'ti_frac_var.eps')
+    plt.savefig(figure_folder + name +'ti_frac_var.png')
 
-dist = ((1- kts_c['cv_ti'])**2 + (1- kts_c['apc'])**2)**0.5
-plt.figure(figsize=(7,12))
-stacked_hist_layers((dist).dropna(), logx=False, logy=False,
-                    maxlim=False, xlim=[0, 2**0.5], bins=100, cumulative=False, normed=True)
-plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
-plt.savefig(figure_folder + 'v4ness_of_caffenet.eps')
 
-plt.figure(figsize=(7,12))
-stacked_hist_layers((dist).dropna(), logx=False, logy=False, xlim=[0, 2**0.5],
-                    maxlim=False, bins=100, cumulative=True, normed=True)
-plt.xlim(0,2**0.5)
-plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
-plt.savefig(figure_folder + 'v4ness_of_caffenet_cumu.eps')
+    plt.figure()
+    stacked_hist_layers((((all_layers[all_layers['k']<k_thresh])['apc'])**1).dropna(),
+                        logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+    plt.suptitle('Fit to APC model measured in center of receptive field. '+name +' pixel' )
+    plt.xlabel('Correlation with APC Model')
+    plt.savefig(figure_folder + name +'apc_correlation.eps')
+    plt.savefig(figure_folder +name + 'apc_correlation.png')
+
+
+    plt.figure(figsize=(7,12))
+    stacked_hist_layers(all_layers['k'].dropna(), logx=True, logy=True,
+                        xlim=[min(all_layers['k']), max(all_layers['k'])],
+                        maxlim=False, bins=100)
+    plt.suptitle('Sparsity of Layers. ' + name + ' pixel' )
+    plt.xlabel('Kurtosis')
+    plt.savefig(figure_folder + name +'sparsity_loghist.eps')
+    plt.savefig(figure_folder + name +'sparsity_loghist.png')
+
+
+    kts = all_layers[all_layers['k']<k_thresh]
+    kts_c = kts[kts.index.get_level_values('layer_label')!='v4']
+    kts_v = kts[kts.index.get_level_values('layer_label')=='v4']
+    ti_m_prob, ti_m_value = np.histogram(kts_v['cv_ti'].dropna(), normed=True, bins=20)
+    apc_m_prob, apc_m_value  = np.histogram(kts_v['apc'].dropna(), normed=True, bins=20)
+
+    joint_v4ness = apc_m_prob.reshape(1,20)*ti_m_prob.reshape(20,1)
+    apc_val, ti_val = np.meshgrid(apc_m_value[1:], ti_m_value[1:])
+    dist_v4 = ((1- apc_val)**2 + (1- ti_val)**2)**0.5
+    plt.figure(figsize=(7,3))
+    n, bins, patches = plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(),
+                                bins=100, range=[0,1], normed=True, histtype='step',
+                                cumulative=True)
+    plt.close('all')
+    plt.figure(figsize=(7,3))
+    plt.gca().xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+    plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(), bins=20,
+                                range=[0, 2**0.5], normed=True, histtype='step', cumulative=False)
+    plt.plot([bins[n>.5][0],]*2, np.array(plt.gca().get_ylim()), color='red')
+    plt.ylim(plt.gca().get_ylim())
+    plt.xlim([0,2**0.5],)
+
+    plt.title('Assume independence of TI and APC measurements in V4.' +name +' pixel')
+    plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.' )
+    nice_axes(plt.gcf().axes, xticks=None, yticks=None, nxticks=5, nyticks=2)
+    plt.tight_layout()
+    plt.savefig(figure_folder + name +'v4ness_ofV4_assuming_independence.eps')
+    plt.savefig(figure_folder + name +'v4ness_ofV4_assuming_independence.png')
+
+
+    dist = ((1- kts_c['cv_ti'])**2 + (1- kts_c['apc'])**2)**0.5
+    plt.figure(figsize=(7,12))
+    stacked_hist_layers((dist).dropna(), logx=False, logy=False,
+                        maxlim=False, xlim=[0, 2**0.5], bins=100, cumulative=False, normed=True)
+    plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
+    plt.savefig(figure_folder + 'v4ness_of_caffenet.eps')
+
+
+    plt.figure(figsize=(7,12))
+    stacked_hist_layers((dist).dropna(), logx=False, logy=False, xlim=[0, 2**0.5],
+                        maxlim=False, bins=100, cumulative=True, normed=True, extra_subplot=True)
+#    plt.xlim(0,2**0.5)
+
+    plt.subplot(22,1,22)
+    plt.gca().xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+    plt.hist(dist_v4.ravel(), weights=joint_v4ness.ravel(),bins=50,
+                                range=[0, 2**0.5], normed=True, histtype='step', cumulative=True)
+    plt.plot([bins[n>.5][0],]*2, np.array((0,1.1)), color='red')
+    plt.ylim([0, 1.1])
+    plt.xlim([0,2**0.5],)
+    plt.gca().set_ylabel('V4', ha='right', rotation=0, labelpad=25)
+    plt.gca().yaxis.set_label_position("right")
+    #plt.title('Assume independence of TI and APC measurements in V4.' +name +' pixel')
+    #plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.')
+    nice_axes(plt.gcf().axes, xticks=None, yticks=None, nxticks=5, nyticks=2)
+    plt.xlabel('Distance from "perfect" V4: APC = 1, TI = 1.' +name +' pixel')
+
+    plt.savefig(figure_folder + name +'v4ness_ofV4_assuming_independence_and_caffe_cumu.eps')
+    plt.savefig(figure_folder + name +'v4ness_ofV4_assuming_independence_and_caffe_cumu.png')
 
 
 
@@ -357,4 +382,63 @@ for name in names:
     plt.figure()
     stacked_hist_layers((pda[pda['k']<k_thresh])['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
     plt.suptitle('3-fold Cross-Validated TI. Stimuli width: ' + name )
-    plt.savefig('3-fold Cross-Validated TI. Stimuli width: ' + name + '.eps')
+    plt.savefig(figure_folder + '3-fold Cross-Validated TI. Stimuli width ' + name + '.eps')
+    plt.savefig(figure_folder + '3-fold Cross-Validated TI. Stimuli width ' + name + '.png')
+
+plt.close('all')
+plt.subplot(211)
+plt.hist(v4_resp_apc[:, np.argmax(k_apc)], bins=30, log=True, normed=False, histtype='step',  range=[0,1])
+plt.hist(v4_resp_apc[:, np.argmin(k_apc)], bins=30,log=True, normed=False, histtype='step', range=[0,1])
+plt.legend(np.round([np.min(k_apc), np.max(k_apc)],1), title='Kurtosis', loc=1)
+plt.xlabel('Normalized firing rate')
+plt.ylabel('Firing rate density')
+#plt.ylim(-1,14)
+plt.plot([0,1],[0,0])
+plt.title('Response distribution of most and least sparse V4 unit.')
+
+plt.subplot(212)
+plt.hist(np.log10(pda['k'].dropna()),  bins=100, histtype='step', normed=True,
+         range=np.log10([min(all_layers['k']), max(all_layers['k'])]), color='m')
+plt.hist(np.log10(k_apc), bins=100, histtype='step',normed=True,
+         range=np.log10([min(all_layers['k']), max(all_layers['k'])]), color='c')
+plt.xlabel('Log10 Kurtosis')
+plt.ylabel('Density')
+plt.title('Comparison of Kurtosis Distributions')
+plt.legend(['CaffeNet','V4'], loc=9)
+plt.tight_layout()
+#nice_axes(plt.gcf().axes, xticks=None, yticks=None, nxticks=5, nyticks=4)
+plt.savefig(figure_folder + name +'sparsity_V4_vs_caffe.eps')
+plt.savefig(figure_folder + name +'sparsity_V4_vs_caffe.png')
+
+s=4
+sample_from_layers = ['fc8', 'conv5', 'conv2']
+colors = ['r' , 'g' , 'b']
+pda = pan['24']
+for c, layer in zip(colors, sample_from_layers):
+    units = pda.index.get_level_values('layer_label')==layer
+    plt.scatter(pda['cv_ti'][units][:100], pda['apc'][units][:100]**2, s=s, color = c)
+    plt.xlabel('Fraction Variance TI');plt.ylabel('Fraction Variance APC')
+    plt.xlim(0,1);plt.ylim(0,1)
+
+
+units = pda.index.get_level_values('layer_label')=='fc8'
+pda = pan['24']
+plt.close('all')
+plt.subplot(121)
+plt.scatter(pda['ti_orf'][units][pda['k']<40], pda['ti'][units][pda['k']<40], s=0.1, alpha =0.5)
+plt.xlabel('Outside RF');plt.ylabel('Inside RF')
+plt.xlim(0,1);plt.ylim(0,1)
+plt.subplot(122)
+pda = pan['48']
+plt.scatter(pda['ti_orf'][units][pda['k']<40], pda['ti'][units][pda['k']<40], s=0.1, alpha =0.5)
+plt.xlabel('Outside RF');plt.ylabel('Inside RF')
+plt.xlim(0,1);plt.ylim(0,1)
+
+plt.title('SVD over all pos vs SVD in rf' + name +' pixel')
+plt.plot([0,1],[0,1]);plt.xlim((0,1));plt.ylim((0,1))
+plt.savefig(figure_folder + name +'in_vs_outrf.png')
+plt.savefig(figure_folder + name +'in_vs_outrf.eps')
+
+
+
+pan['24']['in_rf'].groupby(pan['24'].index.get_level_values('layer_label')).apply(Counter)
