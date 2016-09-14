@@ -54,7 +54,7 @@ deploys = [
 ]
 
 img_n_pix = 227
-max_pix_width = [24. , 48.,]
+max_pix_width = [24. , 30.,]
 #boundaries = boundaries * (max_pix_width/biggest_x_y_diff(boundaries))
 #biggest_diff = biggest_x_y_diff(boundaries)
 #boundaries = boundaries + img_n_pix/2.
@@ -67,7 +67,7 @@ scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 #scale=[0.45,]
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-x = (center_image-50, center_image+50, 51)
+x = (center_image-50, center_image+50, 101)
 y = (center_image, center_image, 1)
 
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
@@ -134,5 +134,5 @@ for  iter_name, deploy  in zip(all_iter,deploys):
         #sparsity.attrs['resp_coords'] = da.coords.values
         sparsity.to_dataset(name='spar').to_netcdf(sparsity_name)
 
-    if i not in save_inds and os.path.isfile(response_file):
-        os.remove(response_file)
+#    if i not in save_inds and os.path.isfile(response_file):
+#        os.remove(response_file)
