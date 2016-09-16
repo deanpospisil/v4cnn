@@ -116,7 +116,7 @@ def cross_val_SVD_TI(da, rf=None):
             ti_est = np.sum(ti_est)/tot_var
             ti_est_all.append(ti_est)
         else:
-            ti_est_all.append(np.nan)
+            ti_est_all.append(np.nan) 
         ti_est = []
     return ti_est_all
 
@@ -228,7 +228,9 @@ measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
 #measure_list =['ti', 'k', 'inrf', 'no_response_mod']
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
 dmod = xr.open_dataset(fn, chunks={'models': 50, 'shapes': 370}  )['resp']
-cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 30.0]_pos_(64.0, 164.0, 101)bvlc_reference_caffenet' ] 
+cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 30.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet' ] 
+#cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_shuffle_fixed_even_pix_width[24, 30.0]_pos_(64.0, 164.0, 51)bvlc_caffenet_reference_shuffle'] 
+
 pdas = []
 cnns = [ xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=0) , 
          xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=1) , 
@@ -243,7 +245,7 @@ for w, da in zip(widths,cnns):
         for  x in range(len(da.coords['x'])):
             print(x)
             for unit in range(len(da.coords['unit'])):
-                da[:,x,unit] = np.random.permutation(da[:,x,unit].values)
+                da[1:, x, unit] = np.random.permutation(da[1:,x,unit].values)
     print(1)
     da_0 = da.sel(x=da.coords['x'][np.round(len(da.coords['x'])/2.).astype(int)])
     rf = in_rf(da, w=w)
@@ -270,7 +272,9 @@ for w, da in zip(widths,cnns):
     pdas.append(pda)
 d = {key: value for (key, value) in zip(['24','30' ], pdas)}
 pan = pd.Panel(d)
+#pan.to_pickle(top_dir + 'data/an_results/fixed_relu_saved_24_30_pix.p')
 pan.to_pickle(top_dir + 'data/an_results/null_fixed_relu_saved_24_30_pix.p')
+#pan.to_pickle(top_dir + 'data/an_results/null_shuffle_fixed_relu_saved_24_30_pix.p')
 
 '''
 type_change = np.where(np.diff(da.coords['layer'].values))[0]

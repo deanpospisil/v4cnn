@@ -49,25 +49,26 @@ get_sparsity = False
 all_iter = [
 '/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet.caffemodel',
 ]
+base_name = 'bvlc_caffenet_reference_shuffle_layer_'
+all_iter = [base_name+str(layer) for layer in range(7)]
+
 deploys = [
 'deploy_fixing_relu_saved.prototxt',
 ]
+if len(all_iter)>1:
+    deploys = deploys*len(all_iter)
+else:
+    all_iter = all_iter*len(deploys)
 
 img_n_pix = 227
-max_pix_width = [24. , 30.,]
-#boundaries = boundaries * (max_pix_width/biggest_x_y_diff(boundaries))
-#biggest_diff = biggest_x_y_diff(boundaries)
-#boundaries = boundaries + img_n_pix/2.
+max_pix_width = [ 30.,]
 mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
 s = np.array(mat['shapes'][0])
 boundaries = imp.center_boundary(s)
-#just save this as pickle.
-
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
-#scale=[0.45,]
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-x = (center_image-50, center_image+50, 101)
+x = (center_image-50, center_image+50, 51)
 y = (center_image, center_image, 1)
 
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
@@ -80,9 +81,8 @@ for  iter_name, deploy  in zip(all_iter,deploys):
 
     #get response and save
     iter_subname = iter_name.split('/')[-1].split('.')[0]
-    #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])
-   
-    response_description = 'APC362_'+deploy +'_fixed_even_pix_width'+ str(max_pix_width) + '_pos_' + str(x) + iter_subname + '.nc'
+    #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])   
+    response_description = iter_name+ 'APC362_pix_width'+ str(max_pix_width) + '_pos_' + str(x) + iter_subname + '.nc'
 
     response_file = ('/home/dean/Desktop/v4cnn/data/responses/' + response_description)
 
@@ -94,7 +94,7 @@ for  iter_name, deploy  in zip(all_iter,deploys):
     if  not os.path.isfile(response_file) and not_all_files_made:
         da = cf.get_net_resp(base_image_nm,
                              ann_dir,
-                             iter_name.split('net/')[1].split('.')[0],
+                             iter_name,
                              stim_trans_cart_dict,
                              stim_trans_dict,
                              require_provenance=False,
