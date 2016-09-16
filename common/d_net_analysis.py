@@ -222,3 +222,4 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
 
+layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
