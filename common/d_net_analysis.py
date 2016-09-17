@@ -222,6 +222,7 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
 
+
 import pickle
 
 measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
@@ -295,4 +296,3 @@ plt.figure()
 stacked_hist_layers(pda[pda['k']<k_thresh]['ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
 plt.suptitle('ti in rf')
 '''
-
