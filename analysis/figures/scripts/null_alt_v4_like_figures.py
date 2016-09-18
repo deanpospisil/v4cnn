@@ -269,7 +269,7 @@ names = ['24', '30']
 name = names[0]
 
 
-'''
+
 v4ness_nms = ['fixed_relu_saved_24_30_pix.p','null_fixed_relu_saved_24_30_pix.p',
           'null_shuffle_fixed_relu_saved_24_30_pix.p' ]
 
@@ -314,6 +314,12 @@ v4ness = pd.concat(v4ness_list, keys=keys)
 
 v4ness['apc'] = v4ness['apc']**2
 
+kt_v4ness = v4ness[v4ness['k']<k_thresh]
+plt.scatter(((kt_v4ness.loc['alt_net']['ti'] - kt_v4ness.loc['alt_net']['cv_ti'])),kt_v4ness.loc['alt_net']['k'], s=0.1 )
+plt.xlabel('ti-cv_ti');plt.ylabel('k')
+
+
+'''
 title = 'Fraction with RF'
 plt.close('all')
 plt.figure(figsize=(12,5))
