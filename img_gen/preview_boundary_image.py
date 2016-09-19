@@ -64,7 +64,7 @@ import caffe_net_response as cf
 import d_img_process as imp
 
 img_n_pix = 227
-max_pix_width = [96.,]
+max_pix_width = [24.,]
 boundaries = imp.center_boundary(s)
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 shape_ids = range(-1, 370)
@@ -75,9 +75,37 @@ stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids
                                                                 scale=scale,
                                                                 x=x,
                                                                 y=y)
-
+figure_folder = top_dir + 'analysis/figures/images/'
+plt.figure(figsize=(6,12))
+center = 113
+box_lengths = [11,51,99,131,163]
 trans_img_stack =np.array(imp.boundary_stack_transform(stim_trans_cart_dict, base_stack, npixels=227))
-for i , shape in enumerate(trans_img_stack[270:370]):
-    plt.subplot(10,10, i + 1)
-    plt.imshow(shape)
-    plt.xticks([]);plt.yticks([])
+#plot smallest and largest shape
+no_blank_image = trans_img_stack[1:]
+extents = (no_blank_image.sum(1)>0).sum(1)
+plt.subplot(211)
+plt.imshow(no_blank_image[np.argmax(extents)],
+                          interpolation = 'nearest', cmap=plt.cm.Greys_r)
+for box_length in box_lengths:
+    rectangle = plt.Rectangle((center-np.ceil(box_length/2.), center-np.ceil(box_length/2)),
+                               box_length, box_length, fill=False, edgecolor='r')
+    plt.gca().add_patch(rectangle)
+
+plt.subplot(212)
+plt.imshow(no_blank_image[np.argmin(extents)],
+                          interpolation = 'nearest', cmap=plt.cm.Greys_r)
+for box_length in box_lengths:
+    rectangle = plt.Rectangle((center-np.ceil(box_length/2.), center-np.ceil(box_length/2)),
+                               box_length, box_length, fill=False, edgecolor='r')
+    plt.gca().add_patch(rectangle)
+
+plt.grid()
+plt.xticks([]);plt.yticks([])
+plt.savefig(figure_folder + 'widest_narrowest_image' + '.svg')
+
+
+
+#for i , shape in enumerate(trans_img_stack[270:370]):
+#    plt.subplot(5, 5, i + 1)
+#    plt.imshow(shape)
+#    plt.xticks([]);plt.yticks([])

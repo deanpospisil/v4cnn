@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug  9 15:06:55 2016
+Created on Sun Sep 18 12:33:29 2016
 
 @author: dean
 """
@@ -13,26 +13,11 @@ top_dir = top_dir + 'v4cnn/'
 sys.path.append( top_dir + 'common/')
 import matplotlib
 from matplotlib.ticker import FuncFormatter
-
+import pickle
 import xarray as xr
 import apc_model_fit as ac
 import pandas as pd
-import matplotlib.ticker as mtick
-try:
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-except:
-    print('no plot')
-
-def kurtosis(da):
-    #take xarray and return coefficient of variation
-    #expects shapes X unit
-    da = da.transpose('shapes','unit')
-    mu = da.mean('shapes')
-   # k = da.reduce(kurtosis,dim='shapes')
-    sig = da.reduce(np.nanvar, dim='shapes')
-    k = (((da - mu)**4).sum('shapes',skipna=True)/da.shapes.shape[0])/(sig**2)
-    return k
+import matplotlib.pyplot as plt
 
 def in_rf(da, w):
     da = da.transpose('shapes','x', 'unit')
@@ -157,69 +142,27 @@ def SVD_TI(da, rf=None):
             ti_est_all.append(np.nan)
     return ti_est_all
 
-def cnn_measure_to_pandas(da, measures, measure_names):
-    keys = ['layer_label', 'unit']
-    coord = [da.coords[key].values for key in keys]
-    index = pd.MultiIndex.from_arrays(coord, names=keys)
-    pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_names)
+
+with open(top_dir + 'data/an_results/' + 'fixed_relu_saved_24_30_pix.p', 'rb') as f:
+    pan = pickle.load(f)
+    pda = pan['24']
+
+k_thresh = 40
+
+kt_pda = pda[pda['k']<k_thresh]
+most_dif = (kt_pda['ti'] - kt_pda['cv_ti']).dropna().argsort()
 
 
-    return pda
-def tick_format_d(x, pos):
-    if x==0:
-        return('0')
-    else:
-        if x==1:
-            return(str(x).split('.')[0])
-        else:
-            return(np.round(x, 2))
-
-
-def nice_axes(axes, xticks=None, yticks=None, nxticks=5, nyticks=2):
-
-    for i, an_axes in enumerate(axes):
-        if i==len(axes)-1:
-            if yticks==None:
-                an_axes.yaxis.set_major_locator(mtick.LinearLocator(numticks=nyticks, presets=None))
-                an_axes.set_yticks([])
-            else:
-                an_axes.set_yticks(yticks)
-                an_axes.set_yticks([])
-            if xticks==None:
-               an_axes.xaxis.set_major_locator(mtick.LinearLocator(numticks=nxticks, presets=None))
-            else:
-                an_axes.set_xticks(xticks)
-                an_axes.xaxis.set_tick_params(length=0)
-                an_axes.yaxis.set_tick_params(length=0)
-                an_axes.yaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
-            an_axes.xaxis.set_major_formatter(mtick.FuncFormatter(tick_format_d))
-        else:
-            an_axes.set_xticks([])
-            an_axes.set_yticks([])
-
-def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
-                        bins=100, cumulative=False, normed=False):
-    layers = cnn.index.get_level_values('layer_label').unique()
-    if logx:
-        cnn = np.log(cnn.dropna())
-    if maxlim:
-        xlim = [np.min(cnn.dropna().values), np.max(cnn.dropna().values)]
-    for i, layer in enumerate(layers):
-        plt.subplot(len(layers), 1, i+1)
-        vals = cnn.loc[layer].dropna().values.flatten()
-
-
-        plt.hist(vals, log=logy, bins=bins, histtype='step',
-                 range=xlim, normed=normed, cumulative=cumulative)
-        if cumulative:
-            plt.ylim(0,1.1)
-        plt.plot([np.median(vals),]*2, np.array(plt.gca().get_ylim()), color='red')
-        plt.xlim(xlim)
-        plt.gca().set_ylabel(layer, ha='right', rotation=0, labelpad=25)
-        plt.gca().yaxis.set_label_position("right")
-
-    if logx:
-        plt.xlabel('log')
-    nice_axes(plt.gcf().axes)
-
-layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
+colors = ['r', 'g', 'b', 'm', 'k']
+cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 48.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet',
+'APC362_deploy_fixing_relu_saved.prototxt_shuffle_fixed_even_pix_width[24, 30.0]_pos_(64.0, 164.0, 51)bvlc_caffenet_reference_shuffle']
+if 'da' not in locals():
+    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].squeeze().isel(scale=0).load()
+unit_ind = (kt_pda['ti'] - kt_pda['cv_ti']).argmax()
+big_dif = da.sel(unit=most_dif[-10::-1])
+#plt.figure()
+#big_dif.plot()
+#plt.title(str(kt_pda.loc[unit_ind][['ti']]) + '  '+str(kt_pda.loc[unit_ind][['cv_ti']]) )
+#plt.tight_layout()
+inrf = in_rf(big_dif, 24)
+ti_est_all = cross_val_SVD_TI(big_dif, rf=inrf)
