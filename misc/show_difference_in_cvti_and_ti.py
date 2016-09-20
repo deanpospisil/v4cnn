@@ -141,6 +141,15 @@ def SVD_TI(da, rf=None):
         else:
             ti_est_all.append(np.nan)
     return ti_est_all
+def kurtosis(da):
+    #take xarray and return coefficient of variation
+    #expects shapes X unit
+    da = da.transpose('shapes','unit')
+    mu = da.mean('shapes')
+   # k = da.reduce(kurtosis,dim='shapes')
+    sig = da.reduce(np.nanvar, dim='shapes')
+    k = (((da - mu)**4).sum('shapes',skipna=True)/da.shapes.shape[0])/(sig**2)
+    return k
 
 
 with open(top_dir + 'data/an_results/' + 'fixed_relu_saved_24_30_pix.p', 'rb') as f:
@@ -150,7 +159,8 @@ with open(top_dir + 'data/an_results/' + 'fixed_relu_saved_24_30_pix.p', 'rb') a
 k_thresh = 40
 
 kt_pda = pda[pda['k']<k_thresh]
-most_dif = (kt_pda['ti'] - kt_pda['cv_ti']).dropna().argsort()
+most_dif = (kt_pda['ti'] - kt_pda['cv_ti']).dropna().sort(inplace=False)
+unit_ind = (kt_pda['ti'] - kt_pda['cv_ti']).dropna().argmax()
 
 
 colors = ['r', 'g', 'b', 'm', 'k']
@@ -158,11 +168,19 @@ cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0,
 'APC362_deploy_fixing_relu_saved.prototxt_shuffle_fixed_even_pix_width[24, 30.0]_pos_(64.0, 164.0, 51)bvlc_caffenet_reference_shuffle']
 if 'da' not in locals():
     da = xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].squeeze().isel(scale=0).load()
-unit_ind = (kt_pda['ti'] - kt_pda['cv_ti']).argmax()
-big_dif = da.sel(unit=most_dif[-10::-1])
-#plt.figure()
-#big_dif.plot()
-#plt.title(str(kt_pda.loc[unit_ind][['ti']]) + '  '+str(kt_pda.loc[unit_ind][['cv_ti']]) )
-#plt.tight_layout()
-inrf = in_rf(big_dif, 24)
-ti_est_all = cross_val_SVD_TI(big_dif, rf=inrf)
+    da = da.sel(unit=slice(None,None,20))
+#big_dif = da.sel(unit=most_dif.index.get_level_values('unit')[-10:-1])
+##plt.figure()
+##big_dif.plot()
+##plt.title(str(kt_pda.loc[unit_ind][['ti']]) + '  '+str(kt_pda.loc[unit_ind][['cv_ti']]) )
+##plt.tight_layout()
+inrf = in_rf(da, 24)
+ti_est_cv = cross_val_SVD_TI(da, rf=inrf)
+ti_est_ti = SVD_TI(da, rf=inrf)
+k = kurtosis(da.sel(x=114))
+
+df = pd.DataFrame(np.array([np.array(ti_est_cv), np.array(ti_est_ti), np.array(k)]), index=['cv_ti','ti' ,'k']).T
+kt_df = df[df['k']<k_thresh]
+plt.scatter(kt_df['cv_ti'], kt_df['ti'])
+plt.xlim(0,1);plt.ylim(0,1);
+
