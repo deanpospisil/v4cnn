@@ -1,3 +1,4 @@
+'''
 # -*- coding: utf-8 -*-
 """
 Created on Mon Sep 19 10:36:44 2016
@@ -28,7 +29,7 @@ def measure_TIA(unit):
     tot_var = (unit**2).sum()
     s = np.linalg.svd(unit.values, compute_uv=False)[0]
     return (s**2)/tot_var
-    
+
 def permute_unit(unit):
     unit = unit.dropna('x', 'all').dropna('shapes', 'all')
     for x in range(len(unit.coords['x'])):
@@ -37,13 +38,13 @@ def permute_unit(unit):
 
 def gram_schmidt_columns(X):
     Q, R = np.linalg.qr(X)
-    return Q        
-    
+    return Q
+
 
 def normalize_w_f(tia,f):
     return (tia-f)/(1-f)
- 
-#making mean 0, perfectly translation variant unit   
+
+#making mean 0, perfectly translation variant unit
 min_ti_unit = np.concatenate([np.imag(np.fft.rfft(np.eye(5)))[:,1:], np.real(np.fft.rfft(np.eye(5)))[:,1:]], axis =1)
 min_ti_unit = np.concatenate([min_ti_unit, np.zeros((51,4))])
 the_nans = (np.nan*np.ones((np.shape(min_ti_unit)[0],1)))
@@ -60,7 +61,7 @@ max_ti_unit = xr.DataArray(max_ti_unit, dims=['unit','x','shapes'])
 fn = top_dir +'data/responses/v4_ti_resp.nc'
 v4 = xr.open_dataset(fn)['resp'].load()
 
-v4 = v4.transpose('unit', 'x', 'shapes') 
+v4 = v4.transpose('unit', 'x', 'shapes')
 v4 = xr.concat([min_ti_unit, max_ti_unit, v4], dim='unit')
 
 v4 = v4 - v4.mean('shapes')
@@ -92,8 +93,8 @@ tin_f_max_rf_srf = ((tia-f)/(1-f)).values
 
 #f = mean(TI(cell resp permuted))
 n_perms = 20
-tias_mean = [] 
-tias_min = [] 
+tias_mean = []
+tias_min = []
 for unit in v4:
      unit = unit.dropna('x', 'all').dropna('shapes', 'all')
      all_perm_tia = [measure_TIA(permute_unit(unit)) for ind in range(n_perms)]
@@ -126,21 +127,36 @@ for i, axes1 in enumerate(axes):
             ax.scatter(tins.loc[:1].values[:,j],tins.loc[0:1].values[:,i], color=['b','g'], s=5)
         else:
             ax.set_xlim(-0.2,1.1);
-            
-plt.tight_layout()
-#plt.scatter(tia, tia_f_maxrf, s=1);plt.xlim(0,1);plt.ylim(0,1);plt.plot([0,1],[0,1])
-#plt.xlabel('tin f=0');plt.ylabel( 'tin f=max/tot')
-#plt.figure()
-#plt.scatter(tia_faxes_maxrf, tia_f_max_rf_srf, s=1);plt.xlim(0,1);plt.ylim(0,1);plt.plot([0,1],[0,1])
-#plt.xlabel('tin f=max/tot');plt.ylabel( 'tin f=max(rf_srf)/tot')
 
-#
-#plt.figure()
-#plt.scatter(tia, tin_f_tias_mean, s=1);plt.xlim(-1,1);plt.ylim(-1,1);
-#plt.plot([-1,1],[-1,1]);plt.plot([-1,1],[0,0]);
-#plt.xlabel('tia');plt.ylabel('tin_f_tias_mean')
-#
-#
-#
-#
-##f = min(TI(cell resp permuted))
+plt.tight_layout()
+'''
+import xarray as xr
+def kurtosis(da):
+    da = da.dropna('shapes')
+    da = da.transpose('shapes','unit')
+    mu = da.mean('shapes')
+    sig = da.reduce(np.nanvar, dim='shapes')
+    k = (((da - mu)**4).sum('shapes',skipna=True)/da.shapes.shape[0])/(sig**2)
+    return k
+#lets find kurtosis of our SP
+fn = top_dir +'data/responses/v4_ti_resp.nc'
+v4 = xr.open_dataset(fn)['resp'].load()
+v4 = v4.transpose('unit', 'x', 'shapes')
+v4 = v4 - v4.mean('shapes')
+sp = v4.var('x')
+k = kurtosis(sp)
+
+#f = 0
+tia = np.array([measure_TIA(unit) for unit in v4])
+max_rf_var = (v4.dropna('x', 'all')**2).sum('shapes').max('x')
+tot_var = (v4**2).sum(['shapes','x'])
+f = (max_rf_var/tot_var).values
+tin_f_maxrf = (tia-f)/(1-f)
+print(sp.shape)
+print(tin_f_maxrf.shape)
+plt.scatter(k, tia);plt.ylim(0,1);plt.ylabel('tia');plt.xlabel('k');
+print('r = ' +  str(np.corrcoef([k,tia])[0,1]))
+
+plt.figure()
+plt.scatter(k, tin_f_maxrf);plt.ylim(0,1);plt.ylabel('tin f=max_rf_var');plt.xlabel('k');
+print('r = ' +  str(np.corrcoef([k,tin_f_maxrf])[0,1]))
