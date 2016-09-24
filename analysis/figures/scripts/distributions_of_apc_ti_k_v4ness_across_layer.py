@@ -12,7 +12,6 @@ sys.path.append( top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn/'
 sys.path.append( top_dir + 'common/')
 import matplotlib
-from matplotlib.ticker import FuncFormatter
 import pickle
 import xarray as xr
 import apc_model_fit as ac
