@@ -52,7 +52,7 @@ for f in fnum:
 cell_resps = [np.dstack(cell).T.reshape(cell.shape[0], np.prod(cell[0].shape))
              for cell in resps]
 
-## putting yasmin data into data_array
+# putting yasmin data into data_array
 lsxr = [xr.DataArray(aresp, dims=['x','shapes']) for aresp in cell_resps]
 resp= xr.concat(xr.align(*lsxr, join='outer'), dim='unit')
 resp.to_dataset('resp').to_netcdf(top_dir + 'data/an_results/v4_ti_resp.nc')
