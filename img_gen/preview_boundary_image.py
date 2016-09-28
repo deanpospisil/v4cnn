@@ -56,10 +56,9 @@ def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, n
 
 
     return response
-
+import d_curve as dc
 s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
 base_stack = dc.center_boundary(s)
-import d_curve as dc
 import caffe_net_response as cf
 import d_img_process as imp
 
