@@ -100,8 +100,8 @@ def vis_square(data, padsize=0, padval=0):
     cbar.ax.yaxis.set_ticks([0,.25,.5,.75, 1])
     cbar.ax.set_yticklabels(['0', .25, .5, .75, 1])
     cbar.solids.set_rasterized(True)
-    plt.tight_layout()
-    plt.show()
+    #plt.tight_layout()
+    #plt.show()
     return data
 
 
@@ -200,27 +200,27 @@ def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, xbins=None, ybins=None
     ax3.set_xlim(xlim)
     ax1.set_ylim(ylim)
     #nice_axes(fig.axes)
-    plt.show()
+    #plt.show()
     return fig
 
 def correct_bins_for_hist(bins):
     dif = np.diff(bins)
-    bin_inds = range(len(bins)) + [len(bins)-1,]
-    dif_inds = [0,] + range(len(dif)) + [len(dif)-1,]
+    bin_inds = list(range(len(bins))) + [len(bins)-1,]
+    dif_inds = [0,] + list(range(len(dif))) + [len(dif)-1,]
     difs_to_add = dif[dif_inds]
     difs_to_add[:-1] = -difs_to_add[:-1]
     bins = bins[bin_inds]
     bins = bins + difs_to_add/2.
     return bins
 
-def plot_resp_on_shapes(imgStack, resp, description, image_square = 19):
+def plot_resp_on_shapes(imgStack, resp, image_square = 19):
     resp_sc = (resp.values*0.8 +.2)
     imgStack = imgStack*resp_sc.reshape(362,1,1)
     #sort images
     sortStack = imgStack[list(reversed(np.argsort(resp_sc))),:,:]
     sortStack = np.array([imp.centeredCrop(img, 64, 64) for img in sortStack])
     data = vis_square(sortStack[0:image_square**2])
-    plt.title('Ranked response. ' + description, fontsize='x-large')
-    plt.tight_layout()
-    plt.show()
+    #plt.title('Ranked response. ' + description, fontsize='x-large')
+#    plt.tight_layout()
+#    plt.show()
     return data
