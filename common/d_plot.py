@@ -80,8 +80,8 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
 
 def vis_square(data, padsize=0, padval=0):
     plt.figure(figsize = (10,7.8))
-    data -= data.min()
-    data /= data.max()
+#    data -= data.min()
+#    data /= data.max()
 
     # force the number of filters to be square
     n = int(np.ceil(np.sqrt(data.shape[0])))
@@ -91,14 +91,12 @@ def vis_square(data, padsize=0, padval=0):
     # tile the filters into an image
     data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
     data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
-
-    plt.xticks([])
-    plt.yticks([])
-    plt.imshow(data, interpolation='bicubic', cmap = cm.Greys_r)
+    plt.xticks([]);plt.yticks([])
+    plt.imshow(data, interpolation='nearest', cmap = cm.Greys_r)
     cbar=plt.colorbar(shrink=0.8)
-    cbar.ax.set_ylabel('Normalized Firing Rate', rotation= 270, labelpad=15, fontsize = 15,)
-    cbar.ax.yaxis.set_ticks([0,.25,.5,.75, 1])
-    cbar.ax.set_yticklabels(['0', .25, .5, .75, 1])
+    cbar.ax.set_ylabel('Firing Rate', rotation= 270, labelpad=15, fontsize = 15,)
+#    cbar.ax.yaxis.set_ticks([0,.25,.5,.75, 1])
+#    cbar.ax.set_yticklabels(['0', .25, .5, .75, 1])
     cbar.solids.set_rasterized(True)
     #plt.tight_layout()
     #plt.show()
