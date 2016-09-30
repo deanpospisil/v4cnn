@@ -250,11 +250,11 @@ def process_V4(v4_resp_apc, v4_resp_ti, dmod):
     v4 = pd.concat([v4pdti,v4pdapc])
     return v4
 colors = ['r', 'g', 'b', 'm', 'k']
-cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 48.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet',
+cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 30.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet',
 'APC362_deploy_fixing_relu_saved.prototxt_shuffle_fixed_even_pix_width[24, 30.0]_pos_(64.0, 164.0, 51)bvlc_caffenet_reference_shuffle']
 
-da = xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=0)
-da = da.sel(unit=slice(0,None,1)).squeeze()
+da = xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp']
+da = da.sel(unit=slice(0, None, 1)).squeeze()
 middle = np.round(len(da.coords['x'])/2.)
 da_0 = da.sel(x=da.coords['x'][np.round(len(da.coords['x'])/2.).astype(int)])
 
