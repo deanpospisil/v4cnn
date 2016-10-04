@@ -190,6 +190,7 @@ def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
         base_stack = dc.center_boundary(s)
 
     has_image_sha = False
+    image_sha = None
     dir_filenames = os.listdir(img_dir)
     #get the current sha from the file
     for name in dir_filenames:
@@ -206,7 +207,7 @@ def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
     indices_for_net_unit_vec = get_indices_for_net_unit_vec(net)
     da = net_resp_2d_to_xray_nd(net_resp, stim_trans_dict, indices_for_net_unit_vec)
 
-    if require_provenance == True:
+    if require_provenance:
         #commit the state of the directory and get is sha identification
         sha = dm.provenance_commit(top_dir)
         da.attrs['resp_sha'] = sha

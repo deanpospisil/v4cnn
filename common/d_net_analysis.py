@@ -229,15 +229,13 @@ measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
 #measure_list =['ti', 'k', 'inrf', 'no_response_mod']
 fn = top_dir + 'data/models/' + 'apc_models_362.nc'
 dmod = xr.open_dataset(fn, chunks={'models': 50, 'shapes': 370}  )['resp']
-cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 30.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet' ] 
-#cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_shuffle_fixed_even_pix_width[24, 30.0]_pos_(64.0, 164.0, 51)bvlc_caffenet_reference_shuffle'] 
+cnn_names =['']
+
 
 pdas = []
-cnns = [ xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=0) , 
-         xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=1) , 
-]
+cnns = [xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=1) , ]
 null=True
-widths = [24.,30.]
+widths = [30.,]
 for w, da in zip(widths,cnns):
     print(w)
     np.random.seed(1)
