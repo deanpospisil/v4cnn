@@ -78,6 +78,35 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
 
+def stacked_steps_hist(cnn, logx=False, logy=False, xlim=None, maxlim=False,
+                        bins=100, cumulative=False, normed=False,
+                        extra_subplot=False, title=None):
+    layers = cnn.index.get_level_values('layer_label').unique()
+    if logx:
+        cnn = np.log10(cnn.dropna())
+        xlim = np.log10(xlim)
+    if maxlim:
+        xlim = [np.min(cnn.dropna().values), np.max(cnn.dropna().values)]
+
+    n_subplot = len(layers)+extra_subplot
+    for i, layer in enumerate(layers):
+        plt.subplot(n_subplot, 1, i+1)
+
+        if title!=None and i==0:
+            plt.title(title)
+        vals = cnn.loc[layer].dropna().values.flatten()
+        plt.hist(vals, log=logy, bins=bins, histtype='step',
+                 range=xlim, normed=normed, cumulative=cumulative)
+        if cumulative:
+            plt.ylim(0,1.1)
+        plt.plot([np.median(vals),]*2, np.array(plt.gca().get_ylim()), color='red')
+        plt.xlim(xlim)
+        plt.gca().set_ylabel(layer, ha='right', rotation=0, labelpad=25)
+        plt.gca().yaxis.set_label_position("right")
+    if logx:
+        plt.xlabel('log')
+    nice_axes(plt.gcf().axes)
+
 def vis_square(data, padsize=0, padval=0):
     plt.figure(figsize = (10,7.8))
 #    data -= data.min()
@@ -139,11 +168,12 @@ def find_count_unique_rows(a):
 
     return unique, u_counts
 
+    
 def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, xbins=None, ybins=None,
                         title=None):
     #first check if there is overlap in x, y
     fig = plt.figure()
-    gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
+    gs = gridspec.GridSpec(2, 2, width_ratios=[0.5,4], height_ratios=[4,0.5] )
     ax1 = plt.subplot(gs[0])
     ax2 = plt.subplot(gs[1])
     ax3 = plt.subplot(gs[3])
@@ -154,7 +184,7 @@ def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, xbins=None, ybins=None
 
     if np.max(u_count)>1:#check there are in fact overlapping  points
         counts_s = (counts/np.double(max(counts))*100.)
-        ax2.scatter(unique[:,0], unique[:,1], s=counts_s, alpha=0.7)
+        ax2.scatter(unique[:,0], unique[:,1], s=counts_s, alpha=0.7, facecolors='none')
 
         u_count_s = np.sort(np.unique(counts_s))
 
@@ -166,39 +196,65 @@ def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, xbins=None, ybins=None
             cnt = [np.min(u_count), np.max(u_count)]
 
         for_legend={'plt':[], 'label':[]}
-        [for_legend['plt'].append(plt.scatter([],[], s=a_size)) for a_size in size]
+        [for_legend['plt'].append(plt.scatter([],[], s=a_size, facecolors='none')) for a_size in size]
         [for_legend['label'].append(str(a_cnt)) for a_cnt in cnt]
 
         # Put a legend to the right of the current axis
         ax2.legend(for_legend['plt'], for_legend['label'], frameon=True,
-                         fontsize='medium', loc = 'top left', handletextpad=1,
+                         fontsize='medium', handletextpad=1,
                          title='Counts', scatterpoints = 1,fancybox=True,
                          framealpha=0.5, bbox_to_anchor=(-.15, -0.1))
     else:
         ax2.scatter(x, y)
 
-    ax1.hist(y, orientation='horizontal', bins=ybins, range=ylim, align='mid')
-    ax3.hist(x, orientation='vertical', bins=xbins, range=xlim, align='mid')
+    n,bins,_  = ax1.hist(y, orientation='horizontal', bins=ybins, range=ylim, align='mid', histtype='step')
+    ax1.set_xlim(0, np.max(n)+np.max(n)*0.1)
+    ax1.set_xticks([0, max(n)])
 
+    n, bins, _  = ax3.hist(x, orientation='vertical', bins=xbins, range=xlim, align='mid',histtype='step')
+    ax3.set_ylim(0, np.max(n)+np.max(n)*0.1)
+    ax3.set_yticks([0, max(n)])
+
+    ax3.spines['top'].set_visible(False)
+    ax3.spines['right'].set_visible(False)
+    ax3.get_xaxis().tick_bottom()
+    ax3.get_yaxis().tick_left()
+    
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.get_xaxis().tick_bottom()
+    ax1.get_yaxis().tick_left()
+    
+    
     ax2.set_xlim(xlim)
     ax2.set_ylim(ylim)
-    ax2.set_title(title)
+    ax2.set_title(title, bbox=dict(facecolor='none', alpha=0.5))
     ax2.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
     ax2.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
     ax2.xaxis.set_ticklabels([])
     ax2.yaxis.set_ticklabels([])
 
-    ax1.xaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
-    ax1.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+    ax2.spines['bottom'].set_visible(False)
+    ax2.spines['left'].set_visible(False)
+    ax2.get_xaxis().tick_bottom()
+    ax2.get_yaxis().tick_left()
+    
+    #ax1.xaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
+    #ax1.yaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
     ax1.yaxis.set_label_text(titley)
 
-    ax3.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
-    ax3.yaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
+    #ax3.xaxis.set_major_locator(mtick.LinearLocator(numticks=5, presets=None))
+    #ax3.yaxis.set_major_locator(mtick.LinearLocator(numticks=2, presets=None))
     ax3.xaxis.set_label_text(titlex)
     ax3.set_xlim(xlim)
     ax1.set_ylim(ylim)
-    #nice_axes(fig.axes)
-    #plt.show()
+    
+    ax1.tick_params('both', length=0, width=0, which='both')
+    ax2.tick_params('both', length=0, width=0, which='both')
+    ax3.tick_params('both', length=0, width=0, which='both')
+
     return fig
 
 def correct_bins_for_hist(bins):
