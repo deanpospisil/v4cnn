@@ -55,10 +55,10 @@ def apc_models(shape_dict_list=[{'curvature': None, 'orientation': None} ],
         shape_dict_list[ind] = a_shape
 
     #initialize our distributions
-    von_rv = st.vonmises( kappa = model_params_dict['or_sd']**-1 , loc = model_params_dict['or_mean'] )
+    von_rv = st.vonmises(kappa = model_params_dict['or_sd']**-1 , loc = model_params_dict['or_mean'])
     #von_rv = st.norm( scale = model_params_dict['or_sd'] , loc = model_params_dict['or_mean'] )
 
-    norm_rv = st.norm( scale = model_params_dict['cur_sd'] , loc = model_params_dict['cur_mean'] )
+    norm_rv = st.norm(scale=model_params_dict['cur_sd'], loc = model_params_dict['cur_mean'])
 
     model_resp = []
     #get responses to all points for each axis ap and c then their product, then the max of all those points as the resp

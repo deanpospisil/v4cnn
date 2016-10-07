@@ -95,7 +95,6 @@ def find_count_unique_rows(a):
 
 def scatter_w_marginals(x, y, titlex, titley, xlim, ylim, xbins=None, ybins=None,
                         title=None):
-
     #first check if there is overlap in x, y
     fig = plt.figure()
     gs = gridspec.GridSpec(2, 2, width_ratios=[1,4], height_ratios=[4,1] )
@@ -255,7 +254,6 @@ rthresh=0.55
 
 ybins_cur = correct_bins_for_hist(np.unique(dmod.coords['cur_sd']))
 xbins_cur = correct_bins_for_hist(np.unique(dmod.coords['cur_mean']))
-
 ybins_or = correct_bins_for_hist(np.unique(dmod.coords['or_sd'].values/(2*np.pi))*360)
 xbins_or = correct_bins_for_hist((((np.unique(dmod.coords['or_mean'].values)/(2*np.pi))*360)%360))
 
