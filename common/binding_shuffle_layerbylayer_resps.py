@@ -19,6 +19,7 @@ import apc_model_fit as ac
 import pandas as pd
 import matplotlib.ticker as mtick
 try:
+    import matplotlib.pyplot as plt
     import matplotlib.cm as cm
 except:
     print('no plot')
@@ -40,6 +41,8 @@ def in_rf(da, w):
         da = da.drop(-1, dim='shapes')
     except:
         base_line = 0
+
+
     da_bls = da - base_line#subtract off baseline
     da_var = ((da_bls)**2).sum('shapes')
     had_resp = da_var > 0
@@ -47,6 +50,8 @@ def in_rf(da, w):
     step_width = np.diff(da_var.coords['x'].values)[1]
     #add this to the right alt, and subtract it from the left alt
     min_steps = int(np.ceil(w /step_width))
+
+
     in_rf = np.zeros(had_resp.T.values.shape)
     n_steps = len(da_var.coords['x'].values)
     rf_pos_all = []
@@ -216,45 +221,78 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
     if logx:
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
- 
-def ti_av_cov(da, rf=None):
-    da = da.transpose('unit', 'x', 'shapes')
-    try:
-        da = da.drop(-1, dim='shapes')
-    except:
-        print('no baseline, ie no shape indexed as -1')
-    if type(rf)==type(None):
-        rf = np.ones(da.shape[:2])
-        no_rf = True
-    else:
-        no_rf = False
 
-    ti_est_all = []
-    counter = 0
-    da = da - da.mean('shapes')
-    resp = da.values
+import pickle
 
-    for unit_resp, unit_in_rf in zip(resp, rf):
-        if counter%100 == 0:
-            print(counter)
-        counter = counter + 1
+measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
+#measure_list =['ti', 'k', 'inrf', 'no_response_mod']
+fn = top_dir + 'data/models/' + 'apc_models_362.nc'
+dmod = xr.open_dataset(fn, chunks={'models': 50, 'shapes': 370}  )['resp']
+cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_fixed_even_pix_width[24.0, 30.0]_pos_(64.0, 164.0, 51)bvlc_reference_caffenet' ] 
+#cnn_names =['APC362_deploy_fixing_relu_saved.prototxt_shuffle_fixed_even_pix_width[24, 30.0]_pos_(64.0, 164.0, 51)bvlc_caffenet_reference_shuffle'] 
 
-        if sum(unit_in_rf)>2:
-            if not no_rf:
-                 unit_resp = unit_resp[unit_in_rf.astype(bool), :]
-            dr = xr.DataArray(unit_resp)
-            dr = dr.dropna('dim_1',how='all')
-            dr = dr.dropna('dim_0',how='all')
-            unit_resp = dr.values
-            cov = np.dot(unit_resp, unit_resp.T)
-            cov[np.diag_indices_from(cov)] = 0
-            numerator = np.sum(np.triu(cov))
-            vlength = np.linalg.norm(unit_resp, axis=1)
-            max_cov = np.outer(vlength.T, vlength)
-            max_cov[np.diag_indices_from(max_cov)] = 0
-            denominator= np.sum(np.triu(max_cov))
-            frac_var = numerator/denominator
-            ti_est_all.append(frac_var)
-        else:
-            ti_est_all.append(np.nan)
-    return ti_est_all
+pdas = []
+cnns = [ xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=0) , 
+         xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp'].isel(scale=1) , 
+]
+null=True
+widths = [24.,30.]
+for w, da in zip(widths,cnns):
+    print(w)
+    np.random.seed(1)
+    da = da.sel(unit=slice(0, None, None)).load().squeeze()
+    if null:
+        for  x in range(len(da.coords['x'])):
+            print(x)
+            for unit in range(len(da.coords['unit'])):
+                da[1:, x, unit] = np.random.permutation(da[1:,x,unit].values)
+    print(1)
+    da_0 = da.sel(x=da.coords['x'][np.round(len(da.coords['x'])/2.).astype(int)])
+    rf = in_rf(da, w=w)
+    measures = []
+    if 'apc' in measure_list:	
+        measures.append(ac.cor_resp_to_model(da_0.chunk({'shapes': 370}), dmod, fit_over_dims=None, prov_commit=False).values)
+    if 'ti' in measure_list:
+        measures.append(SVD_TI(da, rf))
+    if 'ti_orf' in measure_list:
+        measures.append(SVD_TI(da))
+    if 'cv_ti' in measure_list:
+        measures.append(cross_val_SVD_TI(da, rf))
+    if 'k' in measure_list:		
+        measures.append(list(kurtosis(da_0).values))
+    if 'in_rf' in measure_list:
+        measures.append(np.sum(rf,1))
+    if 'no_response_mod' in measure_list:
+        measures.append((((da-da.mean('shapes'))**2).sum(['shapes','x'])==0).values)
+
+    keys = ['layer_label', 'unit']
+    coord = [da_0.coords[key].values for key in keys]
+    index = pd.MultiIndex.from_arrays(coord, names=keys)
+    pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_list)
+    pdas.append(pda)
+d = {key: value for (key, value) in zip(['24','30' ], pdas)}
+pan = pd.Panel(d)
+#pan.to_pickle(top_dir + 'data/an_results/fixed_relu_saved_24_30_pix.p')
+pan.to_pickle(top_dir + 'data/an_results/null_fixed_relu_saved_24_30_pix.p')
+#pan.to_pickle(top_dir + 'data/an_results/null_shuffle_fixed_relu_saved_24_30_pix.p')
+
+'''
+type_change = np.where(np.diff(da.coords['layer'].values))[0]
+type_label = da.coords['layer_label'].values[type_change].astype(str)
+plt.xticks(type_change, type_label, rotation='vertical', size = 'small')
+plt.figure()
+k_thresh = 40
+plt.scatter(pda[pda['k']<k_thresh]['cv_ti'], pda[pda['k']<40]['ti'], alpha=1, s=2)
+plt.plot([0,1],[0,1])
+#plt.close('all')
+plt.figure()
+stacked_hist_layers(pda[pda['k']<k_thresh]['cv_ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+plt.suptitle('cv ti in rf')
+plt.figure()
+stacked_hist_layers(pda[pda['k']<k_thresh]['ti_orf'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+plt.suptitle('ti all pos')
+plt.figure()
+stacked_hist_layers(pda[pda['k']<k_thresh]['ti'].dropna(), logx=False, logy=False, xlim=[0,1], maxlim=False, bins=100)
+plt.suptitle('ti in rf')
+'''
+
