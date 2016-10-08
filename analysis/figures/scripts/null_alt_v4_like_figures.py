@@ -19,11 +19,13 @@ import xarray as xr
 import apc_model_fit as ac
 import pandas as pd
 import matplotlib.ticker as mtick
+
 try:
     import matplotlib.pyplot as plt
     import matplotlib.cm as cm
 except:
     print('no plot')
+
 def kurtosis(da):
     #take xarray and return coefficient of variation
     #expects shapes X unit
@@ -269,7 +271,6 @@ names = ['24', '30']
 name = names[0]
 
 
-
 v4ness_nms = ['fixed_relu_saved_24_30_pix.p','null_fixed_relu_saved_24_30_pix.p',
           'null_shuffle_fixed_relu_saved_24_30_pix.p' ]
 
@@ -303,10 +304,43 @@ if 'dmod' not in locals():
         v4_resp_apc_null[:,unit] = np.random.permutation(v4_resp_apc[:,unit].values)
 
     null_v4 = process_V4(v4_resp_apc_null, v4_resp_ti_null, dmod)
+rf = None
+da = v4_resp_ti.transpose('unit', 'x', 'shapes')
+try:
+   da = da.drop(-1, dim='shapes')
+except:
+    print('no baseline, ie no shape indexed as -1')
+
+if type(rf)==type(None):
+    rf = np.ones(da.shape[:2])
+    no_rf = True
+else:
+    no_rf = False
+
+ti_est_all = []
+counter = 0
+da = da - da.mean('shapes')
+resp = da.values
+
+for unit_resp, unit_in_rf in zip(resp, rf):
+    if counter%100 == 0:
+        print(counter)
+    counter = counter + 1
+
+    if sum(unit_in_rf)>2:
+        if not no_rf:
+             unit_resp = unit_resp[unit_in_rf.astype(bool), :]
+        dr = xr.DataArray(unit_resp)
+        dr = dr.dropna('dim_1',how='all')
+        dr = dr.dropna('dim_0',how='all')
+        unit_resp = dr.values
+        cov = np.sum(np.dot(unit_resp, unit_resp.T))
+        ti_est_all.append(frac_var)
+    else:
+        ti_est_all.append(np.nan)
 
 
-
-
+'''
 v4ness_list.append(alt_v4)
 v4ness_list.append(null_v4)
 keys=['alt_net', 'null_resp','null_net', 'alt_v4', 'null_v4']
@@ -319,7 +353,6 @@ plt.scatter(((kt_v4ness.loc['alt_net']['ti'] - kt_v4ness.loc['alt_net']['cv_ti']
 plt.xlabel('ti-cv_ti');plt.ylabel('k')
 
 
-'''
 title = 'Fraction with RF'
 plt.close('all')
 plt.figure(figsize=(12,5))
