@@ -116,7 +116,7 @@ def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, n
     return response
 
 def stim_trans_generator(shapes=None, blur=None, scale=None,
-                         x=None, y=None, rotation=None):
+                         x=None, y=None, amp=None, rotation=None):
 #takes descrptions of ranges for different transformations (start, stop, npoints)
 #produces a cartesian dictionary of those.
     stim_trans_dict = ordDict()
@@ -138,7 +138,9 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
         stim_trans_dict['y'] = np.linspace(*y)
     if not rotation is None :
         stim_trans_dict['rotation'] = np.linspace(*rotation)
-    # get all dimensions, into a dict
+    if not amp is None:
+        stim_trans_dict['amp'] = np.linspace(*(100,255,2))
+# get all dimensions, into a dict
     stim_trans_cart_dict = dm.cartesian_prod_dicts_lists( stim_trans_dict )
     return stim_trans_cart_dict, stim_trans_dict
 

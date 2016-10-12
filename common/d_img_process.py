@@ -324,13 +324,12 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
     base_stack = []
     n_imgs = np.size(imgDict['shapes'], 0)
     for ind in range(n_imgs):
-        if imgDict['shapes'][ind] !=-1:
+        if imgDict['shapes'][ind] !=-1:#-1 means a blank image
 
             transformed_boundary = shape_boundary[imgDict['shapes'][ind]]
 
             if 'scale' in imgDict:
                 transformed_boundary = transformed_boundary * imgDict['scale'][ind]
-    #        if 'rot' in imgDict:
 
             if 'x' and 'y' in imgDict:
                 x = imgDict['x'][ind]
@@ -344,10 +343,15 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
             elif 'y'  in imgDict:
                 y = imgDict['y'][ind]
                 transformed_boundary = transformed_boundary + [0, y]
-
-            base_stack.append(255. * boundary_to_mat_by_round(transformed_boundary,
+            if 'amp' in imgDict:
+                base_stack.append(imgDict['amp'][ind] * boundary_to_mat_by_round(transformed_boundary,
                                                               img_n_pix=npixels,
                                                               fill=True))
+            else:
+                base_stack.append(255. * boundary_to_mat_by_round(transformed_boundary,
+                                                              img_n_pix=npixels,
+                                                              fill=True))
+        
         else:
             base_stack.append(np.zeros((npixels, npixels)))
 
