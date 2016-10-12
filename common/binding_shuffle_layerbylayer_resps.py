@@ -11,16 +11,12 @@ sys.path.append(top_dir+ 'v4cnn/')
 sys.path.append( top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn/'
 sys.path.append( top_dir + 'common/')
-import matplotlib
-from matplotlib.ticker import FuncFormatter
-
 import xarray as xr
 import apc_model_fit as ac
 import pandas as pd
 import matplotlib.ticker as mtick
 try:
     import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
 except:
     print('no plot')
 
@@ -222,7 +218,6 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
         plt.xlabel('log')
     nice_axes(plt.gcf().axes)
 
-import pickle
 
 measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
 #measure_list =['ti', 'k', 'inrf', 'no_response_mod']
