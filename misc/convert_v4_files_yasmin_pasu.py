@@ -63,8 +63,8 @@ m = l.loadmat(top_dir + 'data/responses/V4_370PC2001.mat')
 v4=m['resp'][0][0]
 v4_da = xr.DataArray(v4.T, dims=['shapes', 'unit']).chunk()
 #adjustment for repeats [ 14, 15, 16,17, 318, 319, 320, 321]
-a = np.hstack((range(14), range(18,318)))
-a = np.hstack((a, range(322, 370)))
-v4_da = v4_da[a, :]
+#a = np.hstack((range(14), range(18,318)))
+#a = np.hstack((a, range(322, 370)))
+#v4_da = v4_da[a, :]
 v4_da = v4_da.to_dataset('resp')
-v4_da.to_netcdf(top_dir + 'data/responses/V4_362PC2001.nc')
+v4_da.to_netcdf(top_dir + 'data/responses/V4_370PC2001.nc')

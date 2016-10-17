@@ -83,14 +83,19 @@ def small_mult_hist(x, labels, scale=1):
     sigfig = 1
     max_list = np.zeros((m, len(x)))
     min_list = np.zeros((m, len(x)))
+    max_n_list= np.zeros((m, len(x)))
     for i_an_x, an_x in enumerate(x):
         for x_col, pos in zip(an_x, range(m)):
             var = np.array(x_col)
             max_list[pos, i_an_x] = np.max(var)
             min_list[pos, i_an_x] = np.min(var)
+            n, bins = np.histogram(var, bins=100, normed=False) 
+            n =  n/float(len(var))
+            max_n_list[pos, i_an_x] = np.max(n)
             
     max_list = np.max(max_list, 1)
     min_list = np.min(min_list, 1)
+    max_n_list = np.max(max_n_list, 1)
 
     for an_x in x:
         for x_col, pos in zip(an_x, range(m)):
@@ -98,27 +103,41 @@ def small_mult_hist(x, labels, scale=1):
             var = np.array(x_col)
             the_range = (min_list[pos], max_list[pos])
             n, bins = np.histogram(var, bins=100, normed=False) 
-            n =  n/float(len(var)-1);n = [0,] + list(n) + [0,];
+            n =  n/float(len(var));
+            n = [0,] + list(n) + [0,];
             bins = [bins[0], ] + list(bins)
-            ax.step(bins, n, where='mid', lw=0.5)
+            
+            ax.step(bins, n, where='mid', lw=0.5, alpha=0.7)
             ax.semilogy(nonposy='clip')
-            ax.set_ylim(0.5/float(len(var)-1), np.max(n))
+            ax.set_ylim(0.5/float(len(var)-1), max_n_list[pos])
             naked_plot([ax,])
             
-            ax.set_xlim(-np.max(np.abs(the_range)), np.max(np.abs(the_range)))
+            ax.set_xlim(-np.max(np.abs(the_range)), np.max(np.abs(the_range))+np.max(np.abs(the_range))*0.001)
             ax.spines['bottom'].set_visible(True)
             ax.spines['bottom'].set(lw=0.5)
             ax.spines['bottom'].set_bounds(-max(np.abs(the_range)), max(np.abs(the_range)))
             ax.set_xticks([the_range[0], 0, the_range[1]])
-            ax.set_xticklabels([np.round(the_range[0],sigfig), ' ',
+            the_min = np.round(the_range[0],sigfig)
+            if np.isclose(the_min,0):
+                the_min = '0'
+            ax.set_xticklabels([the_min, ' ',
                                 np.round(the_range[1],sigfig)])
-            ax.set_ylabel(str(labels[pos]), rotation='horizontal', 
+            ax.set_ylabel(str(labels[pos]) +'\n'+str(int(len(var)/370.)), rotation='horizontal', 
                          labelpad=fontsize*3, fontsize=fontsize)
+            
             ax.yaxis.set_label_position('right')
             ax.xaxis.set_ticks_position('bottom')
+            
+            ax.spines['left'].set_visible(True)
+            ax.spines['left'].set(lw=0.5)
             ax.yaxis.set_ticks_position('left')
-            ax.set_yticks([np.max(n),1])
-            ax.set_yticklabels([np.round(np.max(n), 2),1])
+            ax.tick_params('y', length=0, width=0, which='minor')
+            
+            ax.set_yticks([1./len(var), max_n_list[pos],])
+            if pos == 0:
+                ax.set_yticklabels(['1 unit', np.round(max_n_list[pos], 2),])
+            else:
+                ax.set_yticklabels([' ', np.round(max_n_list[pos], 2),])
             #ax.set_yticklabels([])
             
             y_hists.append(ax) 
@@ -167,9 +186,8 @@ def small_mult_scatter_w_marg_pd(x, y):
         scatters.append(_)
           
     naked_plot(scatters)
-    
+'''    
     return scatters, x_hists, y_hists
-'''
 goforit = False
 if 'fit_best_mods_pd' not in locals() or goforit:
     v4_name = 'V4_362PC2001'
@@ -214,7 +232,7 @@ for name in names:
     cnn = xr.open_dataset(top_dir + 'data/responses/' + name)['resp']
     cnn = cnn.sel(x=114).squeeze()
     cnn = cnn.transpose('unit', 'shapes')
-
+    cnn = cnn.drop(-1,'shapes')
     all_lays = cnn.coords['unit'].layer_label.values.astype(str)
     unique_inds = np.unique(all_lays, return_index=True)[1]
     layers = [all_lays[ind] for ind in np.sort(unique_inds)]
@@ -226,9 +244,14 @@ for name in names:
     cnn_val_lists.append([cnn[a_layer==all_lays,].values.flatten() for a_layer in layers])
     
 hists , n_list = small_mult_hist(cnn_val_lists, layers)
-hists[0].legend(['32', '64'], frameon=0)
+hists[0].legend(['32', '64'], frameon=0, fontsize='small', title='Pix Width')
+hists[0].set_xlabel('Response')
+hists[0].annotate('% (log-axis)', xy=(-0.1, 0.4), xycoords='axes fraction', 
+                    rotation='vertical', ha='center',va='bottom', fontsize='x-small')
 plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/' + '32_64_pix_response_dist.eps')
+plt.savefig(top_dir + 'analysis/figures/images/' + '32_64_pix_response_dist.pdf')
+
+
 
 name = 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(114.0, 114.0, 1)_amp_(100, 255, 2).nc'
 cnn = xr.open_dataset(top_dir + 'data/responses/' + name)['resp']
@@ -236,6 +259,7 @@ cnn = cnn.squeeze()
 cnns = cnn.transpose('amp', 'unit', 'shapes')
 cnn_val_lists = []
 for cnn in cnns:
+    cnn = cnn.drop(-1,'shapes')
     all_lays = cnn.coords['unit'].layer_label.values.astype(str)
     unique_inds = np.unique(all_lays, return_index=True)[1]
     layers = [all_lays[ind] for ind in np.sort(unique_inds)]
@@ -243,14 +267,16 @@ for cnn in cnns:
     cnn_val_lists.append([cnn[a_layer==all_lays,].values.flatten() for a_layer in layers])
     
 hists , n_list = small_mult_hist(cnn_val_lists, layers)
-hists[0].legend(['100', '255'], frameon=0, title='')
+hists[0].legend(['100', '255'], frameon=0, title='Amplitude', fontsize='small')
+hists[0].set_xlabel('Response')
+hists[0].annotate('% (log-axis)', xy=(-0.1, 0.4), xycoords='axes fraction', 
+                    rotation='vertical', ha='center',va='bottom', fontsize='x-small')
 plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/' + '100_255_amp_response_dist.eps')
-'''
+plt.savefig(top_dir + 'analysis/figures/images/' + '100_255_amp_response_dist.pdf')
 
-names = [ 'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc',
-'bvlc_reference_caffenet_nat_image_resp_371.nc',
-]
+
+names = [ 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51).nc',
+'bvlc_reference_caffenet_nat_image_resp_371.nc',]
 cnn = xr.open_dataset(top_dir + 'data/responses/' + names[0])['resp']
 cnn = cnn.sel(x=114).squeeze()
 cnn = cnn.transpose('unit', 'shapes')
@@ -262,7 +288,10 @@ cnns = [cnn1,cnn2]
 cnn_val_lists = []
 for cnn in cnns:
     cnn = cnn.transpose('unit', 'shapes')
-
+    try:
+        cnn = cnn.drop(-1,'shapes')
+    except:
+        cnn = cnn.drop(0,'shapes')
     all_lays = cnn.coords['unit'].layer_label.values.astype(str)
     unique_inds = np.unique(all_lays, return_index=True)[1]
     layers = [all_lays[ind] for ind in np.sort(unique_inds)]
@@ -270,9 +299,34 @@ for cnn in cnns:
     cnn_val_lists.append([cnn[a_layer==all_lays,].values.flatten() for a_layer in layers])
 
 hists , n_list = small_mult_hist(cnn_val_lists, layers)
-hists[0].legend(['APC', 'ImageNet'], frameon=0, title='Image Type', fontsize='small')
+hists[0].legend(['APC (32 pix)', 'ImageNet'], frameon=0, title='Image Type', fontsize='small')
 hists[0].set_xlabel('Response')
 hists[0].annotate('% (log-axis)', xy=(-0.1, 0.4), xycoords='axes fraction', 
-                    rotation='vertical', ha='center',va='bottom', fontsize='small')
+                    rotation='vertical', ha='center',va='bottom', fontsize='x-small')
 plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/' + 'art_nat_amp_response_dist.eps')
+plt.savefig(top_dir + 'analysis/figures/images/' + 'art_nat_amp_response_dist.pdf')
+'''
+name =  'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc'
+cnn = xr.open_dataset(top_dir + 'data/responses/' + name)['resp']
+cnn = cnn.sel(x=114).squeeze()
+cnn = cnn.transpose('unit', 'shapes')
+cnn = cnn.drop(-1,'shapes')
+all_lays = cnn.coords['unit'].layer_label.values.astype(str)
+unique_inds = np.unique(all_lays, return_index=True)[1]
+layers = [all_lays[ind] for ind in np.sort(unique_inds)]
+
+from collections import Counter
+
+id_layer=cnn['prob'==all_lays,]
+shape_id = id_layer.argmax('unit')
+counts = Counter(shape_id.values)
+
+ids = np.array([key for key in counts.keys()])
+number = np.array([n for n in counts.values()])
+ids = ids[np.argsort(number)][::-1]
+number = np.sort(number)[::-1]
+
+labels_file = top_dir + 'data/image_net/synset_words.txt'
+labels = np.loadtxt(labels_file, str, delimiter='\t')
+print(labels[ids])
+print(number/370.)
