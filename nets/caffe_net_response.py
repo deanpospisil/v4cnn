@@ -54,7 +54,7 @@ def net_imgstack_response(net, stack):
 
         if len(layer_resp.shape)>2:#ignore convolutional repetitions, just pulling center.
             mid = [ round(m/2) for m in np.shape(net.blobs[layer_name].data)[2:]   ]
-            layer_resp = layer_resp[ :, :, mid[0], mid[1]]
+            layer_resp = layer_resp[ :, :,int( mid[0]),int( mid[1])]
 
         all_layer_resp.append(layer_resp)
     response = np.hstack( all_layer_resp )
