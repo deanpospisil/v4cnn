@@ -139,7 +139,7 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
     if not rotation is None :
         stim_trans_dict['rotation'] = np.linspace(*rotation)
     if not amp is None:
-        stim_trans_dict['amp'] = np.linspace(*(100,255,2))
+        stim_trans_dict['amp'] = np.linspace(*amp)
 # get all dimensions, into a dict
     stim_trans_cart_dict = dm.cartesian_prod_dicts_lists( stim_trans_dict )
     return stim_trans_cart_dict, stim_trans_dict
