@@ -228,7 +228,7 @@ def imgStackTransform(imgDict, shape_img):
 
     n_imgs = np.size( imgDict['shapes'] , 0 )
     trans_stack = []
-    for ind in range( n_imgs ):
+    for ind in range(n_imgs):
 
         trans_img = shape_img[imgDict['shapes'][ind]]
 

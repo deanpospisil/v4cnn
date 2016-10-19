@@ -53,8 +53,8 @@ def net_imgstack_response(net, stack):
         layer_resp = net.blobs[layer_name].data
 
         if len(layer_resp.shape)>2:#ignore convolutional repetitions, just pulling center.
-            mid = [ round(m/2) for m in np.shape(net.blobs[layer_name].data)[2:]   ]
-            layer_resp = layer_resp[ :, :,int( mid[0]),int( mid[1])]
+            mid = [ int(m/2) for m in np.shape(net.blobs[layer_name].data)[2:]]
+            layer_resp = layer_resp[:, :, mid[0], mid[1]]
 
         all_layer_resp.append(layer_resp)
     response = np.hstack( all_layer_resp )
@@ -121,7 +121,7 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
 #produces a cartesian dictionary of those.
     stim_trans_dict = ordDict()
     if not shapes is None:
-        stim_trans_dict['shapes'] = np.array(shapes, dtype=float)
+        stim_trans_dict['shapes'] = np.array(shapes, dtype=int)
     if not blur is None :
         if isinstance(blur,tuple):
             stim_trans_dict['blur'] = np.linspace(*blur)
