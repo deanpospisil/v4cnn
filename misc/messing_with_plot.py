@@ -72,10 +72,10 @@ def simple_hist_pd(ax, var, orientation='vertical', fontsize=10):
     
 # number of cols is the number of y variables, and number of rows
 def small_mult_hist(x, labels, scale=1):
-    m = max(list(map(len, cnn_val_lists)))
+    m = len(labels)
     gs = gridspec.GridSpec(m, 1, width_ratios=[1,],
                             height_ratios=[1,]*m)
-    plt.figure(figsize=(4*scale, m*2*scale))
+    fig = plt.figure(figsize=(4*scale, m*2*scale))
     
     fontsize = 10
     y_hists = []
@@ -112,7 +112,7 @@ def small_mult_hist(x, labels, scale=1):
             ax.set_ylim(0.5/float(len(var)-1), max_n_list[pos])
             naked_plot([ax,])
             
-            ax.set_xlim(-np.max(np.abs(the_range)), np.max(np.abs(the_range))+np.max(np.abs(the_range))*0.001)
+            ax.set_xlim(-np.max(np.abs(the_range)), np.max(np.abs(the_range))+np.max(np.abs(the_range))*0.01)
             ax.spines['bottom'].set_visible(True)
             ax.spines['bottom'].set(lw=0.5)
             ax.spines['bottom'].set_bounds(-max(np.abs(the_range)), max(np.abs(the_range)))
@@ -122,8 +122,8 @@ def small_mult_hist(x, labels, scale=1):
                 the_min = '0'
             ax.set_xticklabels([the_min, ' ',
                                 np.round(the_range[1],sigfig)])
-            ax.set_ylabel(str(labels[pos]) +'\n'+str(int(len(var)/370.)), rotation='horizontal', 
-                         labelpad=fontsize*3, fontsize=fontsize)
+            ax.set_ylabel(str(labels[pos]) +'\n'+str(int(len(var)/371.)), rotation='horizontal', 
+                         labelpad=fontsize*2, fontsize=fontsize, multialignment='left')
             
             ax.yaxis.set_label_position('right')
             ax.xaxis.set_ticks_position('bottom')
@@ -186,8 +186,9 @@ def small_mult_scatter_w_marg_pd(x, y):
         scatters.append(_)
           
     naked_plot(scatters)
-'''    
+    
     return scatters, x_hists, y_hists
+
 goforit = False
 if 'fit_best_mods_pd' not in locals() or goforit:
     v4_name = 'V4_362PC2001'
@@ -219,102 +220,105 @@ if 'fit_best_mods_pd' not in locals() or goforit:
     fit_best_mods_pd = pd.DataFrame(fit_best_mods_pd)
                                     #columns=np.round(np.sort(apc_fit_v4.values),3))
 
+def response_distribution_over_layers(cnns, layers_to_examine='all'):
+    cnn_val_lists = []
+    for cnn in cnns:
+        cnn = cnn.squeeze()
+        cnn = cnn.transpose('unit', 'shapes')
+        try:
+            cnn = cnn.drop(-1,'shapes')
+        except:
+            cnn = cnn.drop(0,'shapes')
+            
+        all_lays = cnn.coords['unit'].layer_label.values.astype(str)
+        if layers_to_examine == 'all':
+            unique_inds = np.unique(all_lays, return_index=True)[1]
+            layers = [all_lays[ind] for ind in np.sort(unique_inds)]
+        else:
+            layers = layers_to_examine
+        
+        cnn_val_lists.append([cnn[a_layer==all_lays,].values.flatten() 
+                    for a_layer in layers])
+    hists , n_list = small_mult_hist(cnn_val_lists, layers_to_examine, scale=0.75)   
+    return hists     
 
-names = [ 'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51).nc',
-'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc',
-]
-names = [ 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51).nc',
-'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc',
-]
+import datetime
+from matplotlib.backends.backend_pdf import PdfPages
 
-cnn_val_lists = []
-for name in names:
-    cnn = xr.open_dataset(top_dir + 'data/responses/' + name)['resp']
-    cnn = cnn.sel(x=114).squeeze()
-    cnn = cnn.transpose('unit', 'shapes')
-    cnn = cnn.drop(-1,'shapes')
-    all_lays = cnn.coords['unit'].layer_label.values.astype(str)
-    unique_inds = np.unique(all_lays, return_index=True)[1]
-    layers = [all_lays[ind] for ind in np.sort(unique_inds)]
-    type_change = list(np.where(np.diff(cnn.coords['layer'].values))[0])
-    cnn = xr.open_dataset(top_dir + 'data/responses/' + name)['resp']
-    cnn = cnn.sel(x=114).squeeze()
-    cnn = cnn.transpose('unit', 'shapes')
+with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf:
+    plt.rc('text', usetex=False)
+    layers_to_examine = ['conv1', 'norm1', 'conv2', 'norm2', 'conv5', 'fc6', 'prob']
     
-    cnn_val_lists.append([cnn[a_layer==all_lays,].values.flatten() for a_layer in layers])
+    name = 'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc'
+    cnn = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'].sel(x=114), ]
     
-hists , n_list = small_mult_hist(cnn_val_lists, layers)
-hists[0].legend(['32', '64'], frameon=0, fontsize='small', title='Pix Width')
-hists[0].set_xlabel('Response')
-hists[0].annotate('% (log-axis)', xy=(-0.1, 0.4), xycoords='axes fraction', 
-                    rotation='vertical', ha='center',va='bottom', fontsize='x-small')
-plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/' + '32_64_pix_response_dist.pdf')
-
-
-
-name = 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(114.0, 114.0, 1)_amp_(100, 255, 2).nc'
-cnn = xr.open_dataset(top_dir + 'data/responses/' + name)['resp']
-cnn = cnn.squeeze()
-cnns = cnn.transpose('amp', 'unit', 'shapes')
-cnn_val_lists = []
-for cnn in cnns:
-    cnn = cnn.drop(-1,'shapes')
-    all_lays = cnn.coords['unit'].layer_label.values.astype(str)
-    unique_inds = np.unique(all_lays, return_index=True)[1]
-    layers = [all_lays[ind] for ind in np.sort(unique_inds)]
-    type_change = list(np.where(np.diff(cnn.coords['layer'].values))[0])
-    cnn_val_lists.append([cnn[a_layer==all_lays,].values.flatten() for a_layer in layers])
+    name = 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(114.0, 114.0, 1)_amp_(100, 255, 2).nc'
+    cnns = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'].sel(amp=amp) for amp in [100, 255]] + cnn
     
-hists , n_list = small_mult_hist(cnn_val_lists, layers)
-hists[0].legend(['100', '255'], frameon=0, title='Amplitude', fontsize='small')
-hists[0].set_xlabel('Response')
-hists[0].annotate('% (log-axis)', xy=(-0.1, 0.4), xycoords='axes fraction', 
-                    rotation='vertical', ha='center',va='bottom', fontsize='x-small')
-plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/' + '100_255_amp_response_dist.pdf')
+    name = 'bvlc_reference_caffenet_nat_image_resp_371.nc'
+    cnn = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'],]   
+    cnns = cnns + cnn
+           
+    hists = response_distribution_over_layers(cnns, layers_to_examine)
+    
+    hists[0].legend(['100 (Amp.)', '255 (Amp.)', '64 (pix)', 'Nat.'], frameon=0, fontsize='xx-small')
+    hists[0].set_xlabel('Response')
+    hists[0].annotate('%', xy=(-0.1, 0.5), xycoords='axes fraction', 
+                        rotation='horizontal', ha='right',va='bottom', 
+                        fontsize='x-small', multialignment='right')
+    plt.tight_layout()
+    d = pdf.infodict()
+    d['ModDate'] = datetime.datetime.today()
+    pdf.savefig()  # or you can pass a Figure object to pdf.savefig
+    plt.close()
+
+    #plt.savefig(top_dir + 'analysis/figures/images/' + '100_255_amp_response_dist.pdf')
+
+"""
+This is a demo of creating a pdf file with several pages,
+as well as adding metadata and annotations to pdf files.
+"""
 
 
-names = [ 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51).nc',
-'bvlc_reference_caffenet_nat_image_resp_371.nc',]
-cnn = xr.open_dataset(top_dir + 'data/responses/' + names[0])['resp']
-cnn = cnn.sel(x=114).squeeze()
-cnn = cnn.transpose('unit', 'shapes')
-cnn1 = cnn
 
-cnn = xr.open_dataset(top_dir + 'data/responses/' + names[1])['resp']
-cnn2 = cnn
-cnns = [cnn1,cnn2]
-cnn_val_lists = []
-for cnn in cnns:
-    cnn = cnn.transpose('unit', 'shapes')
-    try:
-        cnn = cnn.drop(-1,'shapes')
-    except:
-        cnn = cnn.drop(0,'shapes')
-    all_lays = cnn.coords['unit'].layer_label.values.astype(str)
-    unique_inds = np.unique(all_lays, return_index=True)[1]
-    layers = [all_lays[ind] for ind in np.sort(unique_inds)]
-    type_change = list(np.where(np.diff(cnn.coords['layer'].values))[0])
-    cnn_val_lists.append([cnn[a_layer==all_lays,].values.flatten() for a_layer in layers])
+## Create the PdfPages object to which we will save the pages:
+## The with statement makes sure that the PdfPages object is closed properly at
+## the end of the block, even if an Exception occurs.
+#with PdfPages('multipage_pdf.pdf') as pdf:
+#    plt.figure(figsize=(3, 3))
+#    plt.plot(range(7), [3, 1, 4, 1, 5, 9, 2], 'r-o')
+#    plt.title('Page One')
+#    pdf.savefig()  # saves the current figure into a pdf page
+#    plt.close()
+#
+#    plt.rc('text', usetex=True)
+#    plt.figure(figsize=(8, 6))
+#    x = np.arange(0, 5, 0.1)
+#    plt.plot(x, np.sin(x), 'b-')
+#    plt.title('Page Two')
+#    pdf.attach_note("plot of sin(x)")  # you can add a pdf note to
+#                                       # attach metadata to a page
+#    pdf.savefig()
+#    plt.close()
+#
+#    plt.rc('text', usetex=False)
+#    fig = plt.figure(figsize=(4, 5))
+#    plt.plot(x, x*x, 'ko')
+#    plt.title('Page Three')
+#    pdf.savefig(fig)  # or you can pass a Figure object to pdf.savefig
+#    plt.close()
+#
+#    # We can also set the file's metadata via the PdfPages object:
+#    d = pdf.infodict()
+#    d['Title'] = 'Multipage PDF Example'
+#    d['Author'] = u'Jouni K. Sepp\xe4nen'
+#    d['Subject'] = 'How to create a multipage pdf file and set its metadata'
+#    d['Keywords'] = 'PdfPages multipage keywords author title subject'
+#    d['CreationDate'] = datetime.datetime(2009, 11, 13)
+#    d['ModDate'] = datetime.datetime.today()
 
-hists , n_list = small_mult_hist(cnn_val_lists, layers)
-hists[0].legend(['APC (32 pix)', 'ImageNet'], frameon=0, title='Image Type', fontsize='small')
-hists[0].set_xlabel('Response')
-hists[0].annotate('% (log-axis)', xy=(-0.1, 0.4), xycoords='axes fraction', 
-                    rotation='vertical', ha='center',va='bottom', fontsize='x-small')
-plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/' + 'art_nat_amp_response_dist.pdf')
+
 '''
-name =  'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc'
-cnn = xr.open_dataset(top_dir + 'data/responses/' + name)['resp']
-cnn = cnn.sel(x=114).squeeze()
-cnn = cnn.transpose('unit', 'shapes')
-cnn = cnn.drop(-1,'shapes')
-all_lays = cnn.coords['unit'].layer_label.values.astype(str)
-unique_inds = np.unique(all_lays, return_index=True)[1]
-layers = [all_lays[ind] for ind in np.sort(unique_inds)]
-
 from collections import Counter
 
 id_layer=cnn['prob'==all_lays,]
@@ -330,3 +334,4 @@ labels_file = top_dir + 'data/image_net/synset_words.txt'
 labels = np.loadtxt(labels_file, str, delimiter='\t')
 print(labels[ids])
 print(number/370.)
+'''
