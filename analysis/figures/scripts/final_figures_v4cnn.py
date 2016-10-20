@@ -27,104 +27,8 @@ import d_plot as dp
 import scipy.io as  l
 import d_curve as dc
 import d_img_process as imp
+import d_net_analysis as dn
 
-def beautify(ax=None):
-    '''Apply beautiful settings to an existing graph (figure 1, specifically).
-    FEATURES:
-    ----------------------------------------------------------------------------
-    General:
-    - set all things that were black (axis lines, labels, title, major tick
-          labels, major ticks marks) to be off-black (a dark grey)
-    Axes:
-    - remove the top and right axis lines ('spines')
-    - make remaining axis lines thinner
-    - make dotted grid for major y lines
-    Ticks:
-    - turn off only right and top ticks
-    - set tick direction to be out (pointing out of graph)
-    - set all minor ticks labels and marks to be a lighter grey
-    - make major and minor ticks longer
-    - make tick numbers farther away (padded) to accomodate longer ticks
-    Fonts:
-    - set all fonts to be serif (like Times New Roman)
-    Things you need to do on your own (that aren't generalizable to put here):
-    ----------------------------------------------------------------------------
-    - Make sure major and minor ticks are specified correctly. Check out:
-          [example] http://matplotlib.org/examples/pylab_examples/
-                        major_minor_demo1.html
-          [api] http://matplotlib.org/api/ticker_api.html
-    - Set plotting color. Use better colors than 'blue'. Check out:
-          [example] http://wiki.scipy.org/Cookbook/Matplotlib/Show_colormaps
-          [example] http://colorbrewer2.org/
-    - Set plotting style. Lines should be very differentiable, with lots of
-      visual redundancy. This means the following should be different:
-        - markers [e.g. circles, triangles, 'x's, ...]
-        - color (see above)
-        - and style [e.g. dashed, dotted, line, variations in-between]
-    - Set error bar width and cap sizes. Error bars should be thinner than
-      plotting lines. Check out:
-          [example] http://stackoverflow.com/questions/7601334/how-to-set-the-
-                        line-width-of-error-bar-caps-in-matplotlib
-    '''
-    # Settings
-    almost_black = '#262626'
-    more_grey = '#929292'
-    text_font = 'serif'
-    number_font = 'serif'
-
-    # Get the axes.
-    if ax is None:
-        #fig = plt.figure(1)
-        ax = plt.axes()
-
-    # Remove 'spines' (axis lines)
-    spines_to_remove = ['top', 'right']
-    for spine in spines_to_remove:
-        ax.spines[spine].set_visible(False)
-
-    # Make ticks only on the left and bottom (not on the spines that we removed)
-    ax.yaxis.tick_left()
-    ax.xaxis.tick_bottom()
-
-    # To remove the ticks all-together (like in prettyplotlib), do the following
-    # instead of tick_left() and tick_bottom()
-    #ax.xaxis.set_ticks_position('none')
-    #ax.yaxis.set_ticks_position('none')
-
-    # Now make them go 'out' rather than 'in'
-    for axis in ['x', 'y']:
-        ax.tick_params(axis=axis, which='both', direction='out', pad=7)
-        ax.tick_params(axis=axis, which='major', color=almost_black, length=6)
-        ax.tick_params(axis=axis, which='minor', color=more_grey, length=4)
-
-    # Make thinner and off-black
-    spines_to_keep = ['bottom', 'left']
-    for spine in spines_to_keep:
-        ax.spines[spine].set_linewidth(0.5)
-        ax.spines[spine].set_color(almost_black)
-
-    # Change the labels & title to the off-black and change their font
-    for label in [ax.yaxis.label, ax.xaxis.label, ax.title]:
-        label.set_color(almost_black)
-        label.set_family(text_font)
-
-    # Change the tick labels' color and font and padding
-    for axis in [ax.yaxis, ax.xaxis]:
-        # padding
-        #axis.labelpad = 20
-        # major ticks
-        for major_tick in axis.get_major_ticks():
-            label = major_tick.label
-            label.set_color(almost_black)
-            label.set_family(number_font)
-        # minor ticks
-        for minor_tick in axis.get_minor_ticks():
-            label = minor_tick.label
-            label.set_color(more_grey)
-            label.set_family(number_font)
-
-    # Turn on grid lines for y-only
-    plt.grid(axis='y', color=more_grey)
 def naked_plot(axes):
     for ax in  axes:
         ax.set_xticks([])
@@ -214,20 +118,16 @@ def small_mult_hist(x, labels, scale=1, ax_set_range='symmetric',
                 if beg==0 or fin>=len(bins):
                     print('the bins provided do not contain the data')
                 _bins = bins[beg-1:fin+1] 
-                
-                
+
             n, _bins = np.histogram(var, bins=_bins, normed=False)
             n =  n/float(len(var))
             n = [0,] + list(n) + [0,]
             _bins = [_bins[0],] + list(_bins)
-          
             ax.step(_bins, n, where='post', lw=0.5, alpha=0.7, color=color)
             naked_plot([ax,])
-            
             #x axis
             if logx:
                 ax.semilogx(nonposy='clip')
-            
             the_min = np.round(the_range[0], sigfig)
             if np.isclose(the_min, 0):
                 the_min = '0'
@@ -246,9 +146,6 @@ def small_mult_hist(x, labels, scale=1, ax_set_range='symmetric',
                 med = np.median(var)
                 ax.plot([med, med],[-0.1*max_n_list[pos], ax.get_ylim()[0]], 
                         color=color, clip_on=False)
-                              
-            
-
             ax.set_xticks(x_tick_pos)
             ax.set_xticklabels(x_tick_lab, fontsize=fontsize)
             ax.set_xlim(x_plot_bounds[0], x_plot_bounds[1]+x_plot_bounds[1]*.1)
@@ -273,10 +170,10 @@ def small_mult_hist(x, labels, scale=1, ax_set_range='symmetric',
             for axis in ['x','y']:
                 ax.tick_params(axis=axis, which='both', direction='out')
                 ax.tick_params(axis, length=0, direction='out', width=0, which='minor')
-            ax.spines['left'].set_bounds(0.5/float(len(var)-1), max_n_list[pos])
+            ax.spines['left'].set_bounds(1./float(len(var)-1), max_n_list[pos])
             
-            ax.set_yticks([max_n_list[pos],])
-            ax.set_yticklabels([np.round(max_n_list[pos], sigfig+1),],fontsize=fontsize)
+            ax.set_yticks([1./float(len(var)-1), max_n_list[pos],])
+            ax.set_yticklabels([' ', np.round(max_n_list[pos], sigfig+1),], fontsize=fontsize)
             #beautify(ax)
             
             y_hists.append(ax) 
@@ -302,7 +199,6 @@ def small_mult_scatter_w_marg_pd(x, y):
     y_hists = []
     for y_col, pos in zip(y, y_hist_pos):
         _=plt.subplot(gs[pos])
-        print(y_col)
         simple_hist_pd(_, y[y_col], orientation='horizontal')
         _.set_ylabel(str(y_col), rotation='horizontal', 
                      labelpad=fontsize*3, fontsize=fontsize)
@@ -327,36 +223,6 @@ def small_mult_scatter_w_marg_pd(x, y):
     
     return scatters, x_hists, y_hists
 
-goforit = False
-if 'fit_best_mods_pd' not in locals() or goforit:
-    v4_name = 'V4_362PC2001'
-    v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
-    v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
-    fn = top_dir + 'data/models/' + 'apc_models_362.nc'
-    dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
-    
-    apc_fit_v4 = ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), 
-                                      dmod.chunk({}), 
-                                      fit_over_dims=None, 
-                                      prov_commit=False)
-    v4_resp_apc = v4_resp_apc - v4_resp_apc.mean('shapes')
-    v4_resp_apc_pd = v4_resp_apc[:,apc_fit_v4.argsort().values].to_pandas()
-    
-    best_mods_pd = dmod[:, apc_fit_v4[apc_fit_v4.argsort().values]
-                      .squeeze().coords['unit'].models.values]
-    
-    
-    fn = top_dir + 'data/models/' + 'apc_models_362.nc'
-    dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
-    apc_fit_v4 = apc_fit_v4**2
-    fit_best_mods_pd = []
-    for mod, resp in zip(best_mods_pd.values.T, v4_resp_apc_pd.values.T):
-        mod = np.expand_dims(mod, 1)
-        resp = np.expand_dims(resp, 1)
-        fit_best_mods_pd.append(np.dot(mod, np.linalg.lstsq(mod, resp)[0]))
-    fit_best_mods_pd = np.array(fit_best_mods_pd).squeeze().T
-    fit_best_mods_pd = pd.DataFrame(fit_best_mods_pd)
-                                    #columns=np.round(np.sort(apc_fit_v4.values),3))
 
 def response_distribution_over_layers(cnns, layers_to_examine='all'):
     cnn_val_lists = []
@@ -381,14 +247,107 @@ def response_distribution_over_layers(cnns, layers_to_examine='all'):
                                      scale=0.75, bins=300, logy=True)   
     return hists     
 
-import datetime
-from matplotlib.backends.backend_pdf import PdfPages
 def kurtosis(da):
     da = da.transpose('shapes', 'unit')
     mu = da.mean('shapes')
     sig = da.reduce(np.nanvar, dim='shapes')
     k = (((da - mu)**4).sum('shapes', skipna=True) / da.shapes.shape[0])/(sig**2)
     return k
+
+def open_cnn_analysis(fn):
+    try:
+        an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'), 
+                   encoding='latin1')
+    except:
+        an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'))
+    fvx = an[0].sel(concat_dim='r2')
+    rf = an[0].sel(concat_dim='rf')
+    cnn = an[1]
+    return fvx, rf, cnn
+
+def process_V4(v4_resp_apc, v4_resp_ti, dmod):
+    ti = dn.ti_av_cov(v4_resp_ti, rf=None)
+    apc = dn.ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), dmod.chunk({}), fit_over_dims=None, prov_commit=False)
+    k_apc = list(dn.kurtosis(v4_resp_apc).values)
+    k_ti = list(dn.kurtosis(v4_resp_ti.mean('x')).values)
+
+    keys = ['layer_label', 'unit']
+    index = pd.MultiIndex.from_arrays([np.array(['v4']*len(ti)),np.arange(len(ti))], names=keys)
+    v4pdti  = pd.DataFrame(np.array([ti, k_ti]).T, index=index, columns=['ti_av_cov', 'k'])
+
+    index = pd.MultiIndex.from_arrays([np.array(['v4']*len(apc)),np.arange(len(apc))], names=keys)
+    v4pdapc  = pd.DataFrame(np.array([apc.values, k_apc]).T, index=index, columns=['apc', 'k'])
+    v4 = pd.concat([v4pdti, v4pdapc])
+    return v4
+
+goforit = True
+#loading up all needed data
+if 'fit_best_mods_pd' not in locals() or goforit:
+    v4_name = 'V4_362PC2001'
+    v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
+    v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
+    fn = top_dir + 'data/models/' + 'apc_models_362.nc'
+    dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
+    
+    apc_fit_v4 = ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), 
+                                      dmod.chunk({}), 
+                                      fit_over_dims=None, 
+                                      prov_commit=False)
+    v4_resp_apc = v4_resp_apc - v4_resp_apc.mean('shapes')
+    v4_resp_ti = xr.open_dataset(top_dir + 'data/responses/v4_ti_resp.nc')['resp'].load()
+    alt_v4 = process_V4(v4_resp_apc, v4_resp_ti, dmod)
+
+    #shuffle
+    v4_resp_apc_null = v4_resp_apc.copy()
+    v4_resp_ti_null = v4_resp_ti.copy()
+
+    for  x in range(len(v4_resp_ti_null.coords['x'])):
+        for unit in range(len(v4_resp_ti_null.coords['unit'])):
+            not_null = ~v4_resp_ti_null[unit,x,:].isnull()
+            v4_resp_ti_null[unit,x, not_null] = np.random.permutation(v4_resp_ti[unit,x,not_null].values)
+
+    for unit in range(len(v4_resp_apc_null.coords['unit'])):
+        v4_resp_apc_null[:,unit] = np.random.permutation(v4_resp_apc[:,unit].values)
+
+    null_v4 = process_V4(v4_resp_apc_null, v4_resp_ti_null, dmod)
+    rf = None
+    da = v4_resp_ti.transpose('unit', 'x', 'shapes')
+    
+    fns = [
+    'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
+    'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
+    'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
+    'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_null_analysis.p'
+    ]
+    
+    alt = pd.concat([open_cnn_analysis(fns[0])[-1], alt_v4], axis=0)
+    init = open_cnn_analysis(fns[1])[-1]
+    shuf = open_cnn_analysis(fns[2])[-1]
+    null = pd.concat([open_cnn_analysis(fns[3])[-1], null_v4], axis=0)
+    cnn_an = pd.concat([alt, null, init, shuf ], 
+              axis=0, keys=['alt','null', 'init', 'shuf'])
+    
+    '''
+    v4_resp_apc_pd = v4_resp_apc[:, apc_fit_v4.argsort().values].to_pandas()
+    
+    best_mods_pd = dmod[:, apc_fit_v4[apc_fit_v4.argsort().values]
+                      .squeeze().coords['unit'].models.values]
+ 
+    fn = top_dir + 'data/models/' + 'apc_models_362.nc'
+    dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
+    apc_fit_v4 = apc_fit_v4**2
+    fit_best_mods_pd = []
+    for mod, resp in zip(best_mods_pd.values.T, v4_resp_apc_pd.values.T):
+        mod = np.expand_dims(mod, 1)
+        resp = np.expand_dims(resp, 1)
+        fit_best_mods_pd.append(np.dot(mod, np.linalg.lstsq(mod, resp)[0]))
+    fit_best_mods_pd = pd.DataFrame(np.array(fit_best_mods_pd).squeeze().T)
+                                    #columns=np.round(np.sort(apc_fit_v4.values),3))
+    '''
+ #%%    
+import datetime
+from matplotlib.backends.backend_pdf import PdfPages
+
     
 with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf:
     #dynamic range
@@ -419,17 +378,10 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
     plt.close()
 #%% 
     #kurtosis
-    fn = 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p'
+
     k_apc = kurtosis(v4_resp_apc).values
-    try:
-        an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'), 
-                   encoding='latin1')
-    except:
-        an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'))
-        
-    fvx = an[0].sel(concat_dim='r2')
-    rf = an[0].sel(concat_dim='rf')
-    cnn = an[1]
+    
+
     k_cnn = cnn['k'].dropna()
     layers = cnn.index.get_level_values('layer_label').unique()
     cnns = [[k_cnn.loc[layer].dropna().values.flatten() 
@@ -444,6 +396,11 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
                                      logx=True, logy=False,
                                      bins=np.linspace(0.1,370, 1000),
                                      include_median=False)   
+    hists[-1].set_xlabel('Kurtosis (log-scale)')
+    hists[0].annotate('%', xy=(-0.1, 0.5), xycoords='axes fraction', 
+                        rotation='horizontal', ha='right',va='bottom', 
+                        fontsize='x-small', multialignment='right')
+    
     #%%
     plt.tight_layout()
     pdf.savefig() 
@@ -461,7 +418,8 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
     #%%
     pdf.savefig()
     plt.close()
-       #%% 
+    #%%
+    
     apc_cnn = cnn['apc'][cnn['k']<np.max(k_apc)].dropna()
     layers = cnn.index.get_level_values('layer_label').unique()
     cnns = [[apc_cnn.loc[layer].dropna().values.flatten() 
@@ -477,6 +435,11 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
                                      bins=np.linspace(0,1,100),
                                      include_median=False,
                                      sigfig=2)   
+    hists[0].legend(['100 (Amp.)', '255 (Amp.)', '64 (pix)', 'Nat.'], frameon=0, fontsize='xx-small')
+    hists[-1].set_xlabel('Kurtosis (log-scale)')
+    hists[0].annotate('%', xy=(-0.1, 0.5), xycoords='axes fraction', 
+                        rotation='horizontal', ha='right',va='bottom', 
+                        fontsize='x-small', multialignment='right')
         #%%
     plt.tight_layout()
     pdf.savefig()
