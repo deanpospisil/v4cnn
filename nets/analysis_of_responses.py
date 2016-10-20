@@ -27,17 +27,27 @@ except:
 import pickle
 import d_net_analysis as dn
 import pickle as pk
+import re
+save_dir = '/dean_temp/'
+load_dir = '/dean_temp/'
 measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
-measure_list = ['apc','ti', 'ti_orf', 'k', 'ti_av_cov']
+measure_list = ['apc', 'k', 'ti_av_cov']
 model_file = top_dir + 'data/models/' + 'apc_models_362.nc'
 dmod = xr.open_dataset(model_file, chunks={'models':50, 'shapes':370})['resp']
-cnn_resp =['bvlc_reference_caffenetAPC362_pix_width[30.0]_pos_(64.0, 164.0, 101)',]
-null = False
-w = 30
-subsample_units = 100
+cnn_resp =[
+'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
+#'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51)',
+#'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
+#'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[64.0]_pos_(64.0, 164.0, 51)',
+#'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
+]
+null = True
+#w = 32
+subsample_units = 1
 
 for cnn_resp_name in cnn_resp:
-    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_resp_name  + '.nc' )['resp']
+    w = int(float( re.findall('\[\d\d.0', cnn_resp_name)[0][1:]))
+    da = xr.open_dataset(load_dir + 'data/responses/' + cnn_resp_name  + '.nc' )['resp']
     da = da.sel(unit=slice(0, None, subsample_units)).load().squeeze()
     if null:
         np.random.seed(1)
@@ -71,7 +81,6 @@ for cnn_resp_name in cnn_resp:
     coord = [da_0.coords[key].values for key in keys]
     index = pd.MultiIndex.from_arrays(coord, names=keys)
     pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_list)
-#    pda.to_pickle(top_dir + 'data/an_results/' + cnn_resp_name  + '_analysis.p')
     receptive_field = (da.drop(-1,dim='shapes')**2).sum('shapes')**0.5
     da_cor = da.copy()
     da_cor -= da_cor.mean('shapes')
@@ -80,20 +89,8 @@ for cnn_resp_name in cnn_resp:
     correlation = (da_cor_0*da_cor).sum('shapes')**2
     pos_props = xr.concat([correlation,receptive_field],dim=['r2','rf']) 
     all_props = [pos_props, pda]
-    pk.dump(all_props, open(top_dir + 'data/an_results/' + cnn_resp_name  + '_analysis.p','wb'))
-    pk.load(open(top_dir + 'data/an_results/' + cnn_resp_name  + '_analysis.p','rb'))
-'''
-unit_resp = da.sel(unit=8990).drop(-1, dim='shapes').transpose('x', 'shapes').values
-unit_resp -= unit_resp.mean(1,keepdims=True)
-cov = np.dot(unit_resp, unit_resp.T)
-cov[np.diag_indices_from(cov)] = 0
-numerator = np.sum(np.triu(cov))
-vlength = np.linalg.norm(unit_resp, axis=1)
-max_cov = np.outer(vlength.T, vlength)
-max_cov[np.diag_indices_from(max_cov)] = 0
-denominator= np.sum(np.triu(max_cov))
-frac_var = numerator/denominator
-print(frac_var)
-print(pda['ti_av_cov'].argmax())
-print(pda['ti_av_cov'].max())
-'''
+    if null:
+        pk.dump(all_props, open(save_dir  + 'data/an_results/' + cnn_resp_name  + '_null_analysis.p','wb'))
+    else:
+        pk.dump(all_props, open(save_dir  + 'data/an_results/' + cnn_resp_name  + '_analysis.p','wb'))
+#    pk.load(open(top_dir + 'data/an_results/' + cnn_resp_name  + '_analysis.p','rb'))
