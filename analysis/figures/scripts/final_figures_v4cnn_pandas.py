@@ -103,7 +103,8 @@ def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True,
         var = df.loc[dim2_levels[dim2_ind]].dropna().values
         color = colors[dim2_ind]
         if len(var)>0:
-            n.append(ax.hist(var, bins=bins, color=color, histtype='step', alpha=0.8, lw=0.5)[0])
+            n.append(ax.hist(var, bins=bins, color=color, histtype='step', 
+                             alpha=0.6, lw=2)[0])
     max_n = np.max(n)
     the_range = [df.min(), df.max()]
     if logx:
@@ -140,7 +141,7 @@ def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True,
         ax.set_ylim(0.5/float(len(var)-1), max_n+max_n*0.1)
     else:
         ax.set_ylim(0, max_n+max_n*0.1)
-    ax.set_ylabel(label +'\n n = '+ str(int(len(var))),
+    ax.set_ylabel(label,
                   rotation='horizontal', labelpad=fontsize*2, 
                   fontsize=fontsize, multialignment='left')
     ax.yaxis.set_label_position('right')
@@ -189,7 +190,9 @@ def open_cnn_analysis(fn):
 
 def process_V4(v4_resp_apc, v4_resp_ti, dmod):
     ti = dn.ti_av_cov(v4_resp_ti, rf=None)
-    apc = dn.ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), dmod.chunk({}), fit_over_dims=None, prov_commit=False)
+    apc = dn.ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), 
+                                  dmod.chunk({}), fit_over_dims=None, 
+                                    prov_commit=False)**2.
     k_apc = list(dn.kurtosis(v4_resp_apc).values)
     k_ti = list(dn.kurtosis(v4_resp_ti.mean('x')).values)
 
@@ -202,7 +205,7 @@ def process_V4(v4_resp_apc, v4_resp_ti, dmod):
     v4 = pd.concat([v4pdti, v4pdapc])
     return v4
 
-goforit = False
+goforit = True
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     v4_name = 'V4_362PC2001'
@@ -261,8 +264,8 @@ ax_list = small_mult_hist(cnn_an['apc'][cnn_an['k']<40], bins=np.linspace(0,1,20
 ax_list[0].legend(cnn_an.index.levels[1], frameon=0, fontsize=fontsize)
 plt.savefig(top_dir + 'analysis/figures/images/' + 'apc.pdf')
 
-ax_list = small_mult_hist(cnn_an['ti_av_cov'][cnn_an['k']<40].drop('null', level='cond'), 
+ax_list = small_mult_hist(cnn_an['ti_av_cov'][(cnn_an['k']<40)*(cnn_an['k']>1.2)].drop('null', level='cond'), 
                           bins=np.linspace(0,1,20), logx=False, logy=False,
                           fontsize=fontsize, sigfig=2)
-ax_list[0].legend(cnn_an.drop('null', level='cond').index.levels[1], frameon=0, fontsize=fontsize)
+ax_list[0].legend(cnn_an.drop('null', level='cond').index.levels[1], frameon=0, fontsize=fontsize*2)
 plt.savefig(top_dir + 'analysis/figures/images/' + 'ti.pdf')
