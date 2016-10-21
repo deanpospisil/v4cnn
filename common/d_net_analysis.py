@@ -26,6 +26,11 @@ except:
 def kurtosis(da):
     #take xarray and return coefficient of variation
     #expects shapes X unit
+    try:
+        da = da - da.loc(shapes=-1)
+        da = da.drop(-1, dim='shapes')
+    except:
+        print('no baseline, ie no shape indexed as -1')
     da = da.transpose('shapes','unit')
     mu = da.mean('shapes')
    # k = da.reduce(kurtosis,dim='shapes')
@@ -220,6 +225,7 @@ def stacked_hist_layers(cnn, logx=False, logy=False, xlim=None, maxlim=False,
 def ti_av_cov(da, rf=None):
     da = da.transpose('unit', 'x', 'shapes')
     try:
+        da = da - da.loc(shapes=-1)
         da = da.drop(-1, dim='shapes')
     except:
         print('no baseline, ie no shape indexed as -1')

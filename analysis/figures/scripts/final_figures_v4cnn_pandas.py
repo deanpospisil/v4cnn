@@ -90,13 +90,15 @@ def beautify(ax=None):
     # Turn on grid lines for y-only
     plt.grid(axis='y', color=more_grey)
 def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True, 
-               logy=False, include_median=False, label='', fontsize=3):
+               logy=False, include_median=False, label='', fontsize=10):
     num_colors = len(df.index.levels[0])
     colormap = plt.get_cmap('jet')
     colors = [colormap(1.*i/num_colors) for i in range(num_colors)]  
+    colors = ['r','g','b','k', 'm']
     dim2_inds = np.unique(df.index.labels[0])
     dim2_levels = df.index.levels[0]  
     n=[]
+    
     for dim2_ind in dim2_inds:            
         var = df.loc[dim2_levels[dim2_ind]].dropna().values
         color = colors[dim2_ind]
@@ -116,7 +118,7 @@ def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True,
         x_tick_pos = [the_range[0], 0, the_range[1]]
         x_tick_lab = [the_min, ' ', np.round(the_range[1],sigfig)]
     elif ax_set_range=='range_all':          
-        x_plot_bounds = [ax.get_xlim()[0], ax.get_xlim()[1]]
+        x_plot_bounds = [bins[0], bins[-1]]
         spine_bounds = [the_range[0], the_range[1]]
         x_tick_pos = [the_range[0], the_range[1]]
         x_tick_lab = [the_min, np.round(the_range[1], sigfig)]
@@ -157,23 +159,20 @@ def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True,
     ax.set_yticks([1./float(len(var)-1), max_n,])
     ax.set_yticklabels([' ', np.round(max_n, sigfig+1),], fontsize=fontsize)
 
-
-
-    
-    
 def small_mult_hist(df, scale=1, ax_set_range='symmetric', 
                     logx=False, logy=False, bins='auto',
-                    include_median=False, sigfig=1):
+                    include_median=False, sigfig=1, fontsize=fontsize):
     #defaults to subplots by level 0, colors by level 1
     m = len(df.index.levels[0])
     gs = gridspec.GridSpec(m, 1, width_ratios=[1,],
                             height_ratios=[1,]*m)
-    plt.figure(figsize=(2*scale, m*2*scale))
+    plt.figure(figsize=(4*scale, m*2*scale))
     #fontsize = 10 * scale
     ax_list = [plt.subplot(gs[pos]) for pos in range(m)];
 
     for dim1, ax in zip(df.index.levels[0], ax_list):
-        small_hist(df.loc[dim1], bins, ax, label=dim1)
+        small_hist(df.loc[dim1], bins, ax, label=dim1, 
+                   logx=logx,logy=logy, fontsize=fontsize, sigfig=2)
     plt.tight_layout()
     return ax_list
     
@@ -227,10 +226,11 @@ if 'cnn_an' not in locals() or goforit:
     for  x in range(len(v4_resp_ti_null.coords['x'])):
         for unit in range(len(v4_resp_ti_null.coords['unit'])):
             not_null = ~v4_resp_ti_null[unit,x,:].isnull()
-            v4_resp_ti_null[unit,x, not_null] = np.random.permutation(v4_resp_ti[unit,x,not_null].values)
-
+            v4_resp_ti_null[unit, x, not_null] = np.random.permutation(v4_resp_ti[unit, x, not_null].values)
+    
+    v4_resp_apc = v4_resp_apc.transpose('shapes','unit')
     for unit in range(len(v4_resp_apc_null.coords['unit'])):
-        v4_resp_apc_null[:,unit] = np.random.permutation(v4_resp_apc[:,unit].values)
+        v4_resp_apc_null[:, unit] = np.random.permutation(v4_resp_apc[:, unit].values)
 
     null_v4 = process_V4(v4_resp_apc_null, v4_resp_ti_null, dmod)
     rf = None
@@ -251,7 +251,18 @@ if 'cnn_an' not in locals() or goforit:
               axis=0, keys=['alt','null', 'init', 'shuf'], names=['cond','layer_label','unit'])
     
     cnn_an = cnn_an.swaplevel(i=0,j=1)
-ax_list = small_mult_hist(cnn_an['k'], bins=np.linspace(.9,370,1000))
+fontsize=12
+ax_list = small_mult_hist(cnn_an['k'], bins=np.linspace(.99,370,1000), fontsize=fontsize)
 fontsize=7
-ax_list[0].legend(cnn_an.index.levels[1], frameon=0, fontsize=fontsize/2, labelspacing=fontsize/20)
+ax_list[0].legend(cnn_an.index.levels[1], frameon=0, fontsize=fontsize)
 plt.savefig(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf')
+
+ax_list = small_mult_hist(cnn_an['apc'][cnn_an['k']<40], bins=np.linspace(0,1,20), logx=False, logy=False, fontsize=fontsize)
+ax_list[0].legend(cnn_an.index.levels[1], frameon=0, fontsize=fontsize)
+plt.savefig(top_dir + 'analysis/figures/images/' + 'apc.pdf')
+
+ax_list = small_mult_hist(cnn_an['ti_av_cov'][cnn_an['k']<40].drop('null', level='cond'), 
+                          bins=np.linspace(0,1,20), logx=False, logy=False,
+                          fontsize=fontsize, sigfig=2)
+ax_list[0].legend(cnn_an.drop('null', level='cond').index.levels[1], frameon=0, fontsize=fontsize)
+plt.savefig(top_dir + 'analysis/figures/images/' + 'ti.pdf')
