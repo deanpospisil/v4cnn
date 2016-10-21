@@ -327,7 +327,7 @@ if 'fit_best_mods_pd' not in locals() or goforit:
     cnn_an = pd.concat([alt, null, init, shuf ], 
               axis=0, keys=['alt','null', 'init', 'shuf'])
     
-    '''
+
     v4_resp_apc_pd = v4_resp_apc[:, apc_fit_v4.argsort().values].to_pandas()
     
     best_mods_pd = dmod[:, apc_fit_v4[apc_fit_v4.argsort().values]
@@ -343,13 +343,13 @@ if 'fit_best_mods_pd' not in locals() or goforit:
         fit_best_mods_pd.append(np.dot(mod, np.linalg.lstsq(mod, resp)[0]))
     fit_best_mods_pd = pd.DataFrame(np.array(fit_best_mods_pd).squeeze().T)
                                     #columns=np.round(np.sort(apc_fit_v4.values),3))
-    '''
+
  #%%    
 import datetime
 from matplotlib.backends.backend_pdf import PdfPages
 
     
-with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf:
+with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures_old.pdf') as pdf:
     #dynamic range
     plt.rc('text', usetex=False)
     layers_to_examine = ['conv1', 'relu1', 'norm1', 'conv2', 'norm2', 'conv5', 'fc6', 'prob']
@@ -368,7 +368,7 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
     
     hists[0].legend(['100 (Amp.)', '255 (Amp.)', '64 (pix)', 'Nat.'], frameon=0, fontsize='xx-small')
     hists[0].set_xlabel('Response')
-    hists[0].annotate('%', xy=(-0.1, 0.5), xycoords='axes fraction', 
+    hists[0].annotate('%', xy=(-1.1 , 0.5), xycoords='axes fraction', 
                         rotation='horizontal', ha='right',va='bottom', 
                         fontsize='x-small', multialignment='right')
     plt.tight_layout()
@@ -376,36 +376,7 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
     d['ModDate'] = datetime.datetime.today()
     pdf.savefig()  # or you can pass a Figure object to pdf.savefig
     plt.close()
-#%% 
-    #kurtosis
 
-    k_apc = kurtosis(v4_resp_apc).values
-    
-
-    k_cnn = cnn['k'].dropna()
-    layers = cnn.index.get_level_values('layer_label').unique()
-    cnns = [[k_cnn.loc[layer].dropna().values.flatten() 
-            for layer in layers if layer in layers_to_examine] 
-             + [list(k_apc),]
-                ,]
-    layers = np.array(list(layers) + ['v4',])
-    
-
-    hists , n_list = small_mult_hist(cnns, layers_to_examine, scale=0.5, 
-                                     ax_set_range='range_all', 
-                                     logx=True, logy=False,
-                                     bins=np.linspace(0.1,370, 1000),
-                                     include_median=False)   
-    hists[-1].set_xlabel('Kurtosis (log-scale)')
-    hists[0].annotate('%', xy=(-0.1, 0.5), xycoords='axes fraction', 
-                        rotation='horizontal', ha='right',va='bottom', 
-                        fontsize='x-small', multialignment='right')
-    
-    #%%
-    plt.tight_layout()
-    pdf.savefig() 
-    plt.close()
-        #%%
     v4_name = 'V4_362PC2001'
     v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
     v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
@@ -415,59 +386,11 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
     plt.legend(np.round([np.max(k_apc), np.min(k_apc)],1), 
                  title='Kurtosis', loc=1, fontsize='small')
     plt.xlabel('Normalized firing rate');plt.ylabel('Count');plt.xticks([0,1])
-    #%%
+    plt.title('Example V4 Response Histogram')
     pdf.savefig()
     plt.close()
-    #%%
-    
-    apc_cnn = cnn['apc'][cnn['k']<np.max(k_apc)].dropna()
-    layers = cnn.index.get_level_values('layer_label').unique()
-    cnns = [[apc_cnn.loc[layer].dropna().values.flatten() 
-            for layer in layers if layer in layers_to_examine] 
-             #+ [list(fit_apc),]
-                ,]
-    #layers = np.array(list(layers) + ['v4',])
-    
 
-    hists , n_list = small_mult_hist(cnns, layers_to_examine, scale=0.5, 
-                                     ax_set_range='range_all', 
-                                     logx=False, logy=False,
-                                     bins=np.linspace(0,1,100),
-                                     include_median=False,
-                                     sigfig=2)   
-    hists[0].legend(['100 (Amp.)', '255 (Amp.)', '64 (pix)', 'Nat.'], frameon=0, fontsize='xx-small')
-    hists[-1].set_xlabel('Kurtosis (log-scale)')
-    hists[0].annotate('%', xy=(-0.1, 0.5), xycoords='axes fraction', 
-                        rotation='horizontal', ha='right',va='bottom', 
-                        fontsize='x-small', multialignment='right')
-        #%%
-    plt.tight_layout()
-    pdf.savefig()
-    plt.close()
-    #%%
-    apc_cnn = cnn['ti_av_cov'][cnn['k']<np.max(k_apc)].dropna()
-    layers = cnn.index.get_level_values('layer_label').unique()
-    cnns = [[apc_cnn.loc[layer].dropna().values.flatten() 
-            for layer in layers if layer in layers_to_examine] 
-             #+ [list(fit_apc),]
-                ,]
-    #layers = np.array(list(layers) + ['v4',])
-    
-
-    hists , n_list = small_mult_hist(cnns, layers_to_examine, scale=0.5, 
-                                     ax_set_range='range_all', 
-                                     logx=False, logy=False,
-                                     bins=np.linspace(-1,1,100),
-                                     include_median=False,
-                                     sigfig=2) 
-    plt.tight_layout()
-    #%%
-
-    pdf.savefig()
-    plt.close()
-    
-
-    '''                 
+'''                 
                       
     n_subplot = len(layers)
     for i, layer in enumerate(layers):
@@ -494,45 +417,6 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
 
 This is a demo of creating a pdf file with several pages,
 as well as adding metadata and annotations to pdf files.
-
-
-
-
-## Create the PdfPages object to which we will save the pages:
-## The with statement makes sure that the PdfPages object is closed properly at
-## the end of the block, even if an Exception occurs.
-#with PdfPages('multipage_pdf.pdf') as pdf:
-#    plt.figure(figsize=(3, 3))
-#    plt.plot(range(7), [3, 1, 4, 1, 5, 9, 2], 'r-o')
-#    plt.title('Page One')
-#    pdf.savefig()  # saves the current figure into a pdf page
-#    plt.close()
-#
-#    plt.rc('text', usetex=True)
-#    plt.figure(figsize=(8, 6))
-#    x = np.arange(0, 5, 0.1)
-#    plt.plot(x, np.sin(x), 'b-')
-#    plt.title('Page Two')
-#    pdf.attach_note("plot of sin(x)")  # you can add a pdf note to
-#                                       # attach metadata to a page
-#    pdf.savefig()
-#    plt.close()
-#
-#    plt.rc('text', usetex=False)
-#    fig = plt.figure(figsize=(4, 5))
-#    plt.plot(x, x*x, 'ko')
-#    plt.title('Page Three')
-#    pdf.savefig(fig)  # or you can pass a Figure object to pdf.savefig
-#    plt.close()
-#
-#    # We can also set the file's metadata via the PdfPages object:
-#    d = pdf.infodict()
-#    d['Title'] = 'Multipage PDF Example'
-#    d['Author'] = u'Jouni K. Sepp\xe4nen'
-#    d['Subject'] = 'How to create a multipage pdf file and set its metadata'
-#    d['Keywords'] = 'PdfPages multipage keywords author title subject'
-#    d['CreationDate'] = datetime.datetime(2009, 11, 13)
-#    d['ModDate'] = datetime.datetime.today()
 
 
 
