@@ -294,7 +294,7 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
                                   bins=np.linspace(0,1,20), logx=False, logy=False,
                                   fontsize=fontsize, sigfig=2, 
                                   layers_to_examine=layers_to_examine)
-        legend_labels = list(cnn_an.index.levels[1][list(np.unique(d_cnn_an.index.labels[1]))])
+        legend_labels = list(cnn_an.index.levels[1][list(np.sort(np.unique(d_cnn_an.index.labels[1])))])
         ax_list[0].legend(legend_labels, frameon=0, fontsize=fontsize)
         ax_list[0].set_title('Normalized Average Covariance', fontsize=fontsize)
         plt.tight_layout()
