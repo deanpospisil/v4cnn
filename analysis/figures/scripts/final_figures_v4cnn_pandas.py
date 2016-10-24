@@ -190,7 +190,7 @@ def open_cnn_analysis(fn,layer_label):
         an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'))
     fvx = an[0].sel(concat_dim='r2')
     rf = an[0].sel(concat_dim='rf')
-    cnn = an[1].reindex(layer_label, level='layer_label')
+    cnn = an[1]
     return fvx, rf, cnn
 
 def process_V4(v4_resp_apc, v4_resp_ti, dmod):
@@ -263,18 +263,22 @@ if 'cnn_an' not in locals() or goforit:
     shuf = open_cnn_analysis(fns[2], layer_label)[-1]
     null = pd.concat([open_cnn_analysis(fns[3], layer_label)[-1], null_v4], axis=0)
     cnn_an = pd.concat([alt, null, init, shuf ], 
-              axis=0, keys=['resp', 's. resp', 'init. net', 's. layer wts'], names=['cond','layer_label','unit'])
+                        axis=0, 
+                        keys=['resp', 's. resp', 'init', 's. wts'], 
+                        names=['cond','layer_label','unit'])
     
-    cnn_an = cnn_an.swaplevel(i=0,j=1)
+    cnn_an = cnn_an.swaplevel(i=0, j=1)
 
 fontsize=12
 from matplotlib.backends.backend_pdf import PdfPages
 with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf:
     plt.rc('text', usetex=False)
-    for layers_to_examine in [['conv1', 'relu1', 'norm1', 'conv2', 'norm2', 'conv5', 'fc6', 'prob', 'v4'],layer_label]:
+    for layers_to_examine in [['conv1', 'relu1', 'norm1', 'conv2', 'norm2', 'conv5', 'fc6', 'prob', 'v4'],np.array(layer_label).astype(str)]:
         ax_list = small_mult_hist(cnn_an['k'].drop(['s. resp',], level='cond'), 
-                                  bins=np.linspace(.99,370,1000), logx=True, logy=False, 
-                                    fontsize=fontsize, sigfig=1, layers_to_examine=layers_to_examine)
+                                 bins=np.linspace(.99,370,1000), 
+                                 logx=True, logy=False, 
+                                 fontsize=fontsize, sigfig=1, 
+                                 layers_to_examine=layers_to_examine)
         ax_list[0].legend(cnn_an.index.levels[1], frameon=0, fontsize=fontsize)
         ax_list[0].set_title('Kurtosis', fontsize=fontsize)
         plt.tight_layout()

@@ -359,7 +359,7 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures_old.pdf') as
     
     name = 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(114.0, 114.0, 1)_amp_(100, 255, 2).nc'
     cnns = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'].sel(amp=amp) for amp in [100, 255]] + cnn
-    
+    ref_resp = cnns[1]
     name = 'bvlc_reference_caffenet_nat_image_resp_371.nc'
     cnn = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'],]   
     cnns = cnns + cnn
