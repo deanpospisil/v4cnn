@@ -87,26 +87,49 @@ def beautify(ax=None, spines_to_remove = ['top', 'right']):
             for minor_tick in axis.get_minor_ticks():
                 label = minor_tick.label
                 label.set_color(more_grey)
+
     #plt.grid(axis='y', color=more_grey)
 
-def cartesian_axes(ax, x_line=True, y_line=True, unity=False):
-    ax.axis('equal')
-    ylim = ax.get_ylim()
-    xlim = ax.get_xlim()
+def scatter_lsq(ax, a, b, lsq=True, mean_subtract=True, **kw):    
+
+    if len(a.shape)==1:
+        a = np.expand_dims(a,1)
+    if len(b.shape)==1:
+        b = np.expand_dims(b,1)
     
+    if mean_subtract:
+        a -= np.mean(a);b -= np.mean(b)
+    if a.shape[1] > 1 :
+        print('a second dim to big, just taking the first col')
+        a = a[:,1]
+    if b.shape[1] > 1 :
+        print('b second dim to big, just taking the first col')
+        b = b[:,1]   
+
+    x = np.linalg.lstsq(a, b)[0]
+    a_scaled = np.dot(a, x)
+    ax.scatter(a_scaled, b, **kw)
+    return a_scaled, b
+    
+    
+def cartesian_axes(ax, x_line=True, y_line=True, unity=False):
+    more_grey = '#929292'
+    ax.axis('equal')
+    ylim = ax.spines['left'].get_bounds()
+    xlim = ax.spines['bottom'].get_bounds()    
     if x_line:
-        ax.plot([xlim[0], xlim[1]], [0, 0])
+        #ax.spines['bottom'].set_position('center')
+        ax.plot([xlim[0], xlim[1]], [0, 0], color=more_grey,lw=0.5, alpha=0.5)
     if y_line:
-        ax.plot([0, 0], [ylim[0], ylim[1]])
+        #ax.spines['left'].set_position('center')
+        ax.plot([0, 0], [ylim[0], ylim[1]], color=more_grey,lw=0.5,alpha=0.5)
     
     if unity:
-        if np.diff(ax.get_ylim())<np.diff(ax.get_xlim()):
-            ax.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]])
-        else:
-            ax.plot([ylim[0], ylim[1]], [ylim[0], ylim[1]])
+        ax.plot(xlim, xlim, color=more_grey, lw=0.5,alpha=0.5)
+
     
         
-def data_spines(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12, 
+def data_spines_twinx(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12, 
                 nat_range=None, minor_ticks=False, data_spine=['bottom', 'left']):
     
     if not type(ax)==type([]):
@@ -118,7 +141,7 @@ def data_spines(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12,
     if nat_range == None:
             nat_range = [[[np.min(x), np.max(x)], [np.min(y[0]), np.max(y[0])]],
                          [[np.min(x), np.max(x)], [np.min(y[1]), np.max(y[1])]]]
-    
+    print(np.round(nat_range,2))
     for i, a_ax in enumerate(ax):
         #todo minor ticks, nat_range
         ticks = [[np.min(x), np.max(x)],[np.min(y[i]), np.max(y[i])]]
@@ -129,12 +152,14 @@ def data_spines(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12,
             a_ax.spines['left'].set_bounds(nat_range[0][1][0], nat_range[0][1][1])
             
             scale = np.diff(ax[1].get_ylim())/np.diff(ax[0].get_ylim())
+            scale= scale**-1
             a_ax.spines['right'].set_bounds(nat_range[1][1][0]*scale, nat_range[1][1][1]*scale)
         else:
             a_ax.spines['right'].set_bounds(nat_range[1][1][0], nat_range[1][1][1])
             
             scale = np.diff(ax[0].get_ylim())/np.diff(ax[1].get_ylim())
             scale= scale**-1
+            
             a_ax.spines['left'].set_bounds(nat_range[0][1][0]*scale, nat_range[0][1][1]*scale)
         
         for axis in range(2):
@@ -151,7 +176,42 @@ def data_spines(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12,
                       top=a_ax.get_ylim()[1]+a_ax.get_ylim()[1]*0.1)
     
     return None
+def data_spines(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12, 
+                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left']):
 
+    if nat_range == None:
+            nat_range = [[np.min(x), np.max(x)], [np.min(y), np.max(y)]]
+    
+    #todo minor ticks, nat_range
+    ticks = [[np.min(x), np.max(x)],[np.min(y), np.max(y)]]
+    ax.spines['bottom'].set_bounds(nat_range[0][0], nat_range[0][1])
+    ax.spines['left'].set_bounds(nat_range[1][0], nat_range[1][1])
+   
+    
+    for axis in range(2):
+        if abs((0-ticks[axis][0])/(ticks[axis][0] - ticks[axis][1]))<.05:
+            mark_zero[axis] = False
+        if mark_zero[axis]:
+            ticks[axis] += [0,]
+
+    ax.set_xticks(ticks[0])
+    ax.set_xticklabels(np.round(ticks[0], sigfig), fontsize=fontsize)
+    ax.set_yticks(ticks[1])
+    ax.set_yticklabels(np.round(ticks[1], sigfig), fontsize=fontsize)
+    
+    #ax.set_ylim(bottom=ax.get_ylim()[0] + ax.get_ylim()[0]*0.1, 
+    #              top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.1)
+    
+    return None
+def d_cust_hist(ax, n, bins, color='k'):
+    for a_n, a_bin in zip(n, bins):
+        ax.plot([a_bin,a_bin],[0, a_n], color=color, lw=0.9, linestyle=':', alpha=0.7)
+    for i, a_n in enumerate(n):
+        ax.plot([bins[i], bins[i+1]], [a_n, a_n],color=color)
+    
+
+           
+    
 def d_hist(ax, x, bins='auto', alpha=0.5, color='k', normed=True, cumulative=False):
     if bins=='auto':
         bins = np.round(np.sqrt(len(x))/2)
@@ -162,8 +222,11 @@ def d_hist(ax, x, bins='auto', alpha=0.5, color='k', normed=True, cumulative=Fal
         n = y_cum
         bins = np.sort(x)
     else:
-        n, bins, _ = ax.hist(x, bins=bins, color=color, histtype='step', 
-                         alpha=alpha, lw=1, normed=normed)
+        n, bins = np.histogram(x, bins=bins, normed=True)
+        d_cust_hist(ax, n, bins=bins, color=color)
+        #n, bins, _ = ax.hist(x, bins=bins, color=color, histtype='step', 
+        #                 alpha=alpha, lw=1, normed=normed)
+        
     return n, bins
                  
 def kde_dist(ax, x, bw=None, color='k'):
@@ -175,7 +238,7 @@ def kde_dist(ax, x, bw=None, color='k'):
     # score_samples() returns the log-likelihood of the samples
     log_pdf = kde_skl.score_samples(x_grid[:, np.newaxis])
     est = np.exp(log_pdf)
-    ax.plot(x_grid, est, color=color)
+    ax.plot(x_grid, est, color=color, lw=0.5)
     
     return est
 
@@ -187,7 +250,7 @@ def open_cnn_analysis(fn,layer_label):
         an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'))
     fvx = an[0].sel(concat_dim='r2')
     rf = an[0].sel(concat_dim='rf')
-    cnn = an[1].reindex(layer_label, level='layer_label')
+    cnn = an[1]
     return fvx, rf, cnn
 
 def process_V4(v4_resp_apc, v4_resp_ti, dmod):
@@ -267,7 +330,46 @@ if 'cnn_an' not in locals() or goforit:
     cnn_an = pd.concat([alt, null, init, shuf ], 
               axis=0, keys=['resp', 's. resp', 'init. net', 's. layer wts'], names=['cond','layer_label','unit'])
     
-    cnn_an = cnn_an.swaplevel(i=0,j=1)
+    
+
+import matplotlib.gridspec as gridspec
+conds = ['resp', 's. resp', 'init. net', 's. layer wts']
+apc = cnn_an['apc'][cnn_an['k']<40]
+m = 4
+n = 3
+gs = gridspec.GridSpec(m, n, width_ratios=[1,1,1],
+                        height_ratios=[1,]*m)
+ax_list = [plt.subplot(gs[pos]) for pos in range(m*n)]
+hist_pos = [0,3,6,9]
+hist_dat = [[apc.loc['resp'].loc['v4'], 
+             apc.loc['s. resp'].loc['v4']]
+            , ]
+            
+hist_dat.append([apc.loc[cond].drop('v4', level='layer_label') for cond in conds])
+
+
+
+pd.concat([apc.loc['resp'].drop('v4', level='layer_label')
+                     for label in layer_label 
+                     if 'conv' in label.astype(str)])
+'''
+f, ax = plt.subplots(1,1,figsize=(4,4))
+n, bins = np.histogram(v4_resp_apc.values.ravel())
+d_cust_hist(ax, n, bins)
+beautify(ax, spines_to_remove=['top','right'])
+data_spines(ax, bins, n, mark_zero=[True, False], sigfig=1, fontsize=12, 
+                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left'])
+
+var = v4_resp_apc.values
+kw = {'s':6, 'linewidths':0, 'c':'k'}
+x = np.random.normal(size=(20,1))
+y = np.random.normal(size=(20,1)) + x
+x, y = scatter_lsq(ax, x, y, lsq=True, mean_subtract=True, **kw)
+beautify(ax, spines_to_remove=['top','right'])
+data_spines(ax, x, y, mark_zero=[True, True], sigfig=1, fontsize=12, 
+                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left'])
+cartesian_axes(ax, x_line=True, y_line=True, unity=True)
+
 
 ax = plt.subplot(111)
 x = v4_resp_apc.values.ravel()[1:100]
@@ -277,21 +379,25 @@ ax2 = ax.twinx()
 y_c, bins_c = d_hist(ax2, x, cumulative=True)
 
 x = v4_resp_apc.values.ravel()[100:200]
-kde_dist(ax, x)
-y, bins = d_hist(ax, x,bins=bins)
+kde_dist(ax, x, color='r')
+y, bins = d_hist(ax, x, bins=bins, color='r')
 #ax2 = ax.twinx()
-y_c, bins_c = d_hist(ax2, x, cumulative=True)
+y_c, bins_c = d_hist(ax2, x, cumulative=True, color='r')
 
 
 beautify(ax, spines_to_remove=['top',])
 beautify(ax2, spines_to_remove=['top',])
-data_spines([ax, ax2], x, [y, y_c], mark_zero=[True, False], sigfig=2, fontsize=12, 
+data_spines_twinx([ax, ax2], x, [y, y_c], mark_zero=[True, False], sigfig=2, fontsize=12, 
                 nat_range=None, minor_ticks=False, data_spine=['bottom', 'left', 'right'])
 ax2.set_ylim(auto=True)
 ax.set_ylim(bottom=ax.get_ylim()[0] +ax.get_ylim()[0]*0.05, 
             top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.05)
 ax2.set_ylim(bottom=ax2.get_ylim()[0] +ax2.get_ylim()[0]*0.05, 
             top=ax2.get_ylim()[1]+ax2.get_ylim()[1]*0.05)
+'''
+
+
+
 
 #data_spines(ax2, x, y, mark_zero=[True, False], sigfig=2, fontsize=12, 
 #                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left', 'right'])
@@ -308,5 +414,4 @@ ax2.set_ylim(bottom=ax2.get_ylim()[0] +ax2.get_ylim()[0]*0.05,
 ##beautify(ax)
 ##beautify(ax2, spines_to_remove=['top', 'left'])
 ##kde_dist(ax, alt['apc'][alt['k']<42].dropna().values)
-
 
