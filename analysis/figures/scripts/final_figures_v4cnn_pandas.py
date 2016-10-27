@@ -29,12 +29,38 @@ import d_curve as dc
 import d_img_process as imp
 import d_net_analysis as dn
 plt.close('all')
-def beautify(ax=None):
 
+
+from sklearn.neighbors import KernelDensity
+
+from sklearn.grid_search import GridSearchCV
+
+
+def d_hist(ax, x, kde=True, hist_alpha=0, bw=None, color='k', bins=100, sample_points=1000):
+    x_grid = np.linspace(np.min(x), np.max(x), sample_points)
+    
+    if bw == None:
+        bw = np.std(x)*float(len(x))**(-1/5.) #Silverman Rule-of-Thumb second order normal
+        
+    kde_skl = KernelDensity(bandwidth=bw)
+    kde_skl.fit(x[:, np.newaxis])
+    # score_samples() returns the log-likelihood of the samples
+    log_pdf = kde_skl.score_samples(x_grid[:, np.newaxis])
+    est = np.exp(log_pdf)
+    ax.plot(x_grid, est, color=color)
+    n = ax.hist(x, bins=bins, color=color, histtype='step', 
+                             alpha=hist_alpha, lw=1, normed=True)[0]
+    return n, est
+#ax = plt.subplot(111)
+#d_hist(ax, np.random.normal(0,1,100))
+
+
+    
+def beautify(ax=None):
     almost_black = '#262626'
     more_grey = '#929292'
-    text_font = 'serif'
-    number_font = 'helvetica'
+#    text_font = 'serif'
+#    number_font = 'helvetica'
 
     # Get the axes.
     if ax is None:
@@ -49,11 +75,6 @@ def beautify(ax=None):
     # Make ticks only on the left and bottom (not on the spines that we removed)
     ax.yaxis.tick_left()
     ax.xaxis.tick_bottom()
-
-    # To remove the ticks all-together (like in prettyplotlib), do the following
-    # instead of tick_left() and tick_bottom()
-    #ax.xaxis.set_ticks_position('none')
-    #ax.yaxis.set_ticks_position('none')
 
     # Now make them go 'out' rather than 'in'
     for axis in ['x', 'y']:
@@ -70,7 +91,6 @@ def beautify(ax=None):
     # Change the labels & title to the off-black and change their font
     for label in [ax.yaxis.label, ax.xaxis.label, ax.title]:
         label.set_color(almost_black)
-        label.set_family(text_font)
 
     # Change the tick labels' color and font and padding
     for axis in [ax.yaxis, ax.xaxis]:
@@ -80,18 +100,17 @@ def beautify(ax=None):
         for major_tick in axis.get_major_ticks():
             label = major_tick.label
             label.set_color(almost_black)
-            label.set_family(number_font)
         # minor ticks
         for minor_tick in axis.get_minor_ticks():
             label = minor_tick.label
             label.set_color(more_grey)
-            label.set_family(number_font)
+
 
     # Turn on grid lines for y-only
-    plt.grid(axis='y', color=more_grey)
+    #plt.grid(axis='y', color=more_grey)
 def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True, 
                logy=False, include_median=False, label='', fontsize=10
-               , layers_to_examine=None):
+               , layers_to_examine=None, bw=None):
     num_colors = len(df.index.levels[0])
     colormap = plt.get_cmap('jet')
     colors = [colormap(1.*i/num_colors) for i in range(num_colors)]  
@@ -100,14 +119,17 @@ def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True,
     dim2_levels = df.index.levels[0]  
 
     n=[]
-    
+    est = []
     for dim2_ind in dim2_inds:            
         var = df.loc[dim2_levels[dim2_ind]].dropna().values
         color = colors[dim2_ind]
         if len(var)>0:
-            n.append(ax.hist(var, bins=bins, color=color, histtype='step', 
-                             alpha=0.6, lw=2)[0])
-    max_n = np.max(n)
+            _ = d_hist(ax, var,  bw=bw, color=color, bins=bins)
+            n.append(_[0])
+            est.append(_[1])
+            #n.append(ax.hist(var, bins=bins, color=color, histtype='step', 
+             #                alpha=0.6, lw=2)[0])
+    max_n = np.max([np.max(n),np.max(est)])
     the_range = [df.min(), df.max()]
     if logx:
         ax.semilogx(nonposy='clip')
@@ -165,7 +187,7 @@ def small_hist(df, bins, ax, ax_set_range='range_all', sigfig=1, logx=True,
 def small_mult_hist(df, scale=1, ax_set_range='symmetric', 
                     logx=False, logy=False, bins='auto',
                     include_median=False, sigfig=1, fontsize=12,
-                    layers_to_examine=None):
+                    layers_to_examine=None, bw=None):
     if layers_to_examine == None:
         layers_to_examine = df.index.levels[0]
     m = len(layers_to_examine)
@@ -178,7 +200,7 @@ def small_mult_hist(df, scale=1, ax_set_range='symmetric',
 
     for dim1, ax in zip(layers_to_examine, ax_list):
         small_hist(df.loc[dim1], bins, ax, label=dim1, 
-                   logx=logx,logy=logy, fontsize=fontsize, sigfig=sigfig)
+                   logx=logx,logy=logy, fontsize=fontsize, sigfig=sigfig, bw=bw)
 
     return ax_list
     
@@ -210,7 +232,7 @@ def process_V4(v4_resp_apc, v4_resp_ti, dmod):
     v4 = pd.concat([v4pdti, v4pdapc])
     return v4
 
-goforit = True
+goforit = False
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     v4_name = 'V4_362PC2001'
@@ -273,12 +295,14 @@ fontsize=12
 from matplotlib.backends.backend_pdf import PdfPages
 with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf:
     plt.rc('text', usetex=False)
+
     for layers_to_examine in [['conv1', 'relu1', 'norm1', 'conv2', 'norm2', 'conv5', 'fc6', 'prob', 'v4'],np.array(layer_label).astype(str)]:
         ax_list = small_mult_hist(cnn_an['k'].drop(['s. resp',], level='cond'), 
                                  bins=np.linspace(.99,370,1000), 
                                  logx=True, logy=False, 
                                  fontsize=fontsize, sigfig=1, 
                                  layers_to_examine=layers_to_examine)
+
         ax_list[0].legend(cnn_an.index.levels[1], frameon=0, fontsize=fontsize)
         ax_list[0].set_title('Kurtosis', fontsize=fontsize)
         plt.tight_layout()
@@ -287,7 +311,8 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
         
         ax_list = small_mult_hist(cnn_an['apc'][cnn_an['k']<40], 
                                   bins=np.linspace(0,1,20), logx=False, logy=False, 
-                                    fontsize=fontsize, sigfig=2, layers_to_examine=layers_to_examine)
+                                    fontsize=fontsize, sigfig=2, 
+                                    layers_to_examine=layers_to_examine, bw=None)
         ax_list[0].legend(cnn_an.index.levels[1], frameon=0, fontsize=fontsize)
         ax_list[0].set_title('APC $R^2$', fontsize=fontsize)
         plt.tight_layout()
@@ -297,6 +322,7 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
         ax_list = small_mult_hist(d_cnn_an, 
                                   bins=np.linspace(0,1,20), logx=False, logy=False,
                                   fontsize=fontsize, sigfig=2, 
+
                                   layers_to_examine=layers_to_examine)
         legend_labels = list(cnn_an.index.levels[1][list(np.sort(np.unique(d_cnn_an.index.labels[1])))])
         ax_list[0].legend(legend_labels, frameon=0, fontsize=fontsize)
