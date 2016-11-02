@@ -209,9 +209,6 @@ def data_spines(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12,
     ax.set_yticks(ticks[1])
     ax.set_yticklabels(np.round(ticks[1], sigfig), fontsize=fontsize)
     
-    #ax.set_ylim(bottom=ax.get_ylim()[0] + ax.get_ylim()[0]*0.1, 
-    #              top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.1)
-    
     return None
 def d_cust_hist(ax, n, bins, color='k'):
     for a_n, a_bin in zip(n, bins):
@@ -338,7 +335,7 @@ no_blank_image = trans_img_stack[1:]
 a = np.hstack((range(14), range(18, 318)));a = np.hstack((a, range(322, 370)))
 no_blank_image = no_blank_image[a]/255.
 
-goforit = True
+goforit = False
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     v4_name = 'V4_362PC2001'
@@ -384,16 +381,6 @@ if 'cnn_an' not in locals() or goforit:
     da_0 = da.sel(x=da.coords['x'][middle])
     indexes = np.unique(da.coords['layer_label'].values, return_index=True)[1]
     layer_label = [da.coords['layer_label'].values[index] for index in sorted(indexes)]
-
-    v4_resp_apc_n = v4_resp_apc - v4_resp_apc.mean('shapes') 
-    v4_resp_apc_n = v4_resp_apc_n / v4_resp_apc_n.chunk({}).vnorm('shapes')
-    
-    da_0_n = da_0.sel(shapes=v4_resp_apc.coords['shapes'].values)
-    da_0_n = da_0_n - da_0_n.mean('shapes')
-    da_0_n = da_0_n / da_0_n.chunk({}).vnorm('shapes')
-    frac_var_v4_cnn = np.dot(da_0_n.T, v4_resp_apc_n)**2
-    frac_var_v4_cnn[np.isnan(frac_var_v4_cnn)] = 0
-    frac_var_v4_cnn = frac_var_v4_cnn.max(0)
        
     fns = [
     'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
@@ -497,7 +484,7 @@ hi_curv_resp = hi_curv_resp.reindex_like(model_resp)
 scatter_dat.append([hi_curv_resp, model_resp, b_unit])
                 
 
-kw = {'s':0.5, 'linewidths':0, 'c':'r'}
+kw = {'s':1., 'linewidths':0, 'c':'r'}
 for ax_ind, dat in zip(example_cell_inds, scatter_dat):
     ax = ax_list[ax_ind]
     x,y= scatter_lsq(ax, dat[0].values, dat[1].values, lsq=True,
@@ -508,51 +495,26 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
     ax.set_xticks([]);ax.set_yticks([]);
     ax.set_xlim(min(x), max(x))
     ax.set_ylim(min(y)+min(y)*0.05, max(y)+max(y)*0.05)
-
-    ax.text(0, 0.5, 'Model',
-                        transform=ax.transAxes, fontsize=fs,
-                        va='center', ha='right', rotation='vertical')
-    ax.set_title('µ Curv:'+ str(np.round(dat[1].coords['cur_mean'].values,2))
-                + ', µ Ori:'+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values),0))
-                + ', $R^2$:' +str(np.round(frac_var,2))  ,
-                fontsize=fs)
+    if example_cell_inds[0]==ax_ind:
+        ax.text(0, 0.5, 'Model',
+                            transform=ax.transAxes, fontsize=fs,
+                            va='center', ha='right', rotation='vertical')
+    ax.set_title(' $R^2$:' +str(np.round(frac_var,2)), fontsize=fs)
     ax.text(.5, 0, 'Unit: ' +str(dat[2]),transform=ax.transAxes, 
             fontsize=fs, va='top', ha='center')
     
     ax = ax_list[ax_ind+1]
     im = plot_resp_on_shapes(ax, no_blank_image, dat[0], image_square=5)
-
+    ax.set_xlabel('Curv $(\mu,\sigma)$ : ('+ str(np.round(dat[1].coords['cur_mean'].values,2))
+                + ', ' + str(np.round(dat[1].coords['cur_sd'].values,2))+')'
+                + '\n Ori $(\mu,\sigma)$ : ('+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values),0))
+                +', '+ str(np.round(np.rad2deg(dat[1].coords['or_sd'].values),0))+')', fontsize=fs)
     cbar = plt.gcf().colorbar(im, ax=ax, ticks=[0, np.max(dat[0])],)
     cbar.ax.set_yticklabels(np.round([np.min(dat[0]), np.max(dat[0])],1)) # horizontal colorbarplt.gcf().colorbar(im)
 ax_list[2].set_title('Rank Ordered\nUnit Shape Response', fontsize=8)
 
 gs.tight_layout(plt.gcf())
 plt.savefig(top_dir + '/analysis/figures/images/apc_figs.eps')
-#%%
-plt.figure(figsize=(4,4))
-ax = plt.subplot(111)
-kw = {'s':3, 'linewidths':0, 'c':'k'}
-x,y= scatter_lsq(ax, frac_var_v4_cnn, apc_fit_v4.values**2, lsq=False,
-                     mean_subtract=False, **kw)
-
-beautify(ax, spines_to_remove=['top','right'])
-
-data_spines(ax, x, y, mark_zero=[False, False], sigfig=2, fontsize=fs-2, 
-                nat_range=[[0,1],[0,1]], minor_ticks=False, 
-                data_spine=['bottom', 'left'], supp_xticks=[0.25,0.40, 1,], 
-                supp_yticks = [0.25,0.40, 1,])
-cartesian_axes(ax, x_line=False, y_line=False, unity=True)
-ax.axis('equal')
-ax.set_xlim(0,1)
-ax.set_ylim(0,1)
-
-
-
-
-ax.set_xlabel('CNN fit to V4')
-ax.set_ylabel('APC fit to V4')
-ax.set_title('CNN vs APC fits to V4 $R^2$')
-
 
 
 '''
