@@ -399,7 +399,7 @@ if 'cnn_an' not in locals() or goforit:
 fs = 9  
 plt.figure(figsize=(8,6))
 import matplotlib.gridspec as gridspec
-conds = ['resp', 's. resp', 'init. net', 's. layer wts']
+conds = ['resp', 's. resp', 'init. net']
 apc = cnn_an['apc'][cnn_an['k']<40]
 m = 3
 n = 3
@@ -439,15 +439,21 @@ for i, ax_ind in enumerate(hist_pos):
         y_c, bins_c = d_hist(ax, x, cumulative=True, color=color)   
     bins_c = np.concatenate([apc_vals.dropna().values for apc_vals in hist_dat[i]]).ravel()
     beautify(ax, spines_to_remove=['top','right'])
-    data_spines(ax, bins_c, y_c, mark_zero=[True, False], sigfig=2, fontsize=fs, 
-                nat_range=[[0,1],[0,1]], minor_ticks=False, 
-                data_spine=['bottom', 'left'], supp_xticks=[0.25,1,], 
-                supp_yticks = [0.5,])
+    #data_spines(ax, bins_c, y_c, mark_zero=[True, False], sigfig=2, fontsize=fs, 
+    #            nat_range=[[0,1],[0,1]], minor_ticks=False, 
+    #            data_spine=['bottom', 'left'], supp_xticks=[0.25,1,], 
+    #            supp_yticks = [0.5,])
+    ax.set_xticks([0,0.25,0.5,0.75,1])
+    ax.set_xticklabels([0,0.25,0.5,0.75,1])
+
     ax.set_xlim(0,1)
+    ax.set_yticks([0,0.25,0.5,0.75,1])
+    ax.set_yticklabels([0,0.25,0.5,0.75,1])
+    ax.set_ylim(0,1.1)
     leg = ax.legend(**hist_dat_leg[i])
     plt.setp(leg.get_title(),fontsize=fs)
-    ax.set_ylim(bottom=ax.get_ylim()[0] +ax.get_ylim()[0]*0.05, 
-            top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.05)
+    #ax.set_ylim(bottom=ax.get_ylim()[0] +ax.get_ylim()[0]*0.05, 
+    #        top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.05)
     ax.grid(axis='y')
     
     
