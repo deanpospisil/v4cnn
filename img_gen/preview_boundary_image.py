@@ -63,7 +63,7 @@ import caffe_net_response as cf
 import d_img_process as imp
 
 img_n_pix = 227
-max_pix_width = [24.,]
+max_pix_width = [200.,]
 boundaries = imp.center_boundary(s)
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 shape_ids = range(-1, 370)
@@ -83,8 +83,14 @@ trans_img_stack =np.array(imp.boundary_stack_transform(stim_trans_cart_dict, bas
 no_blank_image = trans_img_stack[1:]
 extents = (no_blank_image.sum(1)>0).sum(1)
 plt.subplot(211)
+plt.imshow(no_blank_image[208],cmap=plt.cm.Greys_r)
+plt.xticks([]);plt.yticks([])
+
+plt.savefig(top_dir+'analysis/figures/images/example.jpeg')
+'''
 plt.imshow(no_blank_image[np.argmax(extents)],
                           interpolation = 'nearest', cmap=plt.cm.Greys_r)
+
 for box_length in box_lengths:
     rectangle = plt.Rectangle((center-np.ceil(box_length/2.), center-np.ceil(box_length/2)),
                                box_length, box_length, fill=False, edgecolor='r')
@@ -108,3 +114,4 @@ plt.savefig(figure_folder + 'widest_narrowest_image' + '.svg')
 #    plt.subplot(5, 5, i + 1)
 #    plt.imshow(shape)
 #    plt.xticks([]);plt.yticks([])
+'''

@@ -24,6 +24,38 @@ import d_img_process as imp
 import d_net_analysis as dn
 from sklearn.neighbors import KernelDensity
 import caffe_net_response as cf
+
+def vis_square(ax, data, padsize=0, padval=0):
+    # force the number of filters to be square
+    n = int(np.ceil(np.sqrt(data.shape[0])))
+    padding = ((0, n ** 2 - data.shape[0]), (0, padsize), (0, padsize)) + ((0, 0),) * (data.ndim - 3)
+    data = np.pad(data, padding, mode='constant', constant_values=(padval, padval))
+
+    # tile the filters into an image
+    data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
+    data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
+    ax.set_xticks([]);ax.set_yticks([])
+#    if min((data.ravel())>=0):
+#        clim = (min(abs(data.ravel())), max(abs(data.ravel())))
+#    else:
+#        clim = (-max(abs(data.ravel())), max(abs(data.ravel())))
+
+    im = ax.imshow(data, interpolation='nearest', cmap=cm.coolwarm)
+    #cbar=ax.colorbar(shrink=0.8)
+    #cbar.ax.set_ylabel('Response', rotation= 270, labelpad=15, fontsize = 15,)
+#    cbar.ax.yaxis.set_ticks([0,.25,.5,.75, 1])
+#    cbar.ax.set_yticklabels(['0', .25, .5, .75, 1])
+    #cbar.solids.set_rasterized(True)
+    return im
+    
+def plot_resp_on_shapes(ax, imgStack, resp, image_square = 19):
+    resp_sc = resp
+    imgStack = imgStack*resp_sc.reshape(362,1,1)
+    #sort images
+    sortStack = imgStack[list(reversed(np.argsort(resp_sc))),:,:]
+    sortStack = np.array([imp.centeredCrop(img, 64, 64) for img in sortStack])
+    im = vis_square(ax, sortStack[0:image_square**2])
+    return im
 def beautify(ax=None, spines_to_remove = ['top', 'right']):
     almost_black = '#262626'
     more_grey = '#929292'
@@ -123,6 +155,27 @@ def cor2(a,b):
     corrcoef = np.dot(a.T, b)       
     return corrcoef
     
+#%%
+#shape image set up
+img_n_pix = 227
+max_pix_width = [64,]
+s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
+base_stack = dc.center_boundary(s)
+boundaries = imp.center_boundary(s)
+scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
+shape_ids = range(-1, 370); center_image = round(img_n_pix/2)
+x = (center_image, center_image, 1);
+y = (center_image, center_image, 1)
+stim_trans_cart_dict, _ = cf.stim_trans_generator(shapes=shape_ids, scale=scale, 
+                                                  x=x, y=y)
+#plt.figure(figsize=(12,24));
+center = 114
+trans_img_stack = np.array(imp.boundary_stack_transform(stim_trans_cart_dict, 
+                                                        base_stack, 
+                                                        npixels=227))
+no_blank_image = trans_img_stack[1:]
+a = np.hstack((range(14), range(18, 318)));a = np.hstack((a, range(322, 370)))
+no_blank_image = no_blank_image[a]/255.
 
  #%%   
 
@@ -193,7 +246,7 @@ plt.figure(figsize=(4,4))
 ax = plt.subplot(221)
 ax_list.append(ax)
 ax.locator_params(nbins=5)
-ax.set_title('APC vs CN on V4 $R^2$')
+ax.set_title('APC vs AlexNet on V4 $R^2$')
 x = mean_scores[0]
 y = mean_scores[2]
 xsd = bsci_scores[0]
@@ -211,6 +264,7 @@ ax.set_ylabel('APC')
 ax.set_ylim(0,.7)
 ax.set_xlim(0,.7)
 plt.grid()
+beautify(ax)
 
 ax = plt.subplot(223, sharex=ax)
 ax_list.append(ax)
@@ -231,17 +285,18 @@ ax.scatter(x,y, color=colors, s=3)
 ax.plot([0,1],[0,1], color='0.5')
 ax.set_ylim(0,.7)
 ax.set_xlim(0,.7)
+beautify(ax)
+
 
 ax.set_xlabel('Trained Net')
 ax.set_ylabel('Untrained Net')
 plt.grid()
 labels = ['A.', 'B.']
-for ax, label in zip(ax_list, labels):
-    ax.text(-0.1, 1., label, transform=ax.transAxes,
-      fontsize=14, fontweight='bold', va='top', ha='right')
+#for ax, label in zip(ax_list, labels):
+#    ax.text(-0.1, 1., label, transform=ax.transAxes,
+#      fontsize=14, fontweight='bold', va='top', ha='right')
 
 
-plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn.pdf')
 k = {'s':1, 'color':'r'}
 ax = plt.subplot(222)
 x = mean_scores[0]
@@ -255,6 +310,7 @@ np.corrcoef(models[0].sel(unit=cnn_better_model).values, v4_resp_apc[:,cnn_bette
 ax.plot([0,1],[0,1], color='0.5')
 ax.set_xticks([0, 0.5, 1])
 ax.set_yticks([0, 0.5, 1])
+beautify(ax)
 
 
 
@@ -267,7 +323,20 @@ scatter_lsq(ax, apb_resp, apu_resp,**k)
 np.corrcoef(models[2].sel(models=apc_better_model).values, v4_resp_apc[:,apc_better_unit].values)
 ax.plot([0,1],[0,1], color='0.5')
 beautify(ax)
+ax.set_xticks([0, 0.5, 1])
+ax.set_yticks([0, 0.5, 1])
 plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn.pdf')
+#%%
+
+plt.figure(figsize=(8,8))
+ax = plt.subplot(121)
+plot_resp_on_shapes(ax, no_blank_image, cnu_resp, image_square = 10)
+
+ax = plt.subplot(122)
+plot_resp_on_shapes(ax, no_blank_image, cnb_resp, image_square = 10)
+plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn_resp.pdf')
+
 
 '''  
 to_compare=cv_scores.mean(1) 

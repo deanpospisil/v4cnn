@@ -384,8 +384,8 @@ if 'cnn_an' not in locals() or goforit:
     layer_label = [da.coords['layer_label'].values[index] for index in sorted(indexes)]
        
     fns = [
-    'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
-    'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
+    'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis_home.p',
+    'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis_home.p',
     'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
     'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_null_analysis.p'
     ]
@@ -519,6 +519,8 @@ beautify([ax,ax2], spines_to_remove=['top',], );
        
 ti_cnn = cnn_an[~cnn_an['ti_av_cov'].isnull()]['ti_av_cov'].loc['resp']
 ex_cell_inds = [('fc7',12604), ('conv2', 497)]
+ex_cell_inds = [('fc7',12601), ('conv2', 501)]
+
 ex_cell_tis = [ti_cnn.loc[ind[0]].loc[ind[1]] for ind in ex_cell_inds]
 ex_cell_cors = [cor.sel(unit=ind[1]) for ind in ex_cell_inds]
 ex_cell_rfs = [rf.sel(unit=ind[1]) for ind in ex_cell_inds]
@@ -558,7 +560,7 @@ for ex_cell, color in zip(cn_ex,['b','r']):
 ax2.legend(ex_cell_inds, loc=(-0.3,1),labelspacing=None, columnspacing=0.1,
           fontsize=8, frameon=False, ncol=3, title='CN Layer Averages')
 
-
+#%%
 ti_cnn = cnn_an[~cnn_an['ti_av_cov'].isnull()]['ti_av_cov']
 hist_pos = [6,7]
 hist_dat_leg = []
