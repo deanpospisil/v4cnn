@@ -219,16 +219,16 @@ for model in models:
     cv_score = []
     model_ind_list = []
     for train_index, test_index in ss.split(X):
-        frac_var_v4_cnn = cor2(model.values[train_index], 
-                               v4_resp_apc.values[train_index])**2
-        frac_var_v4_cnn[np.isnan(frac_var_v4_cnn)] = 0
-        model_sel = frac_var_v4_cnn.argmax(0)
-        frac_var_v4_cnn_cv = np.array([cor2(v4_resp_apc[test_index, i], 
-                            model[test_index, model_ind])**2
+        cor_v4_cnn = cor2(model.values[train_index], 
+                               v4_resp_apc.values[train_index])
+        cor_v4_cnn[np.isnan(cor_v4_cnn)] = 0
+        model_sel = cor_v4_cnn.argmax(0)
+        cor_v4_cnn_cv = np.array([cor2(v4_resp_apc[test_index, i], 
+                            model[test_index, model_ind])
                             for i, model_ind in enumerate(model_sel)]).squeeze()
         model_ind_list.append(model_sel)
-        frac_var_v4_cnn_cv[np.isnan(frac_var_v4_cnn_cv)] = 0
-        cv_score.append(frac_var_v4_cnn_cv)
+        cor_v4_cnn_cv[np.isnan(cor_v4_cnn_cv)] = 0
+        cv_score.append(cor_v4_cnn_cv)
     cv_scores.append(cv_score)
     model_ind_lists.append(model_ind_list)
 model_ind_lists = np.array(model_ind_lists)
@@ -246,23 +246,25 @@ plt.figure(figsize=(4,4))
 ax = plt.subplot(221)
 ax_list.append(ax)
 ax.locator_params(nbins=5)
-ax.set_title('APC vs AlexNet on V4 $R^2$')
+ax.set_title('V4 Models Correlation\n')
 x = mean_scores[0]
 y = mean_scores[2]
 xsd = bsci_scores[0]
 ysd = bsci_scores[2]
 ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o', 
-            alpha=0.5, markersize=0, color='r', ecolor='0.5')
+            alpha=0, markersize=0, color='r', ecolor='0.5')
 colors= np.array(['k',]*len(x))
-colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
-       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+#colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+#       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
 ax.scatter(x,y, color=colors, s=3)
 #ax.scatter(x, y, alpha=0.5, s=2)
 ax.plot([0,1],[0,1], color='0.5')
 #ax.set_xlabel('Trained Net')
 ax.set_ylabel('APC')
-ax.set_ylim(0,.7)
-ax.set_xlim(0,.7)
+ax.set_ylim(0,1)
+ax.set_xlim(0,1)
+ax.set_xticks([])
+ax.set_yticks([0, 0.5, 1])
 plt.grid()
 beautify(ax)
 
@@ -277,14 +279,16 @@ ysd = bsci_scores[1]
 
 #ax.scatter(x, y, alpha=0.5, s=2)
 ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o', 
-            alpha=0.5, markersize=0, color='r', ecolor='0.5')
+            alpha=0, markersize=0, color='r', ecolor='0.5')
 colors= np.array(['k',]*len(x))
-colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
-       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+#colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+#       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
 ax.scatter(x,y, color=colors, s=3)
 ax.plot([0,1],[0,1], color='0.5')
-ax.set_ylim(0,.7)
-ax.set_xlim(0,.7)
+ax.set_ylim(0,1)
+ax.set_xlim(0,1)
+ax.set_xticks([0, 0.5, 1])
+ax.set_yticks([0, 0.5, 1])
 beautify(ax)
 
 
@@ -295,8 +299,10 @@ labels = ['A.', 'B.']
 #for ax, label in zip(ax_list, labels):
 #    ax.text(-0.1, 1., label, transform=ax.transAxes,
 #      fontsize=14, fontweight='bold', va='top', ha='right')
+plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/apc_vs_cnn.pdf')
 
-
+#%%
 k = {'s':1, 'color':'r'}
 ax = plt.subplot(222)
 x = mean_scores[0]
@@ -319,12 +325,15 @@ apc_better_unit = (y-x).argmax()
 apc_better_model = model_ind_lists[2][:,apc_better_unit][0]
 apb_resp = models[2].sel(models=apc_better_model).values
 apu_resp = v4_resp_apc[:,apc_better_unit].values
-scatter_lsq(ax, apb_resp, apu_resp,**k)
+apu_resp_sc, apb_resp_sc = scatter_lsq(ax,  apu_resp, apb_resp, **k)
 np.corrcoef(models[2].sel(models=apc_better_model).values, v4_resp_apc[:,apc_better_unit].values)
 ax.plot([0,1],[0,1], color='0.5')
 beautify(ax)
-ax.set_xticks([0, 0.5, 1])
-ax.set_yticks([0, 0.5, 1])
+ax.set_xticks([0, np.max(apu_resp_sc)])
+ax.set_yticks([0,np.max(apb_resp_sc)])
+ax.set_xlim(np.min(apu_resp_sc),np.max(apu_resp_sc))
+ax.set_ylim(np.min(apb_resp_sc),np.max(apb_resp_sc))
+
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn.pdf')
 #%%
@@ -332,11 +341,13 @@ plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn.pdf')
 plt.figure(figsize=(8,8))
 ax = plt.subplot(121)
 plot_resp_on_shapes(ax, no_blank_image, cnu_resp, image_square = 10)
+ax.title('AlexNet Response')
+
 
 ax = plt.subplot(122)
 plot_resp_on_shapes(ax, no_blank_image, cnb_resp, image_square = 10)
 plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn_resp.pdf')
-
+ax.title('V4 Response')
 
 '''  
 to_compare=cv_scores.mean(1) 

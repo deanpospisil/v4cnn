@@ -527,55 +527,7 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
 ax_list[2].set_title('Rank Ordered\nUnit Shape Response', fontsize=8)
 
 gs.tight_layout(plt.gcf())
-plt.savefig(top_dir + '/analysis/figures/images/apc_figs.eps')
-#%%
-plt.figure(figsize=(4,4))
-ax = plt.subplot(111)
-kw = {'s':3, 'linewidths':0, 'c':'k'}
-x,y= scatter_lsq(ax, frac_var_v4_cnn, apc_fit_v4.values**2, lsq=False,
-                     mean_subtract=False, **kw)
-
-beautify(ax, spines_to_remove=['top','right'])
-
-data_spines(ax, x, y, mark_zero=[False, False], sigfig=2, fontsize=fs-2, 
-                nat_range=[[0,1],[0,1]], minor_ticks=False, 
-                data_spine=['bottom', 'left'], supp_xticks=[0.25,0.40, 1,], 
-                supp_yticks = [0.25,0.40, 1,])
-cartesian_axes(ax, x_line=False, y_line=False, unity=True)
-ax.axis('equal')
-ax.set_xlim(0,1)
-ax.set_ylim(0,1)
-
-
-
-
-ax.set_xlabel('CNN fit to V4')
-ax.set_ylabel('APC fit to V4')
-ax.set_title('CNN vs APC fits to V4 $R^2$')
-
-
-
-'''
-pd.concat([apc.loc['resp'].drop('v4', level='layer_label')
-                     for label in layer_label 
-                     if 'conv' in label.astype(str)])
-
-f, ax = plt.subplots(1,1,figsize=(4,4))
-n, bins = np.histogram(v4_resp_apc.values.ravel())
-d_cust_hist(ax, n, bins)
-beautify(ax, spines_to_remove=['top','right'])
-data_spines(ax, bins, n, mark_zero=[True, False], sigfig=1, fontsize=12, 
-                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left'])
-
-var = v4_resp_apc.values
-kw = {'s':6, 'linewidths':0, 'c':'k'}
-x = np.random.normal(size=(20,1))
-y = np.random.normal(size=(20,1)) + x
-x, y = scatter_lsq(ax, x, y, lsq=True, mean_subtract=True, **kw)
-beautify(ax, spines_to_remove=['top','right'])
-data_spines(ax, x, y, mark_zero=[True, True], sigfig=1, fontsize=12, 
-                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left'])
-cartesian_axes(ax, x_line=True, y_line=True, unity=True)
+plt.savefig(top_dir + '/analysis/figures/images/apc_figs_v4cnn.eps')
 
 
 ax = plt.subplot(111)
@@ -601,24 +553,4 @@ ax.set_ylim(bottom=ax.get_ylim()[0] +ax.get_ylim()[0]*0.05,
             top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.05)
 ax2.set_ylim(bottom=ax2.get_ylim()[0] +ax2.get_ylim()[0]*0.05, 
             top=ax2.get_ylim()[1]+ax2.get_ylim()[1]*0.05)
-'''
-
-
-
-
-#data_spines(ax2, x, y, mark_zero=[True, False], sigfig=2, fontsize=12, 
-#                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left', 'right'])
-
-#x = v4_resp_apc.values.ravel()[:1000]
-#x = np.sort(x)
-#y = np.array(range(len(x)))/float(len(x))
-#
-#from scipy import interpolate
-#f = interpolate.PchipInterpolator(x, y).derivative()
-#xnew = np.linspace(x.min(), x.max(), len(x))
-#ynew = f(xnew)
-#plt.plot(xnew, ynew)
-##beautify(ax)
-##beautify(ax2, spines_to_remove=['top', 'left'])
-##kde_dist(ax, alt['apc'][alt['k']<42].dropna().values)
-
+#%%
