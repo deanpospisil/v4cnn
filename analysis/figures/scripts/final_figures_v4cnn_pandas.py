@@ -296,7 +296,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf:
     plt.rc('text', usetex=False)
 
-    for layers_to_examine in [['conv1', 'relu1', 'norm1', 'conv2', 'norm2', 'conv5', 'fc6', 'prob', 'v4'],np.array(layer_label).astype(str)]:
+    for layers_to_examine in [[ 'conv2', 'norm2', 'conv5', 'fc6', 'prob', 'v4'],]:
         ax_list = small_mult_hist(cnn_an['k'].drop(['s. resp',], level='cond'), 
                                  bins=np.linspace(.99,370,1000), 
                                  logx=True, logy=False, 
@@ -322,7 +322,6 @@ with PdfPages(top_dir + 'analysis/figures/images/' + 'v4cnn_figures.pdf') as pdf
         ax_list = small_mult_hist(d_cnn_an, 
                                   bins=np.linspace(0,1,20), logx=False, logy=False,
                                   fontsize=fontsize, sigfig=2, 
-
                                   layers_to_examine=layers_to_examine)
         legend_labels = list(cnn_an.index.levels[1][list(np.sort(np.unique(d_cnn_an.index.labels[1])))])
         ax_list[0].legend(legend_labels, frameon=0, fontsize=fontsize)

@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Nov  3 11:12:08 2016
+
+@author: deanpospisil
+"""
+
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
@@ -209,29 +216,25 @@ def data_spines(ax, x, y, mark_zero=[True, False], sigfig=2, fontsize=12,
     ax.set_yticks(ticks[1])
     ax.set_yticklabels(np.round(ticks[1], sigfig), fontsize=fontsize)
     
-    #ax.set_ylim(bottom=ax.get_ylim()[0] + ax.get_ylim()[0]*0.1, 
-    #              top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.1)
-    
     return None
-def d_cust_hist(ax, n, bins, color='k'):
+def d_cust_hist(ax, n, bins, color='k', alpha= 0.7, lw=1):
     for a_n, a_bin in zip(n, bins):
-        ax.plot([a_bin,a_bin],[0, a_n], color=color, lw=0.9, linestyle=':', alpha=0.7)
+        ax.plot([a_bin,a_bin],[0, a_n], color=color, lw=lw, linestyle=':', alpha=alpha)
     for i, a_n in enumerate(n):
         ax.plot([bins[i], bins[i+1]], [a_n, a_n],color=color)     
     
-def d_hist(ax, x, bins='auto', alpha=0.5, color='k', normed=True, cumulative=False):
+def d_hist(ax, x, bins='auto', alpha=0.5, color='k', normed=True, cumulative=False,lw=1):
     if bins=='auto':
         bins = np.round(np.sqrt(len(x))/2)
     if cumulative:
         y_cum = np.array(range(1,len(x)+1))/float(len(x))
-        ax.step(np.sort(x), y_cum, 
-                alpha=alpha, lw=1, color=color)
+        ax.step(np.sort(x), y_cum, alpha=alpha, lw=lw, color=color)
         ax.scatter([np.max(x)], [1,], color=color, marker='|')
         n = y_cum
         bins = np.sort(x)
     else:
         n, bins = np.histogram(x, bins=bins, normed=True)
-        d_cust_hist(ax, n, bins=bins, color=color)
+        d_cust_hist(ax, n, bins=bins, color=color, alpha=alpha, lw=lw)
         #n, bins, _ = ax.hist(x, bins=bins, color=color, histtype='step', 
         #                 alpha=alpha, lw=1, normed=normed)
         
@@ -338,7 +341,7 @@ no_blank_image = trans_img_stack[1:]
 a = np.hstack((range(14), range(18, 318)));a = np.hstack((a, range(322, 370)))
 no_blank_image = no_blank_image[a]/255.
 
-goforit = True
+goforit = False
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     v4_name = 'V4_362PC2001'
@@ -351,11 +354,6 @@ if 'cnn_an' not in locals() or goforit:
     fn = top_dir + 'data/models/' + 'apc_models_362.nc'
     dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
     
-    apc_fit_v4 = ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), 
-                                      dmod.chunk({}), 
-                                      fit_over_dims=None, 
-                                      prov_commit=False)**2
-
     v4_resp_apc = v4_resp_apc - v4_resp_apc.mean('shapes')
     v4_resp_ti = xr.open_dataset(top_dir + 'data/responses/v4_ti_resp.nc')['resp'].load()
     alt_v4 = process_V4(v4_resp_apc, v4_resp_ti, dmod)
@@ -384,20 +382,10 @@ if 'cnn_an' not in locals() or goforit:
     da_0 = da.sel(x=da.coords['x'][middle])
     indexes = np.unique(da.coords['layer_label'].values, return_index=True)[1]
     layer_label = [da.coords['layer_label'].values[index] for index in sorted(indexes)]
-
-    v4_resp_apc_n = v4_resp_apc - v4_resp_apc.mean('shapes') 
-    v4_resp_apc_n = v4_resp_apc_n / v4_resp_apc_n.chunk({}).vnorm('shapes')
-    
-    da_0_n = da_0.sel(shapes=v4_resp_apc.coords['shapes'].values)
-    da_0_n = da_0_n - da_0_n.mean('shapes')
-    da_0_n = da_0_n / da_0_n.chunk({}).vnorm('shapes')
-    frac_var_v4_cnn = np.dot(da_0_n.T, v4_resp_apc_n)**2
-    frac_var_v4_cnn[np.isnan(frac_var_v4_cnn)] = 0
-    frac_var_v4_cnn = frac_var_v4_cnn.max(0)
        
     fns = [
-    'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
-    'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
+    'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis_home.p',
+    'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis_home.p',
     'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
     'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_null_analysis.p'
     ]
@@ -407,11 +395,220 @@ if 'cnn_an' not in locals() or goforit:
     shuf = open_cnn_analysis(fns[2], layer_label)[-1]
     null = pd.concat([open_cnn_analysis(fns[3], layer_label)[-1], null_v4], axis=0)
     cnn_an = pd.concat([alt, null, init, shuf ], 
-              axis=0, keys=['resp', 's. resp', 'init. net', 's. layer wts'], names=['cond','layer_label','unit'])
+                        axis=0, keys=['resp', 's. resp', 'init. net', 's. layer wts'], 
+                        names=['cond', 'layer_label', 'unit'])
+
+import matplotlib.gridspec as gridspec
+cnn_an = cnn_an[(cnn_an['k']>2)&(cnn_an['k']<40)]
+#%%
+m = 4
+n = 2
+plt.figure(figsize=(6,8))
+gs = gridspec.GridSpec(m, n, width_ratios=[1,]*n,
+                        height_ratios=[1,]*m) 
+
+ax_list = [plt.subplot(gs[pos]) for pos in range(m*n)]
+ti_v4 = alt_v4[~alt_v4['ti_av_cov'].isnull()]['ti_av_cov']
+ex_cell_inds = [ti_v4.argmax()[1], 2]
+ex_cell_ti = [ti_v4.loc['v4'].loc[ind] for ind in ex_cell_inds]
+ex_cell_resp = [v4_resp_ti.sel(unit=ind).dropna('shapes',how='all').dropna('x',how='all')
+                     for ind in ex_cell_inds]
+v4_ex = [cell for cell in zip(ex_cell_ti, ex_cell_resp, ex_cell_inds)]
+
+v4_ex_plt_inds = [0,2]
+for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
+    ax = ax_list[plt_ind]
+    ex_cell_resp = ex_cell[1]*(1/.3)
+    rf = (ex_cell_resp).mean('shapes')
+    corr = np.corrcoef(ex_cell_resp)**2
+    middle = rf.argmax()
+    corr_slice=corr[:, middle]
+    ax.locator_params(axis='x', nbins=len(rf.values), tight=True);
     
+    ax.plot(rf.values, color='k', linestyle=':', marker='.')
+    ax2 = ax.twinx()
+    ax2.locator_params(axis='y', nbins=5, tight=True);
+    ax2.locator_params(axis='x', nbins=len(rf.values), tight=True);
+
+    ax2.plot(corr_slice, marker='.', color='k')
+    beautify([ax,ax2], spines_to_remove=['top',]);
+
+    ax.set_ylim(0, rf.max() + rf.max()*0.1)
+    ax.set_title('TI = '+str(np.round(ex_cell[0],2)))
+    
+    ax2.set_ylim(0,1.1);
+    ax2.set_yticks([0,0.5,1])
+    ax.set_xlim(-0.1,len(rf.values)-1+0.1)
+    if plt_ind == 0:
+        ax2.legend(['$R^2$', ],loc=10, frameon=False)
+        ax.set_xlabel('Position', labelpad=1)
+        ax.legend(['RF',], loc=8, frameon=False)
+        ax.set_ylabel('RF\n$\mu$ ips', rotation='horizontal', labelpad=10, color='k', ha='right',va='center')
+        ax2.set_ylabel('$R^2$', rotation='horizontal', labelpad=12)
+    ax2.spines['right'].set_bounds(0,1)
+    ax.spines['right'].set_bounds(0,ax.get_ylim()[1]*.9)
+    
+    ax = ax_list[plt_ind+1]
+    a = ex_cell_resp.sel(x=1).values
+    b = ex_cell_resp.sel(x=0).values
+    scatter_lsq(ax, a, b, lsq=0, mean_subtract=0, **{'s':1})
+    cartesian_axes(ax, x_line=False, y_line=False,unity=True)
+    ax.locator_params(nbins=10, tight=True);
+    ax.axis('equal');
+    ax.set_xticks(np.round([min(a), max(a)]), minor=False)
+    ax.set_yticks(np.round([min(b),max(b)]), minor=False)
+    #ax.set_xticks([min(a), max(a)], minor=True)
+    #ax.set_yticks(np.round(np.linspace(min(b),max(b),5)), minor=True)
+    #ax.set_xticks(np.round(np.linspace(min(a),max(a),5)), minor=True)
+
+    
+    ax.set_xlim([min(a), max(a)])
+    ax.set_ylim([min(a),max(a)])
+    beautify(ax);
+    ax.set_xlabel('Pos. '+ str(1),labelpad=0);
+    ax.xaxis.set_label_coords(0.5, -0.1)
+    ax.set_ylabel('Pos. ' +str(0), labelpad=0 );
+    ax.yaxis.set_label_coords(0, 0.4)
+
+
+
+
+rf = open_cnn_analysis(fns[0], layer_label)[1]
+cor = open_cnn_analysis(fns[0], layer_label)[0]
+av_cors = cor.groupby('layer_label').mean('unit')
+av_rfs = rf.groupby('layer_label').mean('unit')
+
+ex_avg_layer = [b'conv2', b'conv5', b'fc7']
+#ex_avg_layer = [ b'conv1', b'fc7'][::-1]
+
+ax = ax_list[4]    
+ax2 = ax.twinx()
+colors = ['r','g','b','m','c', 'k', '0.5']
+for layer, color in zip(ex_avg_layer, colors):
+    av_cor = av_cors.sel(layer_label=layer)
+    av_rf = av_rfs.sel(layer_label=layer)
+    av_rf = av_rf/av_rf.max()
+    #ax.locator_params(axis='x', nbins=len(rf.values), tight=True);
+    ax.set_ylabel('RF', rotation='horizontal', labelpad=0, color='k', ha='right',va='center')
+    ax2.plot(av_rf.coords['x'].values, av_rf.values, linestyle=':',alpha=1, lw=2, color=color)
+    ax.plot(av_cor.coords['x'].values, av_cor.values,alpha=0.3, lw=2, color=color)
+    #ax2.plot(av_cor.coords['x'].values, av_cor.values, linestyle=':', lw=2, color=color)
+
+    #ax2.locator_params(axis='y', nbins=5, tight=True);
+    #ax2.locator_params(axis='x', nbins=10, tight=True);
+
+#    ax.set_ylim(0, av_rf.max() + av_rf.max()*0.1)
+#    ax.set_title('TI = '+str(np.round(ex_cell[0],2)))
+#    ax.set_xlabel('Position', labelpad=1)
+    ax2.set_ylim(0,1.1);
+    ax.set_ylim(0,1.1);
+    ax2.set_yticks([0,0.5,1])
+    ax.set_yticks([0,0.5,1])
+    ax.set_xlim(64,164)
+    ax.set_xticks([64,114,164])
+#    ax.set_ylabel('RF\n$\mu$ ips', rotation='horizontal', labelpad=10, color='k', ha='right',va='center')
+#    ax2.set_ylabel('$R^2$', rotation='horizontal', labelpad=12, color='g')
+#    ax2.spines['right'].set_color('g')
+#    ax2.spines['right'].set_bounds(0,1)
+#    ax.spines['right'].set_bounds(0,ax.get_ylim()[1]*.9)
+ax.legend(np.array(ex_avg_layer).astype(str), loc=(-0.3,0.95),labelspacing=None, columnspacing=0.1,
+          fontsize=8, frameon=False, ncol=3, title='CN Layer Averages')
+plt.tight_layout() 
+beautify([ax,ax2], spines_to_remove=['top',], );  
+        
+       
+ti_cnn = cnn_an[~cnn_an['ti_av_cov'].isnull()]['ti_av_cov'].loc['resp']
+ex_cell_inds = [('fc7',12604), ('conv2', 497)]
+ex_cell_inds = [('fc7',12601), ('conv2', 501)]
+
+ex_cell_tis = [ti_cnn.loc[ind[0]].loc[ind[1]] for ind in ex_cell_inds]
+ex_cell_cors = [cor.sel(unit=ind[1]) for ind in ex_cell_inds]
+ex_cell_rfs = [rf.sel(unit=ind[1]) for ind in ex_cell_inds]
+cn_ex = [cell for cell in zip(ex_cell_tis, ex_cell_cors, ex_cell_rfs, ex_cell_inds)]
+
+ax = ax_list[5]
+ax2 = ax.twinx()
+for ex_cell, color in zip(cn_ex,['b','r']):
+    ex_cell_rf = ex_cell[2]
+    ex_cell_rf /= ex_cell_rf.max()
+    ex_cell_cor = ex_cell[1]
+    ex_cell_ti = ex_cell[1]    
+    ax.plot(ex_cell_rf.coords['x'].values, ex_cell_rf, color=color, linestyle=':',lw=1)
+    ax2.plot(ex_cell_rf.coords['x'].values, ex_cell_cor, color=color,lw=1, alpha=0.5)
+    ax.set_xlim()
+    beautify([ax,ax2], spines_to_remove=['top',]);
+    ax.set_ylim(0,1)
+    ax2.set_ylim(0,1)
+    ax.set_xticks([64,114,164])
+    ax.set_xlim([64,164])
+#
+#    #ax.set_ylim(0, rf.max() + rf.max()*0.1)
+#    ax.set_title('TI = '+str(np.round(ex_cell[0],2)))
+#    
+#    ax2.set_ylim(0,1.1);
+    ax2.set_yticks([0,0.5,1])
+    ax.set_yticks([0,0.5,1])
+#    #ax.set_xlim(-0.1,len(rf.values)-1+0.1)
+#    if plt_ind == 0:
+#        ax2.legend(['$R^2$', ],loc=10, frameon=False)
+#        ax.set_xlabel('Position', labelpad=1)
+#        ax.legend(['RF',], loc=8, frameon=False)
+#        ax.set_ylabel('RF\n$\mu$ ips', rotation='horizontal', labelpad=10, color='k', ha='right',va='center')
+#        ax2.set_ylabel('$R^2$', rotation='horizontal', labelpad=12)
+#    ax2.spines['right'].set_bounds(0,1)
+#    ax.spines['right'].set_bounds(0,ax.get_ylim()[1]*.9)
+ax2.legend(ex_cell_inds, loc=(-0.3,1),labelspacing=None, columnspacing=0.1,
+          fontsize=8, frameon=False, ncol=3, title='CN Layer Averages')
+
+#%%
+ti_cnn = cnn_an[~cnn_an['ti_av_cov'].isnull()]['ti_av_cov']
+hist_pos = [6,7]
+hist_dat_leg = []
+hist_dat = [[ti_cnn.loc['resp'].loc['v4'], 
+             ti_cnn.loc['resp'].drop('v4', level='layer_label'),
+            ti_cnn.loc['init. net'].drop('v4', level='layer_label')]]
+hist_dat_leg.append({'labels':['V4', 'CN', 'CN init.'], 
+                     'fontsize':'xx-small','frameon':False,'loc':(-0.2,1) })
+
+
+layers_to_examine = ['conv1','conv2','conv5', 'fc6', 'fc7', 'fc8']
+hist_dat.append([ti_cnn.loc['resp'].drop('v4', level='layer_label').loc[layer]
+                 for layer in layers_to_examine])
+hist_dat_leg.append({'title':'CN layers', 'labels':layers_to_examine, 
+                    'fontsize':'xx-small' , 'frameon':False, 'loc':(-0.3,1)})
+fs= 8
+for leg in hist_dat_leg:
+    leg['fontsize'] = fs
+    leg['labelspacing'] = 0
+    leg['loc'] = (-0.35,1)
+colors = ['g', 'r','0.5','m','b', 'c', 'k']
+for i, ax_ind in enumerate(hist_pos):
+    ax = ax_list[ax_ind]
+    for apc_vals, color in zip(hist_dat[i], colors):
+        x = apc_vals.dropna().values
+        y_c, bins_c = d_hist(ax, x, cumulative=True, color=color, lw=1, alpha=1)   
+    bins_c = np.concatenate([apc_vals.dropna().values for apc_vals in hist_dat[i]]).ravel()
+    beautify(ax, spines_to_remove=['top','right'])
+    #data_spines(ax, bins_c, y_c, mark_zero=[True, False], sigfig=2, fontsize=fs, 
+               # nat_range=[[0,1],[0,1]], minor_ticks=False, 
+                #data_spine=['bottom', 'left'], supp_xticks=[0.5,], 
+                #supp_yticks = [0.5,])
+    ax.set_xlim(-0.08, 1)
+    ax.set_xticks([0,0.5,1])
+    ax.set_ylim(0,1.01)
+    ax.set_yticks([0,0.5,1])
+    leg = ax.legend(**hist_dat_leg[i],ncol=3)
+    plt.setp(leg.get_title(),fontsize=fs)
+    ax.set_ylim(bottom=ax.get_ylim()[0] +ax.get_ylim()[0]*0.05, 
+            top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.05)
+    ax.grid(axis='y')
+plt.savefig(top_dir + '/analysis/figures/images/ti_figs.eps')
+
+#%%
+'''
+
 fs = 9  
 plt.figure(figsize=(8,6))
-import matplotlib.gridspec as gridspec
 conds = ['resp', 's. resp', 'init. net', 's. layer wts']
 apc = cnn_an['apc'][cnn_an['k']<40]
 m = 3
@@ -497,7 +694,7 @@ hi_curv_resp = hi_curv_resp.reindex_like(model_resp)
 scatter_dat.append([hi_curv_resp, model_resp, b_unit])
                 
 
-kw = {'s':0.5, 'linewidths':0, 'c':'r'}
+kw = {'s':1., 'linewidths':0, 'c':'r'}
 for ax_ind, dat in zip(example_cell_inds, scatter_dat):
     ax = ax_list[ax_ind]
     x,y= scatter_lsq(ax, dat[0].values, dat[1].values, lsq=True,
@@ -508,49 +705,25 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
     ax.set_xticks([]);ax.set_yticks([]);
     ax.set_xlim(min(x), max(x))
     ax.set_ylim(min(y)+min(y)*0.05, max(y)+max(y)*0.05)
-
-    ax.text(0, 0.5, 'Model',
-                        transform=ax.transAxes, fontsize=fs,
-                        va='center', ha='right', rotation='vertical')
-    ax.set_title('µ Curv:'+ str(np.round(dat[1].coords['cur_mean'].values,2))
-                + ', µ Ori:'+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values),0))
-                + ', $R^2$:' +str(np.round(frac_var,2))  ,
-                fontsize=fs)
+    if example_cell_inds[0]==ax_ind:
+        ax.text(0, 0.5, 'Model',
+                            transform=ax.transAxes, fontsize=fs,
+                            va='center', ha='right', rotation='vertical')
+    ax.set_title(' $R^2$:' +str(np.round(frac_var,2)), fontsize=fs)
     ax.text(.5, 0, 'Unit: ' +str(dat[2]),transform=ax.transAxes, 
             fontsize=fs, va='top', ha='center')
     
     ax = ax_list[ax_ind+1]
     im = plot_resp_on_shapes(ax, no_blank_image, dat[0], image_square=5)
-
+    ax.set_xlabel('Curv $(\mu,\sigma)$ : ('+ str(np.round(dat[1].coords['cur_mean'].values,2))
+                + ', ' + str(np.round(dat[1].coords['cur_sd'].values,2))+')'
+                + '\n Ori $(\mu,\sigma)$ : ('+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values),0))
+                +', '+ str(np.round(np.rad2deg(dat[1].coords['or_sd'].values),0))+')', fontsize=fs)
     cbar = plt.gcf().colorbar(im, ax=ax, ticks=[0, np.max(dat[0])],)
     cbar.ax.set_yticklabels(np.round([np.min(dat[0]), np.max(dat[0])],1)) # horizontal colorbarplt.gcf().colorbar(im)
 ax_list[2].set_title('Rank Ordered\nUnit Shape Response', fontsize=8)
 
+
 gs.tight_layout(plt.gcf())
-plt.savefig(top_dir + '/analysis/figures/images/apc_figs_v4cnn.eps')
-
-
-ax = plt.subplot(111)
-x = v4_resp_apc.values.ravel()[1:100]
-kde_dist(ax, x)
-y, bins = d_hist(ax, x)
-ax2 = ax.twinx()
-y_c, bins_c = d_hist(ax2, x, cumulative=True)
-
-x = v4_resp_apc.values.ravel()[100:200]
-kde_dist(ax, x, color='r')
-y, bins = d_hist(ax, x, bins=bins, color='r')
-#ax2 = ax.twinx()
-y_c, bins_c = d_hist(ax2, x, cumulative=True, color='r')
-
-
-beautify(ax, spines_to_remove=['top',])
-beautify(ax2, spines_to_remove=['top',])
-data_spines_twinx([ax, ax2], x, [y, y_c], mark_zero=[True, False], sigfig=2, fontsize=12, 
-                nat_range=None, minor_ticks=False, data_spine=['bottom', 'left', 'right'])
-ax2.set_ylim(auto=True)
-ax.set_ylim(bottom=ax.get_ylim()[0] +ax.get_ylim()[0]*0.05, 
-            top=ax.get_ylim()[1]+ax.get_ylim()[1]*0.05)
-ax2.set_ylim(bottom=ax2.get_ylim()[0] +ax2.get_ylim()[0]*0.05, 
-            top=ax2.get_ylim()[1]+ax2.get_ylim()[1]*0.05)
-#%%
+plt.savefig(top_dir + '/analysis/figures/images/apc_figs.eps')
+'''
