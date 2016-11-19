@@ -335,7 +335,7 @@ no_blank_image = trans_img_stack[1:]
 a = np.hstack((range(14), range(18, 318)));a = np.hstack((a, range(322, 370)))
 no_blank_image = no_blank_image[a]/255.
 
-goforit = False
+goforit = True
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     v4_name = 'V4_362PC2001'
