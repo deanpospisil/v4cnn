@@ -178,7 +178,7 @@ a = np.hstack((range(14), range(18, 318)));a = np.hstack((a, range(322, 370)))
 no_blank_image = no_blank_image[a]/255.
 
  #%%   
-
+#v4 fit to CNN and APC
 v4_name = 'V4_362PC2001'
 v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
 v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
@@ -212,33 +212,105 @@ for cnn_name in cnn_names:
     models.append(da_0)
 models.append(dmod)
 
-n_splits = 5
+#cross_val fit
+n_splits = 50
 for model in models:
-    ss = ShuffleSplit(n_splits=n_splits, test_size=1/n_splits,
+    ss = ShuffleSplit(n_splits=n_splits, test_size=1/5,
         random_state=0)
     cv_score = []
     model_ind_list = []
     for train_index, test_index in ss.split(X):
-        cor_v4_cnn = cor2(model.values[train_index], 
+        cor_v4_model = cor2(model.values[train_index], 
                                v4_resp_apc.values[train_index])
-        cor_v4_cnn[np.isnan(cor_v4_cnn)] = 0
-        model_sel = cor_v4_cnn.argmax(0)
-        cor_v4_cnn_cv = np.array([cor2(v4_resp_apc[test_index, i], 
+        cor_v4_model[np.isnan(cor_v4_model)] = 0
+        model_sel = cor_v4_model.argmax(0)
+        cor_v4_model_cv = np.array([cor2(v4_resp_apc[test_index, i], 
                             model[test_index, model_ind])
                             for i, model_ind in enumerate(model_sel)]).squeeze()
         model_ind_list.append(model_sel)
-        cor_v4_cnn_cv[np.isnan(cor_v4_cnn_cv)] = 0
-        cv_score.append(cor_v4_cnn_cv)
+        cor_v4_model_cv[np.isnan(cor_v4_model_cv)] = 0
+        cv_score.append(cor_v4_model_cv)
     cv_scores.append(cv_score)
     model_ind_lists.append(model_ind_list)
-model_ind_lists = np.array(model_ind_lists)
-cv_scores = np.array(cv_scores)
+model_ind_lists_cv = np.array(model_ind_lists)
+cor_v4_models_cv = np.array(cv_scores)
+#%%
+#direct fit
+model_ind_lists = []
+cor_v4_models = []
+for model in models:
+    cor_v4_model = cor2(model.values, v4_resp_apc.values)
+    cor_v4_model[np.isnan(cor_v4_model)] = 0
+    model_sel = cor_v4_model.argmax(0)
+    model_cor = cor_v4_model.max(0)
+    
+    cor_v4_models.append(model_cor)
+    model_ind_lists.append(model_sel)
+
+    
+model_ind_lists_dirfit = np.array(model_ind_lists)
+cor_v4_models_dirfit = np.array(cor_v4_models)
+
+#%%
+#cross val vs line fit
+titles = ['trained net', 'untrained net', 'apc']
+for i, (dirfit, cv) in enumerate(zip(cor_v4_models_dirfit, cor_v4_models_cv)):
+    ax = plt.subplot(1,3,i+1)
+    ax.scatter(dirfit, cv.mean(0),s=1);ax.set_title(titles[i]);ax.set_xlabel('over fit');
+    ax.set_ylabel('cv fit');
+    ax.plot([0,1],[0,1])
+    ax.set_xlim(0,1);ax.set_ylim(0,1);
+    plt.gca().set_aspect('equal', 'box-forced')
+    ax.grid()
+
+plt.tight_layout() 
+
+plt.figure()
+ax = plt.subplot(121)
+ax.scatter(cor_v4_models_dirfit[0], cor_v4_models_dirfit[2], s=1)
+y_greater_x = np.sum(cor_v4_models_dirfit[2]>cor_v4_models_dirfit[0])
+
+ax.set_title('overfit.  y>x='+ str(y_greater_x));
+
+ax.set_xlabel('trained net');ax.set_ylabel('apc');
+plt.gca().set_aspect('equal', 'box-forced')
+ax.set_xlim(0,1);ax.set_ylim(0,1);
+ax.plot([0,1],[0,1])
+
+
+ax = plt.subplot(122)
+ax.scatter(cor_v4_models_cv[0].mean(0), cor_v4_models_cv[2].mean(0), s=1)
+
+y_greater_x = np.sum(cor_v4_models_cv[2].mean(0)>cor_v4_models_cv[0].mean(0))
+ax.set_title('cvfit  y>x='+ str(y_greater_x));
+ax.set_xlabel('trained net');ax.set_ylabel('apc');
+plt.gca().set_aspect('equal', 'box-forced')
+ax.set_xlim(0,1);ax.set_ylim(0,1);
+ax.plot([0,1],[0,1])
+
+plt.tight_layout() 
+
+plt.figure()
+ax = plt.subplot(111)
+
+ax.scatter(cor_v4_models_cv[0].mean(0)-cor_v4_models_cv[2].mean(0),
+           cor_v4_models_dirfit[0]-cor_v4_models_dirfit[2], s=1)
+
+ax.set_title('compare trained net - apc');
+ax.set_xlabel('cv');ax.set_ylabel('over fit');
+plt.gca().set_aspect('equal', 'box-forced')
+ax.set_xlim(-0.5,0.5);ax.set_ylim(-0.5,0.5);
+ax.plot([-1,1],[-1,1])
+#%%
+
+
+
 #%%
 mean_scores = cv_scores.mean(1)
-bsci_scores= np.array([boot_strap_se(cv_score) for cv_score in cv_scores])
+#bsci_scores= np.array([boot_strap_se(cv_score) for cv_score in cv_scores])
+bsci_scores= np.array([np.percentile(np.array(cv_score), [5,95], axis=0) for cv_score in cv_scores])
+
 bsci_scores = bsci_scores - np.expand_dims(mean_scores,1)
-
-
 
 #%%
 ax_list=[]
@@ -246,7 +318,7 @@ plt.figure(figsize=(4,4))
 ax = plt.subplot(221)
 ax_list.append(ax)
 ax.locator_params(nbins=5)
-ax.set_title('V4 Models Correlation\n')
+ax.set_title('V4 Models Comparison\n')
 x = mean_scores[0]
 y = mean_scores[2]
 xsd = bsci_scores[0]
@@ -254,21 +326,24 @@ ysd = bsci_scores[2]
 ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o', 
             alpha=0, markersize=0, color='r', ecolor='0.5')
 colors= np.array(['k',]*len(x))
-#colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
-#       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
 ax.scatter(x,y, color=colors, s=3)
 #ax.scatter(x, y, alpha=0.5, s=2)
 ax.plot([0,1],[0,1], color='0.5')
 #ax.set_xlabel('Trained Net')
-ax.set_ylabel('APC')
+ax.set_ylabel('APC\nR',labelpad=0)
+ax.yaxis.set_label_coords(-0.4, 0.5)
+
 ax.set_ylim(0,1)
 ax.set_xlim(0,1)
-ax.set_xticks([])
+ax.set_xticks([0,0.5,1])
+ax.set_xticklabels([])
 ax.set_yticks([0, 0.5, 1])
 plt.grid()
 beautify(ax)
 
-ax = plt.subplot(223, sharex=ax)
+ax = plt.subplot(223)
 ax_list.append(ax)
 
 ax.locator_params(nbins=5)
@@ -281,8 +356,8 @@ ysd = bsci_scores[1]
 ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o', 
             alpha=0, markersize=0, color='r', ecolor='0.5')
 colors= np.array(['k',]*len(x))
-#colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
-#       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
 ax.scatter(x,y, color=colors, s=3)
 ax.plot([0,1],[0,1], color='0.5')
 ax.set_ylim(0,1)
@@ -292,15 +367,19 @@ ax.set_yticks([0, 0.5, 1])
 beautify(ax)
 
 
-ax.set_xlabel('Trained Net')
-ax.set_ylabel('Untrained Net')
+ax.set_xlabel('R\nTrained Net',labelpad=5)
+
+ax.set_ylabel('Untrained Net', labelpad=12)
+ax.yaxis.set_label_coords(-0.52, 0.5)
+
 plt.grid()
 labels = ['A.', 'B.']
-#for ax, label in zip(ax_list, labels):
-#    ax.text(-0.1, 1., label, transform=ax.transAxes,
-#      fontsize=14, fontweight='bold', va='top', ha='right')
+for ax, label in zip(ax_list, labels):
+    ax.text(-0.35, 1.12, label, transform=ax.transAxes,
+      fontsize=14, fontweight='bold', va='top', ha='right')
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/apc_vs_cnn.pdf')
+
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig3_apc_vs_cnn.pdf')
 
 #%%
 k = {'s':1, 'color':'r'}
@@ -335,19 +414,20 @@ ax.set_xlim(np.min(apu_resp_sc),np.max(apu_resp_sc))
 ax.set_ylim(np.min(apb_resp_sc),np.max(apb_resp_sc))
 
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn.pdf')
+
 #%%
 
 plt.figure(figsize=(8,8))
 ax = plt.subplot(121)
 plot_resp_on_shapes(ax, no_blank_image, cnu_resp, image_square = 10)
-ax.title('AlexNet Response')
+ax.set_title('AlexNet Response')
 
 
 ax = plt.subplot(122)
 plot_resp_on_shapes(ax, no_blank_image, cnb_resp, image_square = 10)
+ax.set_title('V4 Response')
+
 plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn_resp.pdf')
-ax.title('V4 Response')
 
 '''  
 to_compare=cv_scores.mean(1) 
