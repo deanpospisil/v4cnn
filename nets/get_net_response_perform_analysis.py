@@ -1,6 +1,5 @@
 # this is for getting responses across a bunch of nets for a set of stimuli.
 #name the directory
-
 import caffe_net_response as cf
 ann_dir = '/data/dean_data/net_stages/'
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
@@ -39,7 +38,6 @@ def take_intersecting_1d_index(indexee, indexer):
 #choose a library of images
 baseImageList = ['PC370', 'formlet']
 base_image_nm = baseImageList[0]
-
 ann_fn = 'caffenet_train_iter_'
 
 get_translation_invariance = False

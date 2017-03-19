@@ -1,6 +1,5 @@
 # this is for getting responses across a bunch of nets for a set of stimuli.
 #name the directory
-
 import caffe_net_response as cf
 ann_dir = '/data/dean_data/net_stages/'
 import os
