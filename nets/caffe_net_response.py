@@ -28,7 +28,7 @@ import xarray as xr
 import d_curve as dc
 import scipy.io as  l
 
-def net_imgstack_response(net, stack):
+def net_imgstack_response(net, stack, only_middle_conv=True, record_up_to_layer=None):
     #stack is expected to be nImages x RGB x rows x cols
 
     if not net.blobs['data'].data.shape[1:] == stack.shape[1:]:
@@ -52,13 +52,15 @@ def net_imgstack_response(net, stack):
 
         layer_resp = net.blobs[layer_name].data
 
-        if len(layer_resp.shape)>2:#ignore convolutional repetitions, just pulling center.
+        if len(layer_resp.shape)>2 and only_middle_conv:#ignore convolutional repetitions, just pulling center.
             mid = [ int(m/2) for m in np.shape(net.blobs[layer_name].data)[2:]]
             layer_resp = layer_resp[:, :, mid[0], mid[1]]
 
         all_layer_resp.append(layer_resp)
-    response = np.hstack( all_layer_resp )
-
+    if only_middle_conv:
+        response = np.hstack( all_layer_resp)
+    else:
+        response = all_layer_resp[:record_up_to_layer]
     return response
 
 
@@ -80,7 +82,8 @@ def get_indices_for_net_unit_vec(net, layer_names=None):
 
     return resp_descriptor_dict
 
-def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, nimgs_per_pass=150):
+def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, nimgs_per_pass=150,
+                                       only_middle_conv=True, record_up_to_layer=None):
     #takes stim_trans_cart_dict, pulls from img_stack and transform accordingly,
     #gets nets responses.
 
@@ -107,12 +110,14 @@ def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, n
 
 
         #run then and append them
-        all_net_resp.append(net_imgstack_response(net, trans_img_stack))
+        all_net_resp.append(net_imgstack_response(net, trans_img_stack, only_middle_conv=only_middle_conv,
+                                                  record_up_to_layer=record_up_to_layer))
 
     #stack up all these responses
-    response = np.vstack(all_net_resp)
-
-
+    if only_middle_conv:
+        response = np.vstack(all_net_resp)
+    else:
+        response = all_net_resp
     return response
 
 def stim_trans_generator(shapes=None, blur=None, scale=None,
@@ -183,7 +188,8 @@ def net_resp_2d_to_xray_nd(net_resp, stim_trans_dict, indices_for_net_unit_vec):
     return da
 
 def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
-                 stim_trans_dict, require_provenance=True, use_boundary=True, deploy='deploy.prototxt'):
+                 stim_trans_dict, require_provenance=True, use_boundary=True,
+                 deploy='deploy.prototxt', only_middle_conv=True):
     img_dir = top_dir+'/images/baseimgs/'+ base_image_nm + '/'
     if not use_boundary:
         base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)

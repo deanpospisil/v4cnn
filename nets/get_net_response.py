@@ -26,8 +26,8 @@ base_image_nm = baseImageList[0]
 
 
 all_iter = [
-#'bvlc_reference_caffenet',
-'blvc_caffenet_iter_1',
+'bvlc_reference_caffenet',
+#'blvc_caffenet_iter_1',
 ]
 #base_name = 'bvlc_caffenet_reference_shuffle_layer_'
 #all_iter += [base_name+str(layer) for layer in range(7)]
@@ -51,9 +51,9 @@ boundaries = imp.center_boundary(s)
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-x = (center_image-50, center_image+50, 51)
-#x =  (center_image, center_image, 1)
-y = (center_image, center_image, 1)
+y = (center_image-50, center_image+50, 51)
+x =  (center_image, center_image, 1)
+#y = (center_image, center_image, 11)
 amp = (255, 255, 1)
 amp = None
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
@@ -61,12 +61,10 @@ stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids
                                                                 x=x,
                                                                 y=y,
                                                                 amp=amp)
-
 for  iter_name, deploy  in zip(all_iter, deploys):
     print(iter_name)
     #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])   
-    response_description = iter_name+ 'APC362_pix_width'+ str(max_pix_width) + '_pos_' + str(x) +'_amp_'+ str(amp) + '.nc'
-
+    response_description = iter_name+ 'y_test_APC362_pix_width'+ str(max_pix_width) + '_pos_' + str(x) +'_amp_'+ str(amp) + '.nc'
     response_file = (response_folder + response_description)
 
     if  os.path.isfile(response_file):
