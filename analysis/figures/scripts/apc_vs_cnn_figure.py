@@ -306,6 +306,7 @@ ax.plot([-1,1],[-1,1])
 
 
 #%%
+cv_scores = np.array(cv_scores)
 mean_scores = cv_scores.mean(1)
 #bsci_scores= np.array([boot_strap_se(cv_score) for cv_score in cv_scores])
 bsci_scores= np.array([np.percentile(np.array(cv_score), [5,95], axis=0) for cv_score in cv_scores])
@@ -341,6 +342,14 @@ ax.set_xticks([0,0.5,1])
 ax.set_xticklabels([])
 ax.set_yticks([0, 0.5, 1])
 plt.grid()
+ind_bfitcnn = cor_v4_models_dirfit[0].argsort()[-1]
+ind_bfit_trut = (cor_v4_models_dirfit[0] - cor_v4_models_dirfit[1]).argsort()[-1]
+
+
+#ax.annotate(s='a9501', xy=[x[ind_bfitcnn], y[ind_bfitcnn]+0.03], xytext=[x[ind_bfitcnn], y[ind_bfitcnn]+0.3],
+#            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
+#ax.annotate(s='b8302', xy=[x[ind_bfit_trut], y[ind_bfit_trut]+0.03], xytext=[x[ind_bfit_trut], y[ind_bfit_trut]+0.3],
+#            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
 beautify(ax)
 
 ax = plt.subplot(223)
@@ -365,29 +374,35 @@ ax.set_xlim(0,1)
 ax.set_xticks([0, 0.5, 1])
 ax.set_yticks([0, 0.5, 1])
 beautify(ax)
-
-
+#ax.annotate(s='a9501', xy=[x[ind_bfitcnn], y[ind_bfitcnn]+0.03], xytext=[x[ind_bfitcnn], y[ind_bfitcnn]+0.3],
+#            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'},    
+#        ha='right')
+#ax.annotate(s='b8302', xy=[x[ind_bfit_trut]+0.03, y[ind_bfit_trut]], xytext=[x[ind_bfit_trut]+0.3, y[ind_bfit_trut]],
+#            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
 ax.set_xlabel('R\nTrained Net',labelpad=5)
 
 ax.set_ylabel('Untrained Net', labelpad=12)
 ax.yaxis.set_label_coords(-0.52, 0.5)
-
+plt.tight_layout()
 plt.grid()
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/fig11_apc_vs_cnn.pdf')
+
+#%%
 labels = ['A.', 'B.']
 for ax, label in zip(ax_list, labels):
     ax.text(-0.35, 1.12, label, transform=ax.transAxes,
       fontsize=14, fontweight='bold', va='top', ha='right')
-plt.tight_layout()
 
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig3_apc_vs_cnn.pdf')
 
+#%%
+#plt.scatter()
 #%%
 k = {'s':1, 'color':'r'}
 ax = plt.subplot(222)
 x = mean_scores[0]
 y = mean_scores[2]
 cnn_better_unit = (x-y).argmax()
-cnn_better_model = model_ind_lists[0][:,cnn_better_unit][0]
+cnn_better_model = model_ind_lists_cv[0][:,cnn_better_unit][0]
 cnb_resp = models[0].sel(unit=cnn_better_model).values
 cnu_resp = v4_resp_apc[:,cnn_better_unit].values
 scatter_lsq(ax, cnb_resp, cnu_resp,**k)
@@ -401,7 +416,7 @@ beautify(ax)
 
 ax = plt.subplot(224)
 apc_better_unit = (y-x).argmax()
-apc_better_model = model_ind_lists[2][:,apc_better_unit][0]
+apc_better_model = model_ind_lists_cv[2][:,apc_better_unit][0]
 apb_resp = models[2].sel(models=apc_better_model).values
 apu_resp = v4_resp_apc[:,apc_better_unit].values
 apu_resp_sc, apb_resp_sc = scatter_lsq(ax,  apu_resp, apb_resp, **k)
@@ -432,27 +447,4 @@ plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn_resp.pdf')
 '''  
 to_compare=cv_scores.mean(1) 
 ax.scatter(to_compare[0],to_compare[1])
-#ax.legend(['Trained Net', 'Untrained Net', 'Shuffled'])
-ax.axis('equal')
-ax.set_xlim(0,1)
-ax.set_ylim(0,1)
-ax.plot([0,1],[0,1])
-ax.set_xlabel('CNN Trained')
-ax.set_ylabel('CNN Untrained', rotation=0)
-ax.set_title('CNN vs APC fits to V4 $R^2$')
-plt.grid()
 '''
-#kw = {'s':3, 'linewidths':0, 'c':'k'}
-#x,y= scatter_lsq(ax, frac_var_v4_cnn, apc_fit_v4.values**2, lsq=False,
-#                     mean_subtract=False, **kw)
-#
-#beautify(ax, spines_to_remove=['top','right'])
-#
-#data_spines(ax, x, y, mark_zero=[False, False], sigfig=2, fontsize=fs-2, 
-#                nat_range=[[0,1],[0,1]], minor_ticks=False, 
-#                data_spine=['bottom', 'left'], supp_xticks=[0.25, 1,], 
-#                supp_yticks = [0.25, 1,])
-#cartesian_axes(ax, x_line=False, y_line=False, unity=True)
-
-
-

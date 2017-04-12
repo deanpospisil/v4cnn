@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
@@ -6,7 +5,6 @@ Created on Tue Oct 25 12:14:18 2016
 
 @author: dean
 """
-
 import matplotlib.pyplot as plt 
 import numpy as np
 import os, sys
@@ -310,6 +308,8 @@ def process_V4(v4_resp_apc, v4_resp_ti, dmod):
     v4 = pd.concat([v4pdti, v4pdapc])
     return v4
 #%%
+figure_num = [6, 7, 8, 9, 10, 4, 5, 1]
+fig_ind = 0
 #shape image set up
 img_n_pix = 100
 max_pix_width = [80,]
@@ -392,6 +392,19 @@ if 'cnn_an' not in locals() or goforit:
     null = pd.concat([open_cnn_analysis(fns[3], layer_label)[-1], null_v4], axis=0)
     cnn_an = pd.concat([alt, null, init, shuf ], 
               axis=0, keys=['resp', 's. resp', 'init. net', 's. layer wts'], names=['cond','layer_label','unit'])
+
+
+#%%
+plt.hist(alt.loc['conv2']['ti_av_cov'], histtype='step',  bins=20)
+plt.hist(init.loc['conv2']['ti_av_cov'], histtype='step', bins=20)
+plt.hist(alt.loc['v4']['ti_av_cov'].dropna(), histtype='step', bins=20)
+plt.legend(['trained', 'untrained', 'V4'], loc=6, frameon=False)
+plt.xlabel('Translation Invariance', fontsize=15)
+plt.ylabel('Unit Count', fontsize=15)
+
+beautify(plt.gca())
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/TI_conv2', bbox_inches='tight')
+
 
 
 #%%
@@ -539,7 +552,7 @@ def plot_resp_on_sort_shapes(ax, shapes, resp, top=25, fs=20, shrink=.5, colorba
     im = ax.imshow(np.tile(respsc,(2,1)), cmap=cm.cool, interpolation='nearest')
     if colorbar:
         cbar = ax.get_figure().colorbar(im, ax=ax, shrink=shrink, ticks=[0,1]) 
-        cbar.ax.set_ylabel('Norm.\nResp.',rotation='horizontal', fontsize=fs/1.5, ha='center')
+        cbar.ax.set_ylabel('',rotation='horizontal', fontsize=fs/1.5, ha='center')
         cbar.ax.tick_params(axis='both', which='both',length=0)
 #    cbar = ax.get_figure().colorbar(im, ax=ax, shrink=shrink, 
 #            ticks=[np.min(respsc), np.max(respsc)], aspect=10)
@@ -590,14 +603,18 @@ for leg in hist_dat_leg:
 for i, ax_ind in enumerate(hist_pos):
     ax = ax_list[ax_ind]
     if not (ax_ind==hist_pos[-1]):
-        colors = ['r','g','b','m','c', 'k', '0.5']
+        colors = ['k','g','b','m','c', 'k', '0.5']
     else:
         colors = cm.copper(np.linspace(0,1,len(hist_dat[i])))
-        colors[-1] = [0, 0.5, 0, 0]
+        colors[-1] = [1, 0, 0, 0]
+        colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
+                  [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
+        colors = colors / np.array([[255,255,255,1]])
+        
 
     for apc_vals, color in zip(hist_dat[i], colors):
         x = apc_vals.dropna().values
-        y_c, bins_c = d_hist(ax, np.sqrt(x), cumulative=True, color=color, alpha=0.75, lw=1)   
+        y_c, bins_c = d_hist(ax, np.sqrt(x), cumulative=True, color=color, alpha=0.75, lw=2)   
     bins_c = np.concatenate([apc_vals.dropna().values for apc_vals in hist_dat[i]]).ravel()
     beautify(ax, spines_to_remove=['top','right'])
     ax.set_xticks([0,0.5,1])
@@ -619,19 +636,24 @@ for i, ax_ind in enumerate(hist_pos):
         #fontsize=fs , frameon=True, loc=4, labelspacing=0)
     ax.grid()
     
-ax_list[0].set_title('Cumulative APC Fits\nAll V4 Units', fontsize=12) 
-ax_list[0].set_ylabel('Fraction Units', labelpad=0, fontsize=12) 
+ax_list[0].set_title('Cumulative Distribution', fontsize=12) 
+ax_list[0].set_ylabel('Fraction < r', labelpad=0, fontsize=12) 
+ax_list[0].text(0.6, 0.1, 'V4', transform=ax_list[0].transAxes)
 ax_list[0].text(0.05,0.6, 'Shuffled', transform=ax_list[0].transAxes, color='g', rotation=80)
-ax_list[0].text(0.4,0.6, 'Unshuffled', transform=ax_list[0].transAxes, color='r',rotation=45)
+ax_list[0].text(0.4,0.6, 'Unshuffled', transform=ax_list[0].transAxes, color='k',rotation=45)
 
-ax_list[0].set_xlabel('Correlation', labelpad=0, fontsize=12)
-ax_list[3].set_title('All AlexNet Units') 
+
+ax_list[3].text(0.5, 0.1, 'CNN all layers', transform=ax_list[3].transAxes)
 ax_list[3].text(0.2,0.75, 'Untrained', transform=ax_list[3].transAxes, color='b', rotation=60)
 
-ax_list[6].set_title('AlexNet by Layer') 
-ax_list[6].text(0.2,0.5, 'conv1',transform=ax_list[6].transAxes, color=colors[0])
+ax_list[6].text(0.5, 0.1, 'CNN by layer', transform=ax_list[6].transAxes)
+ax_list[6].text(0.22,0.5, 'conv1',transform=ax_list[6].transAxes, color=colors[0])
 ax_list[6].text(0.65,0.5, 'fc8', transform=ax_list[6].transAxes, 
                 color=colors[-2], fontsize=14)
+ax_list[6].text(0.12, 0.09, 'V4', transform=ax_list[6].transAxes, 
+                color=colors[-1], fontsize=10)
+ax_list[6].set_xlabel('APC fit r', labelpad=0, fontsize=12)
+
 
 example_cell_inds = [1,4,7]
 v4 = cnn_an.loc['resp'].loc['v4']
@@ -683,11 +705,22 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
         #                    va='center', ha='right', rotation='vertical')
         ax.set_ylabel('Model',labelpad=0)
         ax.set_xlabel('Unit', labelpad=0)
+    params = 'Curv. $(\mu=$' +  str(np.round(dat[1].coords['cur_mean'].values,2))\
+    +', $\sigma=$'+ str(np.round(dat[1].coords['cur_sd'].values,2)) + ')'\
+    +'\nOri. $(\mu=$'+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values)))\
+    +', $\sigma=$' + str(np.round(np.rad2deg(dat[1].coords['or_sd'].values),0)) + ')' 
     if ax_ind==1:
-        ax.set_title('Example APC Fits\n$R$=' +str(np.round(frac_var, 3)))
+        ax.set_title('Example units')
+        ax.text(0.5, 0.3, '$r=$' +str(np.round(frac_var, 3)), 
+                transform=ax.transAxes, fontsize=10)
+        ax.text(0.35, 0.1, params, 
+                transform=ax.transAxes, fontsize=7, linespacing=0.5)
     else:
-        ax.set_title('$R$=' +str(np.round(frac_var, 3)))
-        
+        ax.text(0.6, 0.2, '$r=$' +str(np.round(frac_var, 3)), 
+                transform=ax.transAxes, fontsize=10)
+        ax.text(0.35, -0.1, params, linespacing=.5,
+                transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='white',
+                                                              ec='none', alpha=0.8))        
 #    ax.text(.5, 0, 'Unit: ' +str(dat[2]),transform=ax.transAxes, 
 #            fontsize=fs, va='top', ha='center')
     
@@ -712,22 +745,32 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
 #                +', $\sigma=$' + str(np.round(np.rad2deg(dat[1].coords['or_sd'].values),0)) + ')'
 #                , fontsize=fs)
     if ax_ind==1:
-        ax.set_xlabel(str(dat[2]) , labelpad=3)   
+        #ax.set_xlabel(str(dat[2]) , labelpad=3) 
+        ''
     elif ax_ind==4:
-        ax.set_xlabel('Example Early:\n' + str(dat[2][0])+ ' ' +str(dat[2][1]), labelpad=3)   
+        #ax.set_xlabel(str(dat[2][0])+ ' ' +str(dat[2][1]), labelpad=3) 
+        ''
     else:
-        ax.set_xlabel('Example Late:\n' + str(dat[2][0])+ ' ' +str(dat[2][1]), labelpad=3)   
+        #ax.set_xlabel(str(dat[2][0])+ ' ' +str(dat[2][1]), labelpad=3)
+        ''
     #ax.set_ylim(500,2)
-        
-ax_list[2].set_title('Ranked\nResponse', fontsize=12)
+ax_list[2].text(-0.1, 1.2, 'Preferred Shapes', transform=ax_list[2].transAxes, fontsize=12)
+#ax_list[2].set_position([0.9, 0.9, 1, 1])
+import matplotlib 
+c = matplotlib.transforms.Bbox([[0.71, 0.75], [0.91, .9]])
+#ax_list[2].set_position(c)
+
+#left=None, bottom=None, right=None, top=None,
+#ax_list[2].set_title('Preferred Shapes', fontsize=12, labelpad=10)
 gs.tight_layout(plt.gcf())
 
 labels = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.']
 for ax, label in zip(ax_list, labels):
-    ax.text(0, 1.2, label, transform=ax.transAxes,
+    ax.text(-0.05, 1.1, label, transform=ax.transAxes,
       fontsize=fs+2, fontweight='bold', va='top', ha='right')
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig2_apc_figs_v4cnn.pdf', bbox_inches='tight', dpi=500)
-
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+
+            str(figure_num[fig_ind])+ '_apc_figs_v4cnn.pdf', bbox_inches='tight', dpi=500)
+fig_ind += 1
 #%%
 m = 1
 n = 2
@@ -744,12 +787,12 @@ for ax, label in zip(ax_list, labels):
 ti_v4 = alt_v4[~alt_v4['ti_av_cov'].isnull()]['ti_av_cov']
 ex_cell_inds = [ti_v4.argmax()[1]]
 ex_cell_ti = [ti_v4.loc['v4'].loc[ind] for ind in ex_cell_inds]
-ex_cell_resp = [v4_resp_ti.sel(unit=ind).dropna('shapes',how='all').dropna('x',how='all')
+ex_cell_resp = [v4_resp_ti.sel(unit=ind).dropna('shapes',how='all').dropna('x', how='all')
                      for ind in ex_cell_inds]
 v4_ex = [cell for cell in zip(ex_cell_ti, ex_cell_resp, ex_cell_inds)]
 props = {'facecolor':'w', 'boxstyle':'round', 'alpha':1, 'clip_on':True}
 
-v4_ex_plt_inds = [0,1]
+v4_ex_plt_inds = [1,0]
 for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
     ax = ax_list[plt_ind]
     ex_cell_resp = ex_cell[1]*(1/.3)
@@ -818,7 +861,9 @@ for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
     #ax.set_xlim([0, 166])
     #ax.set_ylim([0, 166])
 plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/fig4_ti_v4.pdf', bbox_inches='tight')
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/fig'
+            +str(figure_num[fig_ind])+'_ti_v4.pdf', bbox_inches='tight')
+fig_ind += 1
 #%%
 # just example cells
 m = 3
@@ -929,19 +974,17 @@ for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, ['conv2', 
 #        ax.legend(['RF',], loc='center left', frameon=False,handletextpad=0, markerfirst=False)
 
     #ax.set_yticklabels([])
-ax_list[0].text(0.5,1.01, 'Unit 497',
-                ha='center', va='bottom', fontstyle='italic',
-                transform=ax_list[0].transAxes, fontsize=14)
-
+ax_list[0].text(0.5,1.01, 'Unit 497', ha='center', va='bottom',
+                transform=ax_list[0].transAxes, fontsize=12, fontstyle='italic')
 ax_list[0].annotate('', xy=(101, 0.05), xytext=(101, 0.4), ha='center',
             arrowprops=dict(facecolor='black', shrink=0.05),zorder=1, fontsize=8)
-ax_list[4].text(.5,1.01, 'Unit 12604',
-                ha='center', va='bottom', fontstyle='italic',
-                transform=ax_list[4].transAxes, fontsize=14)
-       
+ax_list[4].text(.5,1.01, 'Unit 12604', ha='center', va='bottom',
+                transform=ax_list[4].transAxes, fontsize=12, fontstyle='italic')
+ax_list[2].set_title('Unit 3190', fontstyle='italic')
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig5_ti_example_and_avg_v4cnn.pdf', bbox_inches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+str(figure_num[fig_ind])+'_ti_example_and_avg_v4cnn.pdf', bbox_inches='tight')
 
+fig_ind += 1
 
 #%%
 
@@ -981,29 +1024,30 @@ for i, ax_ind in enumerate(hist_pos):
     ax = ax_list[ax_ind]
     if i ==0:
         #ax.set_title('Effect of Training on\nTranslation Invariance',fontsize=16)
-        colors = ['g', 'b']
+        colors = ['c', 'b']
         lw=2.5
         ax.text(.25, .70, 'Untrained',
         ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color='b')
+        transform=ax.transAxes, fontsize=14, color=colors[1])
         ax.text(.6, .5, 'Trained',
         ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color='g')
+        transform=ax.transAxes, fontsize=14, color=colors[0])
     else:
         #ax.set_title('Translation Invariance\nby Layer',fontsize=16)
-        colors = cm.copper(np.linspace(0,1,len(hist_dat[i])))
-        colors[-1] = [1,0,0,0]
-        lw=1
+        colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
+                  [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
+        colors = colors / np.array([[255,255,255,1]])
+        lw=2
         ax.text(.30, 0.35, 'conv2',ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color='k')
+        transform=ax.transAxes, fontsize=14, color=colors[1])
         ax.text(.85, 0.35, 'fc8', ha='center', va='bottom', fontstyle='italic',
         transform=ax.transAxes, fontsize=16, color=colors[-2])
-        ax.text(.55, 0.25, 'v4',ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color='r')
+        ax.text(.55, 0.25, 'V4',ha='center', va='bottom', fontstyle='normal',
+        transform=ax.transAxes, fontsize=14, color=colors[-1])
         #ax.set_title('Translation Invariance',fontsize=16)
-        colors = cm.copper(np.linspace(0,1,len(hist_dat[i])))
-        colors[-1] = [1,0,0,0]
-        lw=2
+
+        colors = colors     
+        lw=2.5
 
     for ti_val, color in zip(hist_dat[i], colors):
         x = ti_val.dropna().values
@@ -1037,7 +1081,9 @@ ax_list[1].set_xlabel('Translation invariance', labelpad=0, fontsize=14)
 
 
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig6_ti_training_and_layer.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
+            +str(figure_num[fig_ind])+'_ti_training_and_layer.pdf')
+fig_ind += 1
 
 #%%
 plt.figure(figsize=(5,3))
@@ -1132,11 +1178,13 @@ ax.text(.65, 0.35, 'fc8', ha='center', va='bottom', fontstyle='italic',
 transform=ax.transAxes, fontsize=16, color=colors[-2])
 ax.text(.2, 0.25, 'v4',ha='center', va='bottom', fontstyle='italic',
 transform=ax.transAxes, fontsize=14, color='r')
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig7_v4_ness.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
+            +str(figure_num[fig_ind])+'_v4_ness.pdf')
 
+fig_ind += 1
 
 #%%
-layers_to_examine = ['conv1', 'norm1', 'conv2', 'norm2', 'conv5', 'fc6', 'prob']
+layers_to_examine = ['conv1', 'relu1', 'norm1',  'conv2', 'fc6', 'prob']
 #layers_to_examine = 'all'
 name = 'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc'
 cnn = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'].sel(x=114), ]
@@ -1150,7 +1198,7 @@ cnns = cnns + cnn
 cnns = [cnns[0], cnns[-1], cnns[1], cnns[2]]
 
 n_plot = len(layers_to_examine)
-plt.figure(figsize=(3,n_plot*1.5))
+plt.figure(figsize=(3/1.5,n_plot*1.5/1.5))
 
 gs = gridspec.GridSpec(n_plot,1) 
 ax_list = [plt.subplot(gs[pos]) for pos in range(n_plot)]
@@ -1193,16 +1241,22 @@ for i, a_lay in enumerate(layers_to_examine):
     ax.set_yticklabels(['',''])
     ax.tick_params('y', length=0, width=0, which='minor')
 
-ax_list[0].legend(['255 Amp.', 'Nat.', '100 Amp.', '64 pix', ], loc=2,
-frameon=0, fontsize=7)
+ax_list[0].legend(['Amp. 255, Width 32 Pix.', 'Photographs', 'Amp. 100, Width 32 Pix.', 
+                    'Amp. 255, Width 64 Pix.', ], loc=(-0.3, 1.5), frameon=0, 
+                    fontsize=7, markerfirst=False)
 ax_list[0].set_ylabel('log(%)')
-ax_list[0].set_xlabel('Response', labelpad=0)
+#ax_list[0].set_xlabel('Response', labelpad=0)
+ax_list[0].text(-0.1,-.27, 'Response', transform=ax_list[0].transAxes, color='k', rotation=0)
 ax_list[0].set_yticklabels(['1', '.01'])
 ax_list[0].set_xticklabels([0,])
 
 
-plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig0_dynamic_range.pdf')
+plt.tight_layout(h_pad=0.2)
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
+            +str(figure_num[fig_ind])+'_dynamic_range.pdf',
+            bbox_inches='tight')
+fig_ind += 1
+
 #%%
 #kurtosis v4 example
 def beautify(ax=None, spines_to_remove = ['top', 'right']):
@@ -1310,9 +1364,8 @@ ax.legend(['Max.',
             fontsize=6.5, frameon=False, columnspacing=0, title='Kurtosis')
 ax.tick_params('y', which = 'both', right=0)
 
-#ax.set_ylim(-0.0,1)
-#ax.set_yticks([0,1])
-#ax.set_yticklabels([0,1])
+ax.set_yticks([1, 0.1, 0.01])
+ax.set_yticklabels([1, 0.1, 0.01])
 ax.xaxis.set_label_coords(0.5, -0.3)
 ax.yaxis.set_label_coords(-0.3, 0.5)
 
@@ -1350,12 +1403,12 @@ ax.hist(k_apc, bins=n_bins, histtype='step', weights=[1/len(k_apc),]*len(k_apc),
         log=True, color='k', range=[0,370])
 ax.set_xlabel('Kurtosis');
 ax.set_xticks([0,  42,370])
-#ax.set_yticks([0,  .1, 1])
-#ax.set_yticklabels(['0', 0.1, 1])
+ax.set_yticks([0.01, .1, 1])
+ax.set_yticklabels([ '0.1','0.01', '1'])
 
 
 ax.set_ylim(-0.0,1)
-ax.set_ylabel('log(Fraction Units)')
+ax.set_ylabel('Fraction Units')
 ax.tick_params('y', which = 'both', right=0)
 ax.xaxis.set_label_coords(0.5, -0.3)
 ax.yaxis.set_label_coords(-0.3, 0.5)
@@ -1380,8 +1433,8 @@ ax.hist(var, bins=n_bins, histtype='step', weights=[1/n_samps,]*n_samps,
          color='c',log=True, range=[0,370])
 ax.set_xlim(0, 371)
 ax.set_xticks([0,  42, 370])
-#ax.set_yticks([0,  0.1, 1])
-#ax.set_yticklabels(['0','0.1', 1])
+ax.set_yticks([1, 0.1, 0.01])
+ax.set_yticklabels([1, 0.1, 0.01])
 #ax.set_ylim(10**(-4.5),1)
 ax.tick_params('y', which = 'both', right=0)
 ax.legend(['All Layers', 
@@ -1394,4 +1447,44 @@ ax.set_title('Kurtosis Distribution\nCNN')
 
 [beautify(ax) for ax in ax_list]
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig1_kurtosis.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
+            +str(figure_num[fig_ind])+'_kurtosis.pdf')
+fig_ind += 1
+
+#%%
+import pickle
+import itertools
+flatten_iter = itertools.chain.from_iterable
+def factors(n):
+    return set(flatten_iter((i, n//i) 
+                for i in range(1, int(n**0.5)+1) if n % i == 0))
+goforit = True      
+if 'a' not in locals() or goforit:
+    with open(top_dir + 'nets/netwts.p', 'rb') as f:    
+        try:
+            a = pickle.load(f, encoding='latin1')
+        except:
+            a = pickle.load(f)
+            
+import matplotlib.gridspec as gridspec
+m = 8
+n = 12
+wts = a[0][1]
+plt.figure(figsize=(6,4),)
+plot_id = np.arange(0, m*n).reshape(m, n)
+gs = gridspec.GridSpec(8, 12)
+gs.update(wspace=0.0, hspace=0.0)
+
+p_num = -1
+for filt in wts:
+    filt = filt - filt.min()
+    filt = filt/filt.max()
+    p_num += 1 
+    ax = plt.subplot(gs[p_num])
+    ax.imshow(filt.T, interpolation = 'nearest')        
+    ax.set_xticks([]);ax.set_yticks([]);
+plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
+            +str(figure_num[fig_ind])+ '_1stfilters.pdf')
+
+#%%
