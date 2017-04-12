@@ -55,12 +55,12 @@ stack, stack_desc = imp.load_npy_img_dirs_into_stack( img_dir )
 stack, stack_desc = imp.load_npy_img_dirs_into_stack( img_dir )
 
 plt.imshow(stack[1,:,:])
-trans_stack = imp.imgStackTransform( {'shapes':[1,10],'scale':[1,0.50]}, stack )
+trans_stack = imp.imgStackTransform( {'shapes':[102,],'scale':[5,]}, stack )
 
 plt.close('all')
-plt.imshow(trans_stack[1,:,:],cmap = cm.Greys_r, interpolation = 'nearest')
+plt.imshow(trans_stack[0,:,:],cmap = cm.Greys_r, interpolation = 'nearest')
 
-a = trans_stack[1,:,:]
+a = trans_stack[0,:,:]
 
 s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
 base_stack = dc.center_boundary(s)

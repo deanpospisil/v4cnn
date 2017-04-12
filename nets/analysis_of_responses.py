@@ -28,21 +28,29 @@ import pickle
 import d_net_analysis as dn
 import pickle as pk
 import re
-save_dir = '/home/dean/Desktop/v4cnn/'
-load_dir = '/home/dean/Desktop/v4cnn/'
+
+save_dir = '/dean_temp/'
+load_dir = '/dean_temp/'
+save_dir = top_dir
+load_dir = top_dir
+
 measure_list =[ 'apc', 'ti', 'ti_orf', 'cv_ti', 'k', 'in_rf', 'no_response_mod']
+measure_list = ['k', 'ti_av_cov']
+#measure_list = ['k', 'ti_av_cov']
 
 model_file = top_dir + 'data/models/' + 'apc_models_362.nc'
 dmod = xr.open_dataset(model_file, chunks={'models':50, 'shapes':370})['resp']
 cnn_resp =[
 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
-'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
-'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51)',
-'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
-'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[64.0]_pos_(64.0, 164.0, 51)',
-'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
+
+#'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51)',
+#'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
+#'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[64.0]_pos_(64.0, 164.0, 51)',
+#'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
 ]
+null = False
 nulls = [1,0,0,0,0,0]
+#w = 32
 subsample_units = 1
 
 for cnn_resp_name, null  in zip(cnn_resp, nulls):
@@ -74,6 +82,7 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
         measures.append(dn.cross_val_SVD_TI(da, rf))
     if 'k' in measure_list:		
         measures.append(list(dn.kurtosis(da_0).values))
+
     if 'in_rf' in measure_list:
         measures.append(np.sum(rf,1))
     if 'no_response_mod' in measure_list:
@@ -88,7 +97,7 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
     receptive_field = (da.drop(-1,dim='shapes')**2).sum('shapes')**0.5
     da_cor = da.copy()
     da_cor -= da_cor.mean('shapes')
-    da_cor /= da_cor.chunk({}).vnorm('shapes')
+    da_cor /= da_cor.chunk({}).vnorm('shapes') 
     da_cor_0 = da_cor.isel(x=center_pos) 
     correlation = (da_cor_0*da_cor).sum('shapes')**2
     pos_props = xr.concat([correlation,receptive_field],dim=['r2','rf']) 
@@ -97,4 +106,5 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
         pk.dump(all_props, open(save_dir  + 'data/an_results/' + cnn_resp_name  + '_null_analysis.p','wb'))
     else:
         pk.dump(all_props, open(save_dir  + 'data/an_results/' + cnn_resp_name  + '_analysis.p','wb'))
+
 

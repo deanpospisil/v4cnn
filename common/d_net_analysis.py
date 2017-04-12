@@ -31,7 +31,7 @@ def kurtosis(da):
         da = da.drop(-1, dim='shapes')
     except:
         print('no baseline, ie no shape indexed as -1')
-    da = da.transpose('shapes','unit')
+    #da = da.transpose('shapes','unit')
     mu = da.mean('shapes')
    # k = da.reduce(kurtosis,dim='shapes')
     sig = da.reduce(np.nanvar, dim='shapes')
