@@ -282,7 +282,8 @@ def load_npy_img_dirs_into_stack( img_dir ):
 
     #will need to check this for color images.
     stack_descriptor_dict['img_paths'] = [ img_dir + img_name for img_name in img_names ]
-    stack = np.array([ np.load( full_img_name ) for full_img_name in stack_descriptor_dict['img_paths'] ], dtype = float)
+    stack = np.array([np.load(full_img_name) for full_img_name in 
+                      stack_descriptor_dict['img_paths']], dtype=float)
 
     #to do, some descriptor of the images for provenance: commit and input params for base shape gen
     #stack_descriptor_dict['base_shape_gen_inputs'] = [ img_dir + img_name for img_name in img_names ]

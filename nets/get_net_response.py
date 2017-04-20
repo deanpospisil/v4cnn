@@ -20,9 +20,10 @@ import scipy.io as l
 
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 response_folder = '/home/dean/Desktop/v4cnn/data/responses/'
-response_folder = '/dean_temp/data/responses/'
+#response_folder = '/dean_temp/data/responses/'
 baseImageList = ['PC370', 'formlet']
-base_image_nm = baseImageList[0]
+base_image_nm = 'imgnet_masked'
+#base_image_nm = baseImageList[0]
 
 
 all_iter = [
@@ -49,10 +50,13 @@ mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
 s = np.array(mat['shapes'][0])
 boundaries = imp.center_boundary(s)
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
+scale = None
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-y = (center_image-50, center_image+50, 51)
-x =  (center_image, center_image, 1)
+y = (center_image-20, center_image+20, 21)
+y = (center_image, center_image, 1)
+x = (center_image-50, center_image+50, 101)
+
 #y = (center_image, center_image, 11)
 amp = (255, 255, 1)
 amp = None
@@ -64,7 +68,9 @@ stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids
 for  iter_name, deploy  in zip(all_iter, deploys):
     print(iter_name)
     #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])   
-    response_description = iter_name+ 'y_test_APC362_pix_width'+ str(max_pix_width) + '_pos_' + str(x) +'_amp_'+ str(amp) + '.nc'
+    response_description = (iter_name+ 'pix_width'+ str(max_pix_width)
+                            + '_x_' + str(x) + '_y_' + str(y) 
+                            +'_amp_'+ str(amp) + str(base_image_nm)  +'.nc')
     response_file = (response_folder + response_description)
 
     if  os.path.isfile(response_file):
@@ -75,8 +81,8 @@ for  iter_name, deploy  in zip(all_iter, deploys):
                              iter_name,
                              stim_trans_cart_dict,
                              stim_trans_dict,
-                             require_provenance=True,
-                             use_boundary=True,
+                             require_provenance=False,
+                             use_boundary=False,
                              deploy=deploy)
 
         da.to_dataset(name='resp').to_netcdf(response_file)

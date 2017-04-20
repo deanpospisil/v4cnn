@@ -30,13 +30,12 @@ import scipy.io as  l
 
 def net_imgstack_response(net, stack, only_middle_conv=True, record_up_to_layer=None):
     #stack is expected to be nImages x RGB x rows x cols
-
     if not net.blobs['data'].data.shape[1:] == stack.shape[1:]:
         warnings.warn('Images are not the correct shape. Input shape: '
         + str(stack.shape[1:]) + ' needed shape: ' + str(net.blobs['data'].data.shape[1:])
         + '. Assuming you just put in grey scale' )
 
-        stack = np.tile(stack, (3,1,1,1))
+        stack = np.tile(stack, (3, 1, 1, 1))
         stack = np.swapaxes(stack, 0, 1)
 
     layer_names = [k for k in net.blobs.keys()]
@@ -82,11 +81,11 @@ def get_indices_for_net_unit_vec(net, layer_names=None):
 
     return resp_descriptor_dict
 
-def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, nimgs_per_pass=150,
+def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, nimgs_per_pass=1500,
                                        only_middle_conv=True, record_up_to_layer=None):
     #takes stim_trans_cart_dict, pulls from img_stack and transform accordingly,
     #gets nets responses.
-
+    
     n_imgs = len( stim_trans_cart_dict[stim_trans_cart_dict.keys()[0]] )
     stack_indices, remainder = dm.sectStrideInds( nimgs_per_pass, n_imgs )
 
@@ -105,7 +104,7 @@ def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, n
         if not 2 in shape_stack[0].shape:#check if it is just 2-d ie a boundary
             trans_img_stack = imp.imgStackTransform(stim_trans_cart_dict_sect, shape_stack)
         else:
-            trans_img_stack =np.array(imp.boundary_stack_transform(stim_trans_cart_dict_sect,
+            trans_img_stack = np.array(imp.boundary_stack_transform(stim_trans_cart_dict_sect,
                                                            shape_stack, npixels=227))
 
 
@@ -138,9 +137,15 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
         else:
             stim_trans_dict[ 'scale' ] = scale
     if not x is None :
-        stim_trans_dict['x'] = np.linspace(*x)
+        if type(x) is tuple:
+            stim_trans_dict['x'] = np.linspace(*x)
+        else:
+            stim_trans_dict['x'] = np.array(x)
     if not y is None :
-        stim_trans_dict['y'] = np.linspace(*y)
+        if type(y) is tuple:
+            stim_trans_dict['y'] = np.linspace(*y)
+        else:
+            stim_trans_dict['y'] = np.array(y)
     if not rotation is None :
         stim_trans_dict['rotation'] = np.linspace(*rotation)
     if not amp is None:
@@ -196,7 +201,6 @@ def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
     else:
         s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
         base_stack = dc.center_boundary(s)
-
     has_image_sha = False
     image_sha = None
     dir_filenames = os.listdir(img_dir)
