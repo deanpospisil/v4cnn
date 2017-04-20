@@ -349,7 +349,7 @@ ind_bfit_trut = (cor_v4_models_dirfit[0] - cor_v4_models_dirfit[1]).argsort()[-1
 #ax.annotate(s='a9501', xy=[x[ind_bfitcnn], y[ind_bfitcnn]+0.03], xytext=[x[ind_bfitcnn], y[ind_bfitcnn]+0.3],
 #            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
 #ax.annotate(s='b8302', xy=[x[ind_bfit_trut], y[ind_bfit_trut]+0.03], xytext=[x[ind_bfit_trut], y[ind_bfit_trut]+0.3],
-#            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
+#           arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
 beautify(ax)
 
 ax = plt.subplot(223)
