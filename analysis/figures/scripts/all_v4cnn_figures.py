@@ -1488,3 +1488,215 @@ plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
             +str(figure_num[fig_ind])+ '_1stfilters.pdf')
 
 #%%
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Nov  8 16:00:11 2016
+
+@author: deanpospisil
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 10 21:29:20 2016
+
+@author: deanpospisil
+"""
+
+
+frac_of_image = 0.25
+
+def cur_or_dict(s,norm=True):
+    cs = s[:, 1]*1j + s[:, 0]
+    downsamp = 1
+    if norm:
+        adjust_c = 3.8 # cuvature values weren't matching files I got so I scaled them
+        a = {'curvature': 
+        -((2. / (1 + np.exp(-0.125 * dc.curve_curvature(cs)* adjust_c)))-1)[::downsamp],
+        'orientation': 
+        ((np.angle(dc.curveAngularPos(cs)))% (np.pi * 2))[::downsamp]}
+    else:
+
+        a = {'curvature': 
+        - dc.curve_curvature(cs)[::downsamp],
+        'orientation': 
+        ((np.angle(dc.curveAngularPos(cs)))% (np.pi * 2))[::downsamp]}
+        
+        
+    return a
+    
+def match_ori_max_cur(shape_dict_list_pasu, ws):  
+    or_dense = ws['orientation']
+    or_pasu = shape_dict_list_pasu[shape_id]['orientation']
+    cur_dense = ws['curvature']
+    
+    or_dif = abs(np.expand_dims(or_pasu, axis=1)-np.expand_dims(or_dense,axis=0))
+    min_or_dif = np.pi/20
+    close_bool = list(or_dif < min_or_dif)
+    close_inds = [np.array(np.where(a_close_bool)).T for a_close_bool in close_bool]
+    
+#    #select based on closeness to original Pasu, or and cur.
+#    match_loc = [close_ind_set[np.argmin(
+#                    abs(cur_dense[close_ind_set] - cur_pasu_point))][0].astype(int)
+#                    for close_ind_set, cur_pasu_point 
+#                    in zip(close_inds, cur_pasu)]
+                    
+    match_loc = [close_ind_set[np.argmax(abs(cur_dense[close_ind_set]))][0]
+                for close_ind_set
+                in close_inds]
+                
+    return match_loc
+
+
+    
+with open(top_dir + '/data/models/PC370_params.p', 'rb') as f:
+    shape_dict_list_pasu = pickle.load(f)
+cmap = cm.bwr 
+mat = l.loadmat(top_dir + '/img_gen/'+ 'PC3702001ShapeVerts.mat')
+s = np.array(mat['shapes'][0])
+s = [shape[:-1,:] for shape in s]
+s = bg.center_boundary(s)
+
+normed = True
+shape_id = 105
+rect_len = 8
+
+shape_dict_list_dense = (cur_or_dict(ashape / np.max(np.abs(ashape)), norm=normed)
+                         for ashape in s)
+ws = itertools.islice(shape_dict_list_dense, shape_id, shape_id+1).__next__()
+dense_val = np.array([ws['curvature'], 
+                      ws['orientation']]).T
+
+orig_val = np.array([shape_dict_list_pasu[shape_id]['curvature'], 
+                     shape_dict_list_pasu[shape_id]['orientation']]).T
+
+
+match_loc_orig = match_ori_max_cur(shape_dict_list_pasu, ws)
+schematic_gaussian = True
+
+
+
+plt.close('all')
+
+ashape = s[shape_id]
+norm = mpl.colors.Normalize(vmin=-1.,vmax=1.)
+
+subsamp = 1
+to_roll = len(dense_val[::subsamp, 1]) - np.argmax(dense_val[::subsamp, 1])
+
+x = np.roll(dense_val[::subsamp, 1], to_roll)
+y = np.roll(dense_val[::subsamp, 0], to_roll)
+n_pts = len(x)
+line_segs = [[[x[ind], y[ind]], [x[ind+1], y[ind+1]]] for ind in range(n_pts-1)]
+curv = dense_val[:, 0]
+
+left = -np.pi/4
+right = 2*np.pi
+if schematic_gaussian:
+    from matplotlib.patches import Ellipse
+    def gaussian(x, mu, sig):
+        return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+    
+    fig = plt.figure(figsize=(4,4))
+    ax = plt.subplot(111)
+    m_curv = 0
+    sd_curv = 0.15
+    m_ori = np.deg2rad(270)
+    sd_ori = .7
+    
+    e = Ellipse(xy=[m_ori, m_curv], width=sd_ori*2, height=sd_curv*2)
+    e.set_facecolor('w')
+    ax.add_artist(e)
+
+    curv_x = np.linspace(-1,1,100)  
+    curv_gaus = gaussian(curv_x, m_curv, sd_curv)
+    or_x = np.linspace(0, 2*np.pi, 100)
+    or_gaus = gaussian(or_x, m_ori, sd_ori)
+    fs=16
+    plt.plot( or_x, (0.3*or_gaus-1.05), color='k')
+    plt.plot([m_ori, m_ori], [-1, m_curv-sd_curv], color='k')
+    plt.plot([m_ori-sd_ori, m_ori-sd_ori], [-1, m_curv],  color='0.5')
+    plt.plot([m_ori+sd_ori, m_ori+sd_ori], [-1, m_curv], color='0.5',)
+    ax.text(m_ori, m_curv*2, '$\mu_a$', fontsize=fs)
+    ax.text(m_ori+sd_ori, m_curv*2, '$\sigma_a$', fontsize=fs)
+    
+    plt.plot(0.7*curv_gaus+left, curv_x, color='k')
+    plt.plot([left, m_ori-sd_ori],[m_curv, m_curv], color='k')
+    plt.plot([left, m_ori],[m_curv-sd_curv, m_curv-sd_curv], color='0.5')
+    plt.plot([left, m_ori],[m_curv+sd_curv, m_curv+sd_curv], color='0.5',)
+    ax.text(m_ori/2, m_curv, '$\mu_c$', fontsize=fs, va='top')
+    ax.text(m_ori/2.5, m_curv-sd_curv, '$\sigma_c$', fontsize=fs, va='top')
+
+    
+else:
+    fig = plt.figure(figsize=(8,4))
+    ax = plt.subplot(122)
+#    for line_seg, a_curv in zip(line_segs, np.roll(curv,to_roll)): 
+#        ax.plot([line_seg[0][0], line_seg[1][0]], [line_seg[0][1], line_seg[1][1]], 
+#                color=cmap(norm(a_curv)), lw=8)
+    ax.plot(x,y, color='k', lw=3)
+ax.set_xticks(np.deg2rad(np.array([0, 90, 180, 270])))
+directions = ['right', 'up', 'left', 'down' ]
+xlabels = [str(ang) for ang, direction in
+           zip([0, 90, 180, 270], directions)]
+ax.set_xticklabels(xlabels, fontsize=12)
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+
+ax.set_yticks([ 1,  0,  -1])
+ax.set_yticklabels([ 'Convex\n+1', '0', '-1\nConcave'], fontsize=12,
+                   ha='right')
+#plt.scatter(dense_val[match_loc_orig, 1], dense_val[match_loc_orig, 0], color='r')         
+#ax.scatter(orig_val[:,1], orig_val[:,0], color='r')
+for spine in ['right','top']:
+    ax.spines[spine].set_visible(False)
+    
+ax.plot([left, 2*np.pi],[0, 0], color='0.5')
+
+ax.set_ylim([-1.03,1.03])
+ax.set_xlim(left, right)
+ax.spines['bottom'].set_bounds(0,right)
+
+ax.tick_params(axis='both', length=0)
+ax.set_xlabel('Angular Position ($^\circ$)',fontsize=15)
+ax.set_ylabel('Curvature', fontsize=15)
+ax.set_aspect(2.5)
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/shape_example.svg')
+
+
+if  not schematic_gaussian:
+    ax = plt.subplot(121)
+    n_pts = np.shape(ashape)[0]
+#    line_segs = [[ashape[ind], ashape[ind+1]] for ind in range(n_pts-1)]
+#    for line_seg, a_curv in zip(line_segs, curv):    
+#        ax.plot([line_seg[0][0], line_seg[1][0]], [line_seg[0][1], line_seg[1][1]], 
+#                color=cmap(norm(a_curv)), lw=7)
+    ax.plot(ashape[:,0],ashape[:,1],color='k', lw=3)
+    for spine in ['bottom','left','right','top']:
+        ax.spines[spine].set_visible(False)
+
+#    norm = mpl.colors.Normalize(vmin=0, vmax=1)
+#    sm = plt.cm.ScalarMappable(cmap=cm.cool, norm=norm)
+#    sm._A = []
+#    kw = {'anchor':(1,.5)}
+#    norm = mpl.colors.Normalize(vmin=0, vmax=1)
+#    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+#    sm._A = []
+#    cbar = plt.colorbar(sm)
+    #cbar.set_ticks([])
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.axis('equal')
+    ax.set_ylim(-2,2)
+    ax.set_xlim(-2,2)
+    plt.tight_layout()
+#cbar.set_label('Curvature', fontsize=15)
+
+    plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/apc_encoding.svg')
+    
+#plt.savefig(top_dir + 'v4cnn/analysis/figures/images/apc_encoding_gaussian_params.pdf', 
+#            bbox_inches='tight',)
+
+
+
+#plt.savefig(top_dir + 'v4cnn/analysis/figures/images/apc_encoding_just_ellipse.pdf', 
+ #           bbox_inches='tight',)
