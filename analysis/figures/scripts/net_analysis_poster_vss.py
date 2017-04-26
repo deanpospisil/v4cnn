@@ -16,6 +16,7 @@ sys.path.append(top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn'
 import xarray as xr
 import pandas as pd
+plt.style.use(top_dir+'/poster/dean_poster.mplstyle')
 
 def cmap_discretize(cmap, N):
     """Return a discrete colormap from the continuous colormap cmap.
@@ -58,15 +59,15 @@ def net_vis_square(da, m=None, n=None):
     if da.max()>1 or da.max()<0:
         print('Your image is outside the color range [0,1]')
         print('trying to fix it automatically')
-        data = data - data.min([1, 2, 3], keepdims=True)
-        data = data/data.max([1, 2, 3], keepdims=True)
+        data = data - data.min((1, 2, 3), keepdims=True)
+        data = data/data.max((1, 2, 3), keepdims=True)
     if type(m)==type(None):
         (m, n) = close_factors(da.shape[0])
         
     if data.shape[-1] == 1:
         data = np.repeat(data, 4, axis=-1)
     if data.shape[-1] == 3:
-        np.concatenate([data, np.ones(np.shape(data)[:-1] + (1,))], axis=-1)
+        data = np.concatenate([data, np.ones(np.shape(data)[:-1] + (1,))], axis=-1)
         
     
     if data.shape[1]<11:
@@ -89,13 +90,15 @@ def net_vis_square(da, m=None, n=None):
     data = data.reshape((m, n) + data.shape[1:]).transpose((0, 2, 1, 3, 4))
     data = data.reshape((m * data.shape[1], n * data.shape[3], data.shape[4]))
     
-#    ax = plt.subplot(111)
-#    ax.imshow(data, interpolation='nearest')
-#    ax.set_xticks([])
-#    ax.set_yticks([])
-#    [ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
-
-    return ax, data
+    return data
+def clean_imshow(da, ax=None):
+    if ax == None:
+        ax = plt.subplot(111)
+    ax.imshow(data, interpolation='nearest')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    [ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
+    return ax
 
 def variance_to_power_ratio(da):
     red_dims = list(set(da.dims) - set(['unit',]))
@@ -147,7 +150,7 @@ def spatial_opponency(da):
     
     return opponency_da
 
-def PC_spatial_freq(da):
+def PC_spatial_freq(da, nomean=True):
     da = da.transpose('unit', 'chan', 'y', 'x')
     u_da, s_da, v_da = prin_comp_maps(da)
     
@@ -163,14 +166,14 @@ def PC_spatial_freq(da):
     freq_power = np.fft.fftshift(freq_power)
     freq_ori = np.fft.fftshift(freq_ori)
     
-    a_fv_da = xr.DataArray(a_fv, dims=('unit', 'pc', 'yft', 'xft'), 
+    a_fv_da = xr.DataArray(a_fv, dims=('unit', 'pc', 'y', 'x'), 
                             coords=[range(n) for n in np.shape(a_fv)])
     unrav_a_fv = a_fv.reshape(a_fv.shape[:2] + (np.product(a_fv.shape[2:]),))
     
     #maybe change this to get spatial frequency up to a certain pc
     #what would relationship between spatial frequencies of different PC's mean?
-    peak_freq_power= [freq_power.ravel()[ind[0]] for ind in np.argmax(unrav_a_fv,-1)]
-    peak_freq_ori = [freq_ori.ravel()[ind[0]] for ind in np.argmax(unrav_a_fv,-1)]
+    peak_freq_power= [freq_power.ravel()[ind[0]] for ind in np.argmax(unrav_a_fv,-1)]        
+    peak_freq_ori = [freq_ori.ravel()[ind[0]] for ind in np.argmax(unrav_a_fv, -1)]
     #peak_amp_frac = np.max(unrav_a_fv,-1)*2 / np.sum(unrav_a_fv, [-2, -1])
     
     
@@ -225,7 +228,13 @@ conv1vis = conv1vis/conv1vis.max(['chan', 'y', 'x'])
 #conv1vis = conv1vis/conv1vis.max()
 
 #conv1vis = conv1vis[:, :, :5, :5]
-ax, data = net_vis_square(conv1vis)
+data = net_vis_square(conv1vis)
+ax = plt.subplot(111)
+ax.imshow(data, interpolation='nearest')
+ax.set_xticks([])
+ax.set_yticks([])
+[ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
+
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters.pdf')
 
 #%%
@@ -234,10 +243,11 @@ u_da, s_da, v_da = prin_comp_maps(conv1)
 rf = receptive_field(netwtsd['conv2'])
 opponency_da = spatial_opponency(conv1)
 a_fv_da, spatial_freq = PC_spatial_freq(conv1)
+data = net_vis_square(a_fv_da.expand_dims('chan'))
+clean_imshow(data)
 
 #%%
 lw = 5
-plt.style.use(top_dir+'/poster/dean_poster.mplstyle')
 plt.figure()
 da_ratio.plot.hist(cumulative=True, bins=100, histtype='step', lw=5)
 da_ratio[:48].plot.hist(cumulative=True, bins=100, histtype='step',range=[0,1], lw=5)
@@ -248,15 +258,22 @@ plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/hist.pdf', bboxinches='tight')
 
 plt.figure()
-ax, data = net_vis_square(conv1vis[da_ratio.argsort().values])
+data = net_vis_square(conv1vis[da_ratio.argsort().values])
 ax.set_ylabel('All Filters')
 plt.figure()
-ax, data = net_vis_square(conv1vis[:48][da_ratio[:48].argsort().values], m=4,n=12)
+data = net_vis_square(conv1vis[:48][da_ratio[:48].argsort().values], m=4,n=12)
+ax = clean_imshow(da)
 ax.set_ylabel('Group 1')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/group1.pdf', bboxinches='tight')
+
 
 plt.figure()
-ax, data = net_vis_square(conv1vis[48:][da_ratio[48:].argsort().values], m=4, n=12)
+data = net_vis_square(conv1vis[48:][da_ratio[48:].argsort().values], m=4, n=12)
+ax = clean_imshow(da)
 ax.set_ylabel('Group 2')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/group2.pdf', bboxinches='tight')
+#%%
+
 
 #%%%
 #for variance explained maps for PC and variance explained make it a quantized color distribution
@@ -276,64 +293,147 @@ norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 rfvis_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=c_disc, norm=norm).to_rgba(rfperc))
 rf_vis = xr.DataArray(rfvis_dat, dims=rf.dims)
 
-ax, data = net_vis_square(rf_vis)
-
-
+data = net_vis_square(rf_vis)
 fig = plt.figure(figsize=(8, 8))
-ax = fig.add_axes([0, 0.7, 1, 1])
-plt.imshow(data)
-[ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
-ax.set_xticks([]);ax.set_yticks([]);
+ax = fig.add_axes([0.1, 0.2, 0.8, 0.8])
 
-ax = fig.add_axes([0.05, 0.63, 0.9, 0.05])
+clean_imshow(data ,ax)
+ax = fig.add_axes([0.15, 0.12, 0.7, 0.05])
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 norm=norm,
                                 orientation='horizontal',
                                 extend='max',
                                 ticks=np.linspace(vmin, vmax, N+1))
 cb1.set_label('Percent Variance')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/rfconv2.pdf', bboxinches='tight')
+
 
 #%%
-plt.style.use('seaborn-paper')
+plt.style.use('default')
+def cor_over(da1, da2, center_dims, cor_dims):
+    das = [da1, da2]
+    das = [da - da.mean(center_dims) for da in das]
+    das = [da / (da**2).sum(cor_dims)**0.5 for da in das]
+    da_cor = (das[0]*das[1]).sum(cor_dims)
+    return da_cor
+
+
+def reg_on_chan_weights(da, A):
+    da = da.transpose('unit', 'chan', 'y', 'x')
+    lay2 = da.values.reshape(da.shape[:2] + (np.product(da.shape[2:]),)) 
+    fit = [np.linalg.lstsq(A, a_filt)[:2] for a_filt in lay2]
+    reg_coefs = np.array([a_fit[0] for a_fit in fit])
+
+    prediction = np.matmul(A, reg_coefs).reshape(da.shape)
+    prediction = xr.DataArray(prediction, dims=da.dims, coords=da.coords)
+    
+    da_sum_cor = cor_over(da, prediction, ['chan'], ['chan', 'x','y'])
+    da_cor_map = cor_over(da, prediction, ['chan'], ['chan']).expand_dims('chan',0)
+    
+    return da_cor_map, da_sum_cor, reg_coefs
 conv2 = netwtsd['conv2']
 freq = 2
 lay1_1 = np.deg2rad(spatial_freq['ori'][:48])
+sort_ori = np.argsort(lay1_1)
 lay2_1 = conv2.values.reshape(conv2.shape[:2] + (np.product(conv2.shape[2:]),))
 lay2_1 = lay2_1[:128]
 #our predictors are a sinusoidal function the preferred orientation of the prior layer
 A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq), np.ones(len(lay1_1))]).T
 
-fit = [np.linalg.lstsq(A, a_filt)[:2] for a_filt in lay2_1]
-reg_coefs = np.array([a_fit[0] for a_fit in fit])
-residual = np.array([a_fit[1] for a_fit in fit])
+da_cor_map, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[:128], A[:48])  
 
-res_map = residual.reshape((lay2_1.shape[0],) + conv2.shape[-2:])
+rads = np.linspace(0, np.pi, 100)
+A_smth = np.vstack([np.cos(rads*freq), np.sin(rads*freq), np.ones(len(rads))]).T
+smooth_prediction = np.matmul(A_smth, reg_coefs)
 
-#fit_maps = fits.reshape((lay2_1.shape[0],) + (A.shape[1],) + conv2.shape[-2:])
+cor_map_dat = da_cor_map.squeeze().values.reshape((da_cor_map.shape[1],)
+                                    + (np.product(da_cor_map.shape[2:]),))
+cor_level_loc = []
+cor_level = []
+cor_level_near = [0.3,0.4,0.5,0.6,0.7,0.8][::-1]
+for level in cor_level_near:
+   the_loc = np.unravel_index(np.argmin(np.abs(cor_map_dat-level)), cor_map_dat.shape)
+   cor_level_loc.append(the_loc)
+   cor_level.append(cor_map_dat[the_loc[0], the_loc[1]])
 
-prediction = np.matmul(A, reg_coefs)
+import matplotlib.gridspec as gridspec
+m = len(cor_level_near)
+n = 1
 
-lay2_1_nrm = lay2_1 - lay2_1.mean(-2, keepdims=True)
-lay2_1_nrm = lay2_1_nrm/(np.sum(lay2_1_nrm**2, -2, keepdims=True)**0.5)
+# We'll use two separate gridspecs to have different margins, hspace, etc
+gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4)
+gs_base = plt.GridSpec(m, 1, hspace=0.4, left=0.4)
+fig = plt.figure(figsize=(3,10))
 
-prediction_nrm = prediction - prediction.mean(-2, keepdims=True)
-prediction_nrm = prediction_nrm/(np.sum(prediction_nrm**2, -2, keepdims=True)**0.5)
+# Top (unshared) axes
+topax = fig.add_subplot(gs_top[0,:])
+# The four shared axes
+ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
+other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
+bottom_axes = [ax] + other_axes
 
 
-corr_map = np.sum(lay2_1_nrm*prediction_nrm, -2)
-best_ind = np.unravel_index(np.argmax(corr_map), corr_map.shape)
-p = prediction[best_ind[0], :, best_ind[1]]
-b = lay2_1[best_ind[0], :, best_ind[1]]
-#plt.scatter(np.sort(spatial_freq['ori'][:48]), b[sort_ori])
-plt.hist(corr_map.ravel())
+for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
+    if n==0:
+        ax = topax
+        ax.set_title('R = ' +np.str(np.round(cor, 2)), fontsize=14)
+        ax.set_ylabel('Conv2\nWeight', rotation=0, labelpad=1, va='center', ha='right')
+        ax.set_xlabel('Orientation Conv1')
+        ax.set_xticks([0,90,180])
+        
+    else:
+        ax = bottom_axes[n-1]
+        ax.set_title(np.str(np.round(cor, 2)), fontsize=12)
+        ax.set_xticks([0,90,180])
+        ax.set_xticklabels([])
+
+    ax.grid(b=True)
+    b = lay2_1[ind[0], :, ind[1]]
+    ax.scatter(spatial_freq['ori'][:48][sort_ori], b[sort_ori], s=4)
+    ax.plot(np.rad2deg(rads), smooth_prediction[ind[0],:,ind[1]], color='b', lw=1)
+    #plt.hist(corr_map.ravel(), histtype='step', range=[0,1])
+#plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/cross_examples.pdf')
 #%%
 
+#%%  
+plt.figure()
+conv2 = netwtsd['conv2']
+freq = 2
+lay1_1 = np.deg2rad(spatial_freq['ori'])
+#our predictors are a sinusoidal function the preferred orientation of the prior layer
+A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq), np.ones(len(lay1_1))]).T
 
+da_cor_map1, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[:128], A[:48])  
+da_cor_map2, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[128:], A[48:])  
 
+N = 6
+c_disc = cmap_discretize(mpl.cm.plasma, N=N)
+vmax = 0.9
+vmin = 0.3
+norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
+cormap_dat1 = np.squeeze(mpl.cm.ScalarMappable(cmap=c_disc, norm=norm).to_rgba(da_cor_map1))
+cormap_dat2 = np.squeeze(mpl.cm.ScalarMappable(cmap=c_disc, norm=norm).to_rgba(da_cor_map2))
+
+cormap_vis1 = xr.DataArray(cormap_dat1, dims=('unit', 'y', 'x', 'chan'))
+cormap_vis2 = xr.DataArray(cormap_dat2, dims=('unit', 'y', 'x', 'chan'))
+
+data1 = net_vis_square(cormap_vis1)
+data2 = net_vis_square(cormap_vis2)
+
+data = np.vstack([data1,data2])
+
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_axes([0.1, 0.2, 0.7, 0.7])
+clean_imshow(data ,ax)
+plt.title('Cross-Orientation Suppresion Maps')
+ax = fig.add_axes([0.15, 0.12, 0.6, 0.05])
+cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
+                                norm=norm,
+                                orientation='horizontal',
+                                extend='both',
+                                ticks=np.linspace(vmin, vmax, N+1))
+cb1.set_label('Correlation')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_center_surround.pdf', bboxinches='tight')
 #%%
-sort_ori = np.argsort(spatial_freq['ori'][:48]).values
-plt.scatter(np.sort(spatial_freq['ori'][:48]),lay2_1[best, sort_ori, best_spot], s=10)
-    
-prediction[best, sort_ori, best_spot]
-
-    
