@@ -66,8 +66,7 @@ def net_vis_square(da, m=None, n=None):
     if data.shape[-1] == 1:
         data = np.repeat(data, 4, axis=-1)
     if data.shape[-1] == 3:
-        np.concatenate([data, np.ones(np.shape(data)[:-1] + (1,))], axis=-1)
-        
+        data = np.concatenate([data, np.ones(np.shape(data)[:-1] + (1,))], axis=-1)
     
     if data.shape[1]<11:
         from scipy.ndimage import zoom
@@ -88,14 +87,8 @@ def net_vis_square(da, m=None, n=None):
         # tile the filters into an image
     data = data.reshape((m, n) + data.shape[1:]).transpose((0, 2, 1, 3, 4))
     data = data.reshape((m * data.shape[1], n * data.shape[3], data.shape[4]))
-    
-#    ax = plt.subplot(111)
-#    ax.imshow(data, interpolation='nearest')
-#    ax.set_xticks([])
-#    ax.set_yticks([])
-#    [ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
 
-    return ax, data
+    return data
 
 def variance_to_power_ratio(da):
     red_dims = list(set(da.dims) - set(['unit',]))
@@ -225,7 +218,12 @@ conv1vis = conv1vis/conv1vis.max(['chan', 'y', 'x'])
 #conv1vis = conv1vis/conv1vis.max()
 
 #conv1vis = conv1vis[:, :, :5, :5]
-ax, data = net_vis_square(conv1vis)
+data = net_vis_square(conv1vis)
+ax = plt.subplot(111)
+ax.imshow(data, interpolation='nearest')
+ax.set_xticks([])
+ax.set_yticks([])
+[ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters.pdf')
 
 #%%
