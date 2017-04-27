@@ -31,12 +31,12 @@ def cmap_discretize(cmap, N):
     """
 
     if type(cmap) == str:
-        cmap = cm.get_cmap(cmap)
+        cmap = mpl.cm.get_cmap(cmap)
     colors_i = np.concatenate((np.linspace(0, 1., N), (0.,0.,0.,0.)))
     colors_rgba = cmap(colors_i)
     indices = np.linspace(0, 1., N+1)
     cdict = {}
-    for ki,key in enumerate(('red','green','blue')):
+    for ki,key in enumerate(('red', 'green', 'blue')):
         cdict[key] = [ (indices[i], colors_rgba[i-1,ki], colors_rgba[i,ki]) for i in np.arange(N+1) ]
     # Return colormap object.
     return mpl.colors.LinearSegmentedColormap(cmap.name + "_%d"%N, cdict, 1024)
@@ -242,9 +242,59 @@ da_ratio = variance_to_power_ratio(conv1)
 u_da, s_da, v_da = prin_comp_maps(conv1)
 rf = receptive_field(netwtsd['conv2'])
 opponency_da = spatial_opponency(conv1)
+#%%
+c = da_ratio.values
+wts_c = conv1.transpose('unit', 'y','x', 'chan').values
+
+#our reference points for plotting in the 2-d space
+rgb = np.eye(3) 
+axis1 = np.real(np.fft.ifft([0,1,0]))
+axis2 = np.imag(np.fft.fft([0,1,0]))
+proj_mat = np.vstack([axis1 ,axis2]).T
+proj_mat /= np.sum(proj_mat**2,0, keepdims=True)**0.5
+rgb_proj = np.dot(rgb, proj_mat)/1.
+fig, axs = plt.subplots(figsize=(12, 8), nrows=8, ncols=12)
+for ax, c_ind in zip(axs.ravel(), c.argsort()[::-1]):
+    to_proj = wts_c[c_ind].squeeze()
+    amp = np.sum(to_proj**2)**0.5
+    to_proj = to_proj/np.max(to_proj)
+    to_proj = to_proj.reshape(np.product(to_proj.shape[:-1]), 3)
+    proj = np.dot(to_proj, proj_mat)
+    color = np.array(to_proj - np.min(to_proj))
+    color /= np.max(color)
+    _=ax.scatter(proj[:, 0], proj[:, 1], c=color, linewidths=0)
+    _=ax.scatter(0, 0, c='none', linewidths=1);_=plt.axis('equal')
+    #ax.set_title('i='+str(c_ind) +' \nc='+ str(np.round(c[c_ind],2)) +
+    #             '\n amp=' + str(np.round(amp,2)), fontsize=6)
+    for spine in ['left', 'right', 'bottom', 'top']:
+        ax.spines[spine].set_visible(True)
+    _ = ax.scatter(rgb_proj[:,0], rgb_proj[:,1], c=rgb, edgecolors='k')
+    _ = ax.scatter(0, 0, c='k', edgecolors='k')
+for ax in axs.ravel():
+    ax.set_xticks([]);ax.set_yticks([]);ax.axis('equal')
+plt.tight_layout(w_pad=0.01, h_pad=0.01)
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters_chroma.pdf')
+
+#%%
+
 a_fv_da, spatial_freq = PC_spatial_freq(conv1)
-data = net_vis_square(a_fv_da)
-clean_imshow(data)
+a_fv_da_nrm = a_fv_da/a_fv_da.max(['x', 'y'])
+spec_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=mpl.cm.plasma).to_rgba(a_fv_da_nrm))
+spec_vis = xr.DataArray(spec_dat[:,0,...], dims=('unit','y', 'x', 'chan'))
+data = net_vis_square(spec_vis)
+
+
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_axes([0.1, 0.05, 0.8, 0.8])
+clean_imshow(data ,ax)
+ax = fig.add_axes([0.15, 0.12, 0.7, 0.05])
+cb1 = mpl.colorbar.ColorbarBase(ax, cmap=mpl.cm.plasma,
+                                orientation='horizontal',
+                                ticks=np.linspace(0, 1, 6))
+cb1.set_label('Fraction Amplitude')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/spec_conv1.pdf', bboxinches='tight')
+
+
 
 #%%
 lw = 5
@@ -272,8 +322,6 @@ data = net_vis_square(conv1vis[48:][da_ratio[48:].argsort().values], m=4, n=12)
 ax = clean_imshow(da)
 ax.set_ylabel('Group 2')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/group2.pdf', bboxinches='tight')
-#%%
-
 
 #%%%
 #for variance explained maps for PC and variance explained make it a quantized color distribution
