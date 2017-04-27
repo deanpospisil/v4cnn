@@ -16,7 +16,7 @@ sys.path.append(top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn'
 import xarray as xr
 import pandas as pd
-plt.style.use(top_dir+'/poster/dean_poster.mplstyle')
+plt.style.use('default')
 
 def cmap_discretize(cmap, N):
     """Return a discrete colormap from the continuous colormap cmap.
@@ -126,7 +126,7 @@ def prin_comp_maps(da):
     s_da = xr.DataArray(s, dims=('unit', 'sv'), 
                         coords=[range(n) for n in np.shape(s)])
     s_da.coords['unit'] = da.coords['unit']
-    v_da = xr.DataArray(v, dims=('unit', 'pc', 'x', 'y'), 
+    v_da = xr.DataArray(v, dims=('unit', 'chan', 'x', 'y'), 
                         coords=[range(n) for n in np.shape(v)])
     v_da.coords['unit'] = da.coords['unit']
     
@@ -166,7 +166,7 @@ def PC_spatial_freq(da, nomean=True):
     freq_power = np.fft.fftshift(freq_power)
     freq_ori = np.fft.fftshift(freq_ori)
     
-    a_fv_da = xr.DataArray(a_fv, dims=('unit', 'pc', 'y', 'x'), 
+    a_fv_da = xr.DataArray(a_fv, dims=('unit', 'chan', 'y', 'x'), 
                             coords=[range(n) for n in np.shape(a_fv)])
     unrav_a_fv = a_fv.reshape(a_fv.shape[:2] + (np.product(a_fv.shape[2:]),))
     
@@ -234,10 +234,7 @@ ax.imshow(data, interpolation='nearest')
 ax.set_xticks([])
 ax.set_yticks([])
 [ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
-<<<<<<< HEAD
-=======
 
->>>>>>> 03c17df2e9774b79090a09026e2c653522b57dd8
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters.pdf')
 
 #%%
@@ -246,7 +243,7 @@ u_da, s_da, v_da = prin_comp_maps(conv1)
 rf = receptive_field(netwtsd['conv2'])
 opponency_da = spatial_opponency(conv1)
 a_fv_da, spatial_freq = PC_spatial_freq(conv1)
-data = net_vis_square(a_fv_da.expand_dims('chan'))
+data = net_vis_square(a_fv_da)
 clean_imshow(data)
 
 #%%
@@ -374,7 +371,9 @@ topax = fig.add_subplot(gs_top[0,:])
 ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
 other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
 bottom_axes = [ax] + other_axes
-
+from math import log10, floor
+def round_to_1(x):
+    return round(x, -int(floor(log10(abs(x)))))
 
 for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     if n==0:
@@ -393,6 +392,12 @@ for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     ax.grid(b=True)
     b = lay2_1[ind[0], :, ind[1]]
     ax.scatter(spatial_freq['ori'][:48][sort_ori], b[sort_ori], s=4)
+    max_extent = round_to_1(np.max([np.max(b), np.abs(np.min(b))]))
+    ytick = [-max_extent, 0, max_extent]
+    ax.set_yticks(ytick)
+    ytick[1] = '0'
+    ax.set_yticklabels(ytick)
+    ax.set_ylim([-max_extent*1.2, max_extent*1.2])
     ax.plot(np.rad2deg(rads), smooth_prediction[ind[0],:,ind[1]], color='b', lw=1)
     #plt.hist(corr_map.ravel(), histtype='step', range=[0,1])
 #plt.tight_layout()
