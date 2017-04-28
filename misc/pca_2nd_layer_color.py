@@ -19,19 +19,16 @@ import numpy as np
 import scipy.io as  l
 import matplotlib.pyplot as plt
 import pickle
+from matplotlib import cm
 
-top_dir = os.getcwd().split('net_code')[0]
+top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append( top_dir + 'xarray/')
-top_dir = top_dir + 'net_code/'
-sys.path.append(top_dir + 'common')
+top_dir = top_dir + '/v4cnn/'
+sys.path.append(top_dir + 'common/')
 sys.path.append(top_dir + 'img_gen')
 sys.path.append(top_dir + 'nets')
 plt.close('all')
 
-import d_misc as dm
-import d_img_process as imp
-import pandas as pd
-from sklearn import  decomposition
 
 def my_cor(a, b):
     a = a / np.linalg.norm(a)
@@ -46,7 +43,8 @@ def vis_square(data, padsize=0, padval=0):
     data = np.pad(data, padding, mode='constant', constant_values=(padval, padval))
 
     # tile the filters into an image
-    data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
+    data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + 
+                        tuple(range(4, data.ndim + 1)))
     data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
 
     plt.imshow(data, interpolation='nearest', cmap = cm.hot, vmin=0, vmax=1)
@@ -59,7 +57,8 @@ def vis_square_rgb(data, padsize=0, padval=0):
 
     # force the number of filters to be square
     n = int(np.ceil(np.sqrt(data.shape[0])))
-    padding = ((0, n ** 2 - data.shape[0]), (0, padsize), (0, padsize)) + ((0, 0),) * (data.ndim - 3)
+    padding = (((0, n**2 - data.shape[0]), (0, padsize), (0, padsize))
+                + ((0, 0),) * (data.ndim - 3))
     data = np.pad(data, padding, mode='constant', constant_values=(padval, padval))
 
     # tile the filters into an image
@@ -190,7 +189,10 @@ coeffs_pol_hsl = np.concatenate((coeffs_pol, sat_scale * np.ones_like(coeffs_pol
 coeffs_pol_hsl = coeffs_pol_hsl[:,[0, 2, 1], ...]#by default is hue:angle, sat:mag, lum:constant
 coeffs_pol_rgb = np.apply_along_axis(ziphusl, 1, coeffs_pol_hsl)
 coeffs_pol_rgb_img = np.reshape(coeffs_pol_rgb, (128, 3, 5, 5)).swapaxes(-1, 1)
-
+plt.figure()
+#vis_square_rgb(coeffs_pol_rgb_img)
+vis_square(coeffs_pol_rgb_img, padsize=1)
+#%%
 plt.figure()
 plt.subplot(133)
 vis_square_rgb(coeffs_pol_rgb_img, padsize=1, padval=0)

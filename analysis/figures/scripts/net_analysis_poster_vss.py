@@ -57,7 +57,7 @@ def close_factors(n):
     closest_factors = paired_factors[:,best_ind]
     return closest_factors[0], closest_factors[1]
 
-def net_vis_square(da, m=None, n=None):
+def net_vis_square_da(da, m=None, n=None):
     da = da.transpose('unit', 'y', 'x','chan')
     data = da.values
     if da.max()>1 or da.max()<0:
@@ -122,7 +122,7 @@ def prin_comp_maps(da):
 
     data = da.values.reshape(da.shape[:2] + (np.product(da.shape[2:]),))
     u, s, v = np.linalg.svd(data, full_matrices=False)
-    v = v.reshape(da.shape)
+    v = v.reshape(v.shape[:2]+ da.shape[-2:])#reshape into space
     
     u_da = xr.DataArray(u, dims=('unit', 'chan', 'pc'), 
                         coords=[range(n) for n in np.shape(u)])
@@ -135,6 +135,28 @@ def prin_comp_maps(da):
     v_da.coords['unit'] = da.coords['unit']
     
     return u_da, s_da, v_da
+
+def prin_comp_rec(da, n_pc=2):
+    da = da.transpose('unit', 'chan', 'y', 'x')
+    u_da, s_da, v_da = prin_comp_maps(da)
+    u, s, v = (u_da.values, s_da.values, v_da.values)
+    v = v.reshape(v.shape[:2] + (np.product(da.shape[-2:]),))#unrwap
+
+    coefs = np.matmul(np.array(map(np.diag, s[:, :n_pc,])), v[:, :n_pc, :])
+    reconstruction = np.matmul(u[..., :n_pc], coefs)
+    
+    reconstruction = reconstruction.reshape(reconstruction.shape[:2] + da.shape[-2:])
+    reconstruction_da = xr.DataArray(reconstruction, dims=da.dims, 
+                        coords=[range(n) for n in np.shape(da)])
+    reconstruction_da.coords['unit'] = da.coords['unit']
+    
+    coefs = coefs.reshape(coefs.shape[:2] + da.shape[-2:])
+    coefs_da = xr.DataArray(coefs, dims=da.dims, 
+                        coords=[range(n) for n in np.shape(coefs)])
+    coefs_da.coords['unit'] = da.coords['unit']
+    
+    return coefs_da, reconstruction_da
+    
 
 def spatial_opponency(da):
     da = da.transpose('unit', 'chan', 'y', 'x')
@@ -232,16 +254,18 @@ conv1vis = conv1vis/conv1vis.max(['chan', 'y', 'x'])
 #conv1vis = conv1vis/conv1vis.max()
 
 #conv1vis = conv1vis[:, :, :5, :5]
-data = net_vis_square(conv1vis)
+data = net_vis_square_da(conv1vis)
 ax = clean_imshow(data)
 
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters.pdf')
 
 #%%
+u_da, s_da, v_da = prin_comp_maps(netwtsd['conv2'])
 da_ratio = variance_to_power_ratio(conv1)
 u_da, s_da, v_da = prin_comp_maps(conv1)
 rf = receptive_field(netwtsd['conv2'])
 opponency_da = spatial_opponency(conv1)
+
 #%%
 c = da_ratio.values
 wts_c = conv1.transpose('unit', 'y','x', 'chan').values
@@ -285,7 +309,7 @@ a_fv_da, spatial_freq = PC_spatial_freq(conv1)
 a_fv_da_nrm = a_fv_da/a_fv_da.max(['x', 'y'])
 spec_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=mpl.cm.plasma).to_rgba(a_fv_da_nrm))
 spec_vis = xr.DataArray(spec_dat[:,0,...], dims=('unit','y', 'x', 'chan'))
-data = net_vis_square(spec_vis)
+data = net_vis_square_da(spec_vis)
 
 
 fig = plt.figure()
@@ -312,18 +336,18 @@ plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/hist.pdf', bboxinches='tight')
 
 plt.figure()
-data = net_vis_square(conv1vis[da_ratio.argsort().values])
+data = net_vis_square_da(conv1vis[da_ratio.argsort().values])
 ax = clean_imshow(da)
 ax.set_ylabel('All Filters')
 plt.figure()
-data = net_vis_square(conv1vis[:48][da_ratio[:48].argsort().values], m=4,n=12)
+data = net_vis_square_da(conv1vis[:48][da_ratio[:48].argsort().values], m=4,n=12)
 ax = clean_imshow(da)
 ax.set_ylabel('Group 1')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/group1.pdf', bboxinches='tight')
 
 
 plt.figure()
-data = net_vis_square(conv1vis[48:][da_ratio[48:].argsort().values], m=4, n=12)
+data = net_vis_square_da(conv1vis[48:][da_ratio[48:].argsort().values], m=4, n=12)
 ax = clean_imshow(da)
 ax.set_ylabel('Group 2')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/group2.pdf', bboxinches='tight')
@@ -346,7 +370,7 @@ norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 rfvis_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=c_disc, norm=norm).to_rgba(rfperc))
 rf_vis = xr.DataArray(rfvis_dat, dims=rf.dims)
 
-data = net_vis_square(rf_vis)
+data = net_vis_square_da(rf_vis)
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_axes([0.1, 0.2, 0.8, 0.8])
 
@@ -466,9 +490,9 @@ A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq), np.ones(len(lay1_1))]).
 da_cor_map1, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[:128], A[:48])  
 da_cor_map2, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[128:], A[48:])  
 
-N = 6
+N = 7
 c_disc = cmap_discretize(mpl.cm.plasma, N=N)
-vmax = 0.9
+vmax = 1
 vmin = 0.3
 norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -478,8 +502,8 @@ cormap_dat2 = np.squeeze(mpl.cm.ScalarMappable(cmap=c_disc, norm=norm).to_rgba(d
 cormap_vis1 = xr.DataArray(cormap_dat1, dims=('unit', 'y', 'x', 'chan'))
 cormap_vis2 = xr.DataArray(cormap_dat2, dims=('unit', 'y', 'x', 'chan'))
 
-data1 = net_vis_square(cormap_vis1)
-data2 = net_vis_square(cormap_vis2)
+data1 = net_vis_square_da(cormap_vis1)
+data2 = net_vis_square_da(cormap_vis2)
 
 data = np.vstack([data1,data2])
 
@@ -491,8 +515,145 @@ ax = fig.add_axes([0.15, 0.12, 0.6, 0.05])
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 norm=norm,
                                 orientation='horizontal',
-                                extend='both',
+                                extend='min',
                                 ticks=np.linspace(vmin, vmax, N+1))
 cb1.set_label('Correlation')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_center_surround.pdf', bboxinches='tight')
 #%%
+plt.figure(figsize=(2,2))
+conv2 = netwtsd['conv2']
+u_da, s_da, v_da = prin_comp_maps(netwtsd['conv2'])
+
+frac_var = ((s_da.isel(sv=[0,1])**2).sum('sv')/(s_da**2).sum('sv'))
+(frac_var).plot.hist(histtype='step', 
+lw=3, range=[0,1], bins=1000, cumulative=True, normed=True)
+plt.title('Two PC Reconstruction')
+plt.xlabel('Fraction Variance')
+plt.ylabel('Cumulative Fraction')
+plt.grid()
+plt.yticks([0, 0.25,0.5,0.75,1])
+plt.gca().set_yticklabels(['0', '0.25', '0.5', '0.75', '1'])
+plt.xticks([0, 0.25,0.5,0.75,1])
+plt.gca().set_xticklabels(['0', '0.25', '0.5', '0.75', '1'])
+plt.xlim(0,1)
+
+#%%
+import husl
+sat_scale = 100
+cor_scale = 80
+def cart2angle(a):
+    ang = np.array([np.arctan2(cart[0, :], cart[1, :]) for cart in a ])
+    ang = np.rad2deg(ang)%360
+    return ang
+def cart2mag(a):
+    mag = np.sum(a**2, 1)**0.5
+    return mag
+def cart2pol(a):
+    angle = cart2angle(a)
+    mag = cart2mag(a)
+    pol = np.dstack((angle, mag)).swapaxes(1,2)
+    return pol
+def ziphusl(a):
+    rgb = husl.huslp_to_rgb(a[0], a[1], a[2])
+    return rgb 
+
+#%%
+conv2 = conv2.transpose('unit', 'chan', 'y', 'x')
+coefs_da, reconstruction_da = prin_comp_rec(conv2, n_pc=2)
+
+da_cor = cor_over(conv2, reconstruction_da, ['chan'], ['chan'])
+da_cor = da_cor.expand_dims('chan')
+
+N = 7
+c_disc = cmap_discretize(mpl.cm.plasma, N=N)
+vmax = 1
+vmin = 0.3
+norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
+cormap_dat1 = np.squeeze(mpl.cm.ScalarMappable(cmap=c_disc, norm=norm).to_rgba(da_cor))
+
+cormap_vis1 = xr.DataArray(cormap_dat1, dims=('unit', 'y', 'x', 'chan'))
+
+data = net_vis_square_da(cormap_vis1)
+
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_axes([0.1, 0.2, 0.7, 0.7])
+clean_imshow(data ,ax)
+plt.title('1st PC corr')
+ax = fig.add_axes([0.15, 0.12, 0.6, 0.05])
+cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
+                                norm=norm,
+                                orientation='horizontal',
+                                extend='min',
+                                ticks=np.linspace(vmin, vmax, N+1))
+cb1.set_label('Correlation')
+
+#%%
+sat_scale = 100
+cor_scale = 83
+coefs_da_c = coefs_da[:, 0, ...]*1j + coefs_da[:, 1, ...]
+angle = xr.ufuncs.angle(coefs_da_c, deg=True)
+#angle = (angle + 2 * np.pi) % (2 * np.pi)
+mag = np.abs(coefs_da_c)*200
+mag[...] = sat_scale
+lum = da_cor.squeeze()*cor_scale
+
+
+husl_coefs = xr.concat([angle, mag, lum], dim='husl')
+
+coeffs_pol_rgb = np.apply_along_axis(ziphusl, 0, husl_coefs)
+coeffs_pol_rgb = xr.DataArray(coeffs_pol_rgb, dims=['chan', 'unit', 'y', 'x'])
+data = net_vis_square_da(coeffs_pol_rgb)
+clean_imshow(data)
+plt.title('Hue=Angle(PC1 Coef., PC2 Coef.)\nLuminance=Correlation(Reconstruction, Original)')
+
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/layer2_pc_vis.pdf')
+
+#%%
+opponency_da = spatial_opponency(conv2)
+
+examples = [36, 22]
+plt.figure(figsize=(4,4))
+nx, ny = (100, 100)
+x = np.linspace(-1, 1, nx)
+y = np.linspace(-1, 1, ny)
+xv, yv = np.meshgrid(x, y)
+cart = xv*1j + yv
+pol = (np.rad2deg(np.angle(cart)))%360
+mag = abs(cart)
+color_circle = np.apply_along_axis(ziphusl, 2, np.dstack((pol, 100*np.ones_like(mag), 70*np.ones_like(mag))))
+for example, ind in zip(examples, range(1,4,2)):
+    plt.subplot(2,2, ind+1)
+    plt.imshow(color_circle, interpolation='nearest')
+    shift = 50
+    scale = 40./np.max((coefs_da[example]**2).sum('chan')**0.5)
+    rgb = coeffs_pol_rgb[:, example,...]
+    
+    plt.scatter((coefs_da[example, 0, ...]*scale)+shift, 
+                (coefs_da[example, 1, ...]*scale)+shift,
+                s=30, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1),edgecolors='k')
+    plt.xticks([]);plt.yticks([])
+    plt.subplot(2,2, ind)
+    plt.title('Filter: ' + str(example))
+
+    plt.imshow(np.moveaxis(rgb.values, 0, -1), interpolation='nearest')
+    plt.xticks([]);plt.yticks([])
+plt.subplots_adjust(wspace=0.1, hspace=.3)
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
+
+#%%
+data = conv2.values.reshape(conv2.shape[:2] + (np.product(conv2.shape[2:]),))
+u, s, v = np.linalg.svd(data, full_matrices=False)
+n_pc = 2
+rec = np.matmul(np.matmul(u[...,:n_pc], 
+                          np.array(map(np.diag, s[:,:n_pc,]))), 
+                          v[:,:n_pc,:])
+rec_uw = rec.reshape((rec.shape[0],) + (np.product(rec.shape[1:]),))
+rec_uw_nrm = rec_uw/((rec_uw**2).sum(1, keepdims=True)**0.5)
+
+data_uw = data.reshape((rec.shape[0],) + (np.product(rec.shape[1:]),))
+data_uw_nrm = data_uw/((data_uw**2).sum(1, keepdims=True)**0.5)
+
+cor = (rec_uw_nrm*data_uw_nrm).sum(1)**2
+plt.hist(cor, range=[0,1])
+
