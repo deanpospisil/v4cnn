@@ -67,6 +67,8 @@ def net_vis_square_da(da, m=None, n=None):
         data = data/data.max((1, 2, 3), keepdims=True)
     if type(m)==type(None):
         (m, n) = close_factors(da.shape[0])
+        m = int(m)
+        n = int(n)
         
     if data.shape[-1] == 1:
         data = np.repeat(data, 4, axis=-1)
@@ -141,8 +143,8 @@ def prin_comp_rec(da, n_pc=2):
     u_da, s_da, v_da = prin_comp_maps(da)
     u, s, v = (u_da.values, s_da.values, v_da.values)
     v = v.reshape(v.shape[:2] + (np.product(da.shape[-2:]),))#unrwap
-
-    coefs = np.matmul(np.array(map(np.diag, s[:, :n_pc,])), v[:, :n_pc, :])
+    S = np.array(list(map(np.diag, s[:, :n_pc,])))
+    coefs = np.matmul(S, v[:, :n_pc, :])
     reconstruction = np.matmul(u[..., :n_pc], coefs)
     
     reconstruction = reconstruction.reshape(reconstruction.shape[:2] + da.shape[-2:])
@@ -295,7 +297,7 @@ for  c_ind, ax in enumerate(axs.ravel()):
         ax.spines[spine].set_visible(True)
     _ = ax.scatter(rgb_proj[:,0], rgb_proj[:,1], c='None', edgecolors=rgb)
     _ = ax.scatter(0, 0, c='None', edgecolors='k')
-    ax.text(x=1, y=1, s=str(round(opponency_da[c_ind].values,2)), 
+    ax.text(x=1, y=1, s=str(np.round(opponency_da[c_ind].values,2)), 
             ha='right', va='top', transform=ax.transAxes, fontsize=10,
             bbox=dict(facecolor='white', alpha=0.5, pad=0.02))
 for ax in axs.ravel():
@@ -477,7 +479,6 @@ for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     #plt.hist(corr_map.ravel(), histtype='step', range=[0,1])
 #plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/cross_examples.pdf')
-#%%
 
 #%%  
 plt.figure()
@@ -651,7 +652,7 @@ data = conv2.values.reshape(conv2.shape[:2] + (np.product(conv2.shape[2:]),))
 u, s, v = np.linalg.svd(data, full_matrices=False)
 n_pc = 2
 rec = np.matmul(np.matmul(u[...,:n_pc], 
-                          np.array(map(np.diag, s[:,:n_pc,]))), 
+                          np.array(list(map(np.diag, s[:,:n_pc,])))), 
                           v[:,:n_pc,:])
 rec_uw = rec.reshape((rec.shape[0],) + (np.product(rec.shape[1:]),))
 rec_uw_nrm = rec_uw/((rec_uw**2).sum(1, keepdims=True)**0.5)
