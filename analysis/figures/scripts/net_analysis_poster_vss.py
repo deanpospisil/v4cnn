@@ -18,6 +18,7 @@ import xarray as xr
 import pandas as pd
 plt.style.use('default')
 from math import log10, floor
+plt.rc('text', usetex=False)
 
 
 def round_to_1(x):
@@ -611,11 +612,12 @@ plt.title('Hue=Angle(PC1 Coef., PC2 Coef.)\nLuminance=Correlation(Reconstruction
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/layer2_pc_vis.pdf')
 
 #%%
+plt.rc('text', usetex=False)
 opponency_da = spatial_opponency(conv2)
 da_sum_cor = cor_over(conv2, reconstruction_da, ['chan'], ['chan', 'x','y'])
 
-examples = [36, 22]
-plt.figure(figsize=(4,4))
+examples = [36, 200, 233 ]
+plt.figure(figsize=(4,6))
 nx, ny = (100, 100)
 x = np.linspace(-1, 1, nx)
 y = np.linspace(-1, 1, ny)
@@ -624,10 +626,11 @@ cart = xv*1j + yv
 pol = (np.rad2deg(np.angle(cart)))%360
 mag = abs(cart)
 color_circle = np.apply_along_axis(ziphusl, 2, np.dstack((pol, 100*np.ones_like(mag), 70*np.ones_like(mag))))
-for example, ind in zip(examples, range(1,4,2)):
-    plt.subplot(2,2, ind+1)
-    plt.xlabel('PC1');plt.ylabel('PC2')
-    plt.title('R^2 = ' + str(np.round(da_sum_cor[example].values**2,2)))
+for example, ind in zip(examples, range(1,6,2)):
+    plt.subplot(3,2, ind+1)
+    plt.xlabel(r'PC1');plt.ylabel(r'PC2')
+    plt.title(r"$R^2= $"+ str(np.round(da_sum_cor[example].values**2, 2)))
+    #plt.title('R^2 = ' + str(np.round(da_sum_cor[example].values**2, 2)))
     plt.imshow(color_circle, interpolation='nearest')
     shift = 50
     scale = 40./np.max((coefs_da[example]**2).sum('chan')**0.5)
@@ -635,15 +638,15 @@ for example, ind in zip(examples, range(1,4,2)):
     
     plt.scatter((coefs_da[example, 0, ...]*scale)+shift, 
                 (coefs_da[example, 1, ...]*scale)+shift,
-                s=30, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1),edgecolors='k')
+                s=25, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1),edgecolors='k')
     plt.xticks([]);plt.yticks([])
-    plt.subplot(2,2, ind)
-    plt.title('Filter: ' + str(example))
+    plt.subplot(3,2, ind)
+    plt.title(r'Filter: ' + str(example))
 
     plt.imshow(np.moveaxis(rgb.values, 0, -1), interpolation='nearest')
     plt.xticks([]);plt.yticks([])
     
-plt.subplots_adjust(wspace=0.2, hspace=.3)
+plt.subplots_adjust(wspace=0.2, hspace=.5)
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
 
