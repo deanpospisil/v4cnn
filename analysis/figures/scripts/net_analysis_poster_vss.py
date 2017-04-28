@@ -611,6 +611,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/layer2_pc_vis.pdf')
 
 #%%
 opponency_da = spatial_opponency(conv2)
+da_sum_cor = cor_over(conv2, reconstruction_da, ['chan'], ['chan', 'x','y'])
 
 examples = [36, 22]
 plt.figure(figsize=(4,4))
@@ -624,6 +625,8 @@ mag = abs(cart)
 color_circle = np.apply_along_axis(ziphusl, 2, np.dstack((pol, 100*np.ones_like(mag), 70*np.ones_like(mag))))
 for example, ind in zip(examples, range(1,4,2)):
     plt.subplot(2,2, ind+1)
+    plt.xlabel('PC1');plt.ylabel('PC2')
+    plt.title('R^2 = ' + str(np.round(da_sum_cor[example].values**2,2)))
     plt.imshow(color_circle, interpolation='nearest')
     shift = 50
     scale = 40./np.max((coefs_da[example]**2).sum('chan')**0.5)
@@ -638,7 +641,9 @@ for example, ind in zip(examples, range(1,4,2)):
 
     plt.imshow(np.moveaxis(rgb.values, 0, -1), interpolation='nearest')
     plt.xticks([]);plt.yticks([])
-plt.subplots_adjust(wspace=0.1, hspace=.3)
+    
+plt.subplots_adjust(wspace=0.2, hspace=.3)
+plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
 
 #%%
