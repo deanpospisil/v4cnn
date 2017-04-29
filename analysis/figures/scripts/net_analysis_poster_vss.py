@@ -480,7 +480,27 @@ for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     #plt.hist(corr_map.ravel(), histtype='step', range=[0,1])
 #plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/cross_examples.pdf')
+#%%
+da_cor_map_lst = []
+freqs = np.linspace(0.1, 100, 400)
+lay1_1 = np.deg2rad(spatial_freq['ori'])
+for freq in freqs:
+    #our predictors are a sinusoidal function the preferred orientation of the prior layer
+    A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq), np.ones(len(lay1_1))]).T
+    A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq),]).T
 
+    da_cor_map1, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[:128], A[:48])  
+    da_cor_map2, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[128:], A[48:]) 
+    da_cor_map = xr.concat([da_cor_map1, da_cor_map2], dim='unit')
+    da_cor_map_lst.append(da_cor_map1)
+    
+#%%
+def perc_50(da, axis):
+    return np.percentile(da, 75, axis=axis)
+da_cor_map_freq = xr.concat(da_cor_map_lst, dim='freq').squeeze()
+da_cor_map_freq['freq'] = freqs
+da_cor_map_freq.groupby('freq').reduce(perc_50).plot()
+plt.ylim(0,1)
 #%%  
 plt.figure()
 conv2 = netwtsd['conv2']
@@ -649,6 +669,7 @@ for example, ind in zip(examples, range(1,6,2)):
 plt.subplots_adjust(wspace=0.2, hspace=.5)
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
+
 
 #%%
 data = conv2.values.reshape(conv2.shape[:2] + (np.product(conv2.shape[2:]),))
