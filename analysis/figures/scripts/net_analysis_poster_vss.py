@@ -119,7 +119,6 @@ def receptive_field(da):
     rf = rf.transpose('unit', 'y', 'x','chan')
     return rf
 
-
 def prin_comp_maps(da):
     da = da.transpose('unit', 'chan', 'y', 'x')
 
@@ -179,38 +178,73 @@ def spatial_opponency(da):
     
     return opponency_da
 
+def polar2cart(r, theta, center):
+
+    x = r  * np.cos(theta) + center[0]
+    y = r  * np.sin(theta) + center[1]
+    return x, y
+
+def img2polar(img, center, final_radius, initial_radius = None, phase_width = 3000):
+
+    if initial_radius is None:
+        initial_radius = 0
+
+    theta , R = np.meshgrid(np.linspace(0, 2*np.pi, phase_width), 
+                            np.arange(initial_radius, final_radius))
+
+    Xcart, Ycart = polar2cart(R, theta, center)
+
+    Xcart = Xcart.astype(int)
+    Ycart = Ycart.astype(int)
+
+    if img.ndim ==3:
+        polar_img = img[Ycart,Xcart,:]
+        polar_img = np.reshape(polar_img,(final_radius-initial_radius,phase_width,3))
+    else:
+        polar_img = img[Ycart,Xcart]
+        polar_img = np.reshape(polar_img,(final_radius-initial_radius,phase_width))
+
+    return polar_img
+
 def PC_spatial_freq(da, nomean=True):
     da = da.transpose('unit', 'chan', 'y', 'x')
     u_da, s_da, v_da = prin_comp_maps(da)
+    v_da_0 = v_da[:, 0]
     
-    fv = np.fft.fft2(v_da)
+    if nomean:
+        v_da_0 = v_da_0 - v_da_0.mean(['x','y'])
+    
+    min_upsamp_size =  100 
+    upsamp_rate = np.ceil(min_upsamp_size/np.min(np.shape(v_da)[1:]))
+    (upsamp_y, upsamp_x) = np.round(np.array(np.shape(v_da_0)[1:])*upsamp_rate).astype(int)
+    
+    fv_us = np.fft.fft2(v_da_0, s=(upsamp_y, upsamp_x))
+    a_fv_us = np.abs(fv_us)
+    a_fv_us = np.fft.fftshift(a_fv_us, axes=(-2, -1))
+    
+    fv = np.fft.fft2(v_da_0)
     a_fv = np.abs(fv)
-    
-    index = np.fft.fftfreq(a_fv.shape[-1])
-    x, y = np.meshgrid(index, index)
-    freq_power = (x**2 + y**2)**0.5
-    freq_ori = np.angle(x + y*1j, deg=True)%180
-    
     a_fv = np.fft.fftshift(a_fv, axes=(-2, -1))
-    freq_power = np.fft.fftshift(freq_power)
-    freq_ori = np.fft.fftshift(freq_ori)
+
+
     
-    a_fv_da = xr.DataArray(a_fv, dims=('unit', 'chan', 'y', 'x'), 
-                            coords=[range(n) for n in np.shape(a_fv)])
-    unrav_a_fv = a_fv.reshape(a_fv.shape[:2] + (np.product(a_fv.shape[2:]),))
-    
-    #maybe change this to get spatial frequency up to a certain pc
-    #what would relationship between spatial frequencies of different PC's mean?
-    peak_freq_power= [freq_power.ravel()[ind[0]] for ind in np.argmax(unrav_a_fv,-1)]        
-    peak_freq_ori = [freq_ori.ravel()[ind[0]] for ind in np.argmax(unrav_a_fv, -1)]
-    #peak_amp_frac = np.max(unrav_a_fv,-1)*2 / np.sum(unrav_a_fv, [-2, -1])
-    
+    radius = np.max([np.round(upsamp_y/2), np.round(upsamp_y/2)]).astype(int)
+    polar_a_fv = np.array([img2polar(filt, [np.round(upsamp_y/2).astype(int), 
+                                            np.round(upsamp_x/2).astype(int)],
+                                            radius,
+                                            phase_width=360)[:, :180] 
+                                            for filt in a_fv_us])
+    prfrd_ori = np.deg2rad(polar_a_fv.sum(1).argmax(1))
+    prfrd_amp = polar_a_fv.sum(2).argmax(1)/np.double(radius)
     
     keys = ['layer_label', 'unit']
     coord = [da.coords[key].values for key in keys]
     index = pd.MultiIndex.from_arrays(coord, names=keys)
-    spatial_freq = pd.DataFrame(np.vstack([peak_freq_power, peak_freq_ori,]).T, 
+    spatial_freq = pd.DataFrame(np.vstack([prfrd_amp, prfrd_ori,]).T, 
                                           index=index, columns=['amp', 'ori', ])
+
+    a_fv_da = xr.DataArray(a_fv, dims=('unit', 'y', 'x'), 
+                            coords=[range(n) for n in np.shape(a_fv)])
     return a_fv_da, spatial_freq
 
 #%%
@@ -310,11 +344,11 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters_ch
 
 a_fv_da, spatial_freq = PC_spatial_freq(conv1)
 a_fv_da_nrm = a_fv_da/a_fv_da.max(['x', 'y'])
-spec_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=mpl.cm.plasma).to_rgba(a_fv_da_nrm))
-spec_vis = xr.DataArray(spec_dat[:,0,...], dims=('unit','y', 'x', 'chan'))
+spec_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=mpl.cm.plasma).to_rgba(np.expand_dims(a_fv_da_nrm.values, -1)))
+spec_vis = xr.DataArray(spec_dat, dims=('unit','y', 'x', 'chan'))
+
+#%%
 data = net_vis_square_da(spec_vis)
-
-
 fig = plt.figure()
 ax = fig.add_axes([0.1, 0.05, 0.8, 0.8])
 clean_imshow(data ,ax)
@@ -413,7 +447,7 @@ def reg_on_chan_weights(da, A):
     return da_cor_map, da_sum_cor, reg_coefs
 conv2 = netwtsd['conv2']
 freq = 2
-lay1_1 = np.deg2rad(spatial_freq['ori'][:48])
+lay1_1 = spatial_freq['ori'][:48]
 sort_ori = np.argsort(lay1_1)
 lay2_1 = conv2.values.reshape(conv2.shape[:2] + (np.product(conv2.shape[2:]),))
 lay2_1 = lay2_1[:128]
@@ -430,7 +464,7 @@ cor_map_dat = da_cor_map.squeeze().values.reshape((da_cor_map.shape[1],)
                                     + (np.product(da_cor_map.shape[2:]),))
 cor_level_loc = []
 cor_level = []
-cor_level_near = [0.3,0.4,0.5,0.6,0.7,0.8][::-1]
+cor_level_near = [0.3,0.4,0.5,0.6,0.7,0.85][::-1]
 for level in cor_level_near:
    the_loc = np.unravel_index(np.argmin(np.abs(cor_map_dat-level)), cor_map_dat.shape)
    cor_level_loc.append(the_loc)
@@ -469,7 +503,7 @@ for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
 
     ax.grid(b=True)
     b = lay2_1[ind[0], :, ind[1]]
-    ax.scatter(spatial_freq['ori'][:48][sort_ori], b[sort_ori], s=4)
+    ax.scatter(np.rad2deg(spatial_freq['ori'][:48][sort_ori]), b[sort_ori], s=4)
     max_extent = round_to_1(np.max([np.max(b), np.abs(np.min(b))]))
     ytick = [-max_extent, 0, max_extent]
     ax.set_yticks(ytick)
@@ -480,27 +514,47 @@ for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     #plt.hist(corr_map.ravel(), histtype='step', range=[0,1])
 #plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/cross_examples.pdf')
+
 #%%
+a_fv_da, spatial_freq = PC_spatial_freq(conv1)
 da_cor_map_lst = []
-freqs = np.linspace(0.1, 100, 400)
-lay1_1 = np.deg2rad(spatial_freq['ori'])
+
+#null_cor_map_lst = []
+#shuffle_ind = range(len(spatial_freq))
+
+freqs = np.linspace(0.1, 12, 100)
+print(freqs)
+lay1_1 = spatial_freq['ori']
+
 for freq in freqs:
     #our predictors are a sinusoidal function the preferred orientation of the prior layer
     A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq), np.ones(len(lay1_1))]).T
-    A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq),]).T
+    #A = np.vstack([np.cos(lay1_1*freq), np.sin(lay1_1*freq),]).T
 
-    da_cor_map1, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[:128], A[:48])  
-    da_cor_map2, da_sum_cor, reg_coefs = reg_on_chan_weights(conv2[128:], A[48:]) 
-    da_cor_map = xr.concat([da_cor_map1, da_cor_map2], dim='unit')
-    da_cor_map_lst.append(da_cor_map1)
-    
+    da_cor_map1, da_sum_cor1, reg_coefs = reg_on_chan_weights(conv2[:128], A[:48])  
+    da_cor_map2, da_sum_cor2, reg_coefs = reg_on_chan_weights(conv2[128:], A[48:]) 
+    da_cor_map = xr.concat([da_sum_cor1, da_sum_cor2], dim='unit')
+    da_cor_map_lst.append(da_cor_map)
+
 #%%
-def perc_50(da, axis):
-    return np.percentile(da, 75, axis=axis)
+plt.figure(figsize=(3.5,3.5))
+
 da_cor_map_freq = xr.concat(da_cor_map_lst, dim='freq').squeeze()
 da_cor_map_freq['freq'] = freqs
-da_cor_map_freq.groupby('freq').reduce(perc_50).plot()
-plt.ylim(0,1)
+for perc in [0.75, 0.5, 0.25]:
+    da_cor_map_freq[:, :128].quantile(perc, [ 'unit']).plot()
+for i, freq in list(enumerate(freqs))[::4]:
+    plt.scatter([freq,]*len(da_cor_map_freq[i, :128]), 
+                da_cor_map_freq[i, :128], s=2, edgecolors='None', c='k', alpha=0.2)
+    
+plt.title('Sinusoidal Fit to Weights')
+plt.xticks(np.linspace(0,12,13))
+plt.legend(['75th', '50th', '25th'], title='Percentile')
+plt.ylim(0,1);
+plt.xlabel('Frequency (cycles/radian)')
+plt.ylabel('Correlation', rotation=0, ha='right')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_cross_ori_spec.pdf', bboxinches='tight')
+
 #%%  
 plt.figure()
 conv2 = netwtsd['conv2']
@@ -540,7 +594,7 @@ cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 extend='min',
                                 ticks=np.linspace(vmin, vmax, N+1))
 cb1.set_label('Correlation')
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_center_surround.pdf', bboxinches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_cross_ori.pdf', bboxinches='tight')
 #%%
 plt.figure(figsize=(2,2))
 conv2 = netwtsd['conv2']
@@ -561,8 +615,7 @@ plt.xlim(0,1)
 
 #%%
 import husl
-sat_scale = 100
-cor_scale = 80
+
 def cart2angle(a):
     ang = np.array([np.arctan2(cart[0, :], cart[1, :]) for cart in a ])
     ang = np.rad2deg(ang)%360
@@ -578,8 +631,9 @@ def cart2pol(a):
 def ziphusl(a):
     rgb = husl.huslp_to_rgb(a[0], a[1], a[2])
     return rgb 
-
-#%%
+plt.figure()
+sat_scale = 100
+cor_scale = 80
 conv2 = conv2.transpose('unit', 'chan', 'y', 'x')
 coefs_da, reconstruction_da = prin_comp_rec(conv2, n_pc=2)
 
@@ -670,20 +724,49 @@ plt.subplots_adjust(wspace=0.2, hspace=.5)
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
 
-
 #%%
-data = conv2.values.reshape(conv2.shape[:2] + (np.product(conv2.shape[2:]),))
-u, s, v = np.linalg.svd(data, full_matrices=False)
-n_pc = 2
-rec = np.matmul(np.matmul(u[...,:n_pc], 
-                          np.array(list(map(np.diag, s[:,:n_pc,])))), 
-                          v[:,:n_pc,:])
-rec_uw = rec.reshape((rec.shape[0],) + (np.product(rec.shape[1:]),))
-rec_uw_nrm = rec_uw/((rec_uw**2).sum(1, keepdims=True)**0.5)
+opp_list = [spatial_opponency(netwtsd[layer]) for layer in layer_names]
+#%%
+plt.figure(figsize=(2,6))
+for i, layer in enumerate(opp_list):
+    plt.subplot(len(opp_list), 1, i+1)
+    plt.title(str(layer.layer_label[0].values))
+    plt.hist(layer, histtype='step', normed=True, bins=100, range=[-1,1])
+    plt.xlim([-0.2, 1])
+plt.tight_layout()
+#%%
+import matplotlib.gridspec as gridspec
+m = len(opp_list)
+n = 1
 
-data_uw = data.reshape((rec.shape[0],) + (np.product(rec.shape[1:]),))
-data_uw_nrm = data_uw/((data_uw**2).sum(1, keepdims=True)**0.5)
+# We'll use two separate gridspecs to have different margins, hspace, etc
+gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
+gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
+fig = plt.figure(figsize=(2,6))
 
-cor = (rec_uw_nrm*data_uw_nrm).sum(1)**2
-plt.hist(cor, range=[0,1])
+# Top (unshared) axes
+topax = fig.add_subplot(gs_top[0,:])
+# The four shared axes
+ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
+other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
+bottom_axes = [ax] + other_axes
 
+for layer, n in zip(opp_list,  range(m)):
+    if n==0:
+        ax = topax
+        ax.set_title(str(layer.layer_label[0].values))
+        ax.set_ylabel('Count', rotation=0, labelpad=1, va='center', ha='right')
+        ax.set_xlabel('Opponency')
+        ax.set_xticks([0,0.5,1])
+        ax.set_xticklabels(['0', '0.5', '1'])
+        
+    else:
+        ax = bottom_axes[n-1]
+        ax.set_title(str(layer.layer_label[0].values), fontsize=12)
+        ax.set_xticks([0, 0.5 ,1])
+        ax.set_xticklabels([])
+
+    ax.hist(layer, histtype='step', normed=0, bins=100, range=[-1,1])
+    ax.set_xlim(-0.2,1)
+
+#plt.tight_layout()
