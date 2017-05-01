@@ -78,26 +78,29 @@ def net_vis_square_da(da, m=None, n=None):
     
     if data.shape[1]<11:
         from scipy.ndimage import zoom
-        data_new_size = np.zeros((np.shape(data)[0], 10, 10, 4))
+        zoom_amt = np.ceil(9/data.shape[1])
+        print(zoom_amt)
+        data_new_size = np.zeros((np.shape(data)[0], int(zoom_amt*data.shape[1]), 
+                                      int(zoom_amt*data.shape[1]), 4))
         for i, im in enumerate(data):
             data_new_size[i, ...] = zoom(im, 
-                         (2, 2, 1), 
+                         (zoom_amt, zoom_amt, 1), 
                          order=0)
         data = data_new_size
             
-    ypad = xpad = int(data.shape[1]/10)
+    ypad = xpad = int(data.shape[1]/5)
 
 
     padding = ((0, 0), (ypad, ypad), (xpad, xpad), (0, 0))
     data = np.pad(data, padding, mode='constant', constant_values=0)
     data[...,-1] = 1
+    pad_data = data
     #data = data.reshape(m*data.shape[1], n*data.shape[2], data.shape[3], order='C')
         # tile the filters into an image
     data = data.reshape((m, n) + data.shape[1:]).transpose((0, 2, 1, 3, 4))
     data = data.reshape((m * data.shape[1], n * data.shape[3], data.shape[4]))
-
-    
-    return data
+    return data, pad_data
+#%%
 def clean_imshow(da, ax=None):
     if ax == None:
         ax = plt.subplot(111)
@@ -411,7 +414,7 @@ data = net_vis_square_da(rf_vis)
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_axes([0.1, 0.2, 0.8, 0.8])
 
-clean_imshow(data ,ax)
+clean_imshow(data, ax)
 ax = fig.add_axes([0.15, 0.12, 0.7, 0.05])
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 norm=norm,
@@ -421,8 +424,59 @@ cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
 cb1.set_label('Percent Variance')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/rfconv2.pdf', bboxinches='tight')
 
-
 #%%
+#%%
+rf_list = [receptive_field(netwtsd[layer]) for layer in layer_names]
+rf_list = [layer/layer.sum(['x', 'y']) for layer in rf_list]
+
+m = len(rf_list)
+n = 1
+
+# We'll use two separate gridspecs to have different margins, hspace, etc
+gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
+gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
+fig = plt.figure(figsize=(2,6))
+
+# Top (unshared) axes
+topax = fig.add_subplot(gs_top[0,:])
+# The four shared axes
+ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
+other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
+bottom_axes = [ax] + other_axes
+
+for layer, n in zip(rf_list,  range(m)):
+    lower_bound = 1./layer.shape[1]**2.
+    if n==0:
+        ax = topax
+        ax.set_title(str(layer.layer_label[0].values))
+        ax.set_ylabel('Count', rotation=0, labelpad=4, va='center', ha='right')
+        ax.set_xlabel('Fraction RF Variance of Max')
+        ax.set_xticks([lower_bound, 0.25, 0.5])
+        ax.set_xticklabels(['l.b.', '0.25', '0.5'])
+        
+    else:
+        ax = bottom_axes[n-1]
+        ax.set_title(str(layer.layer_label[0].values), fontsize=12)
+
+        ax.set_xticks([lower_bound, 0.25, 0.5])
+        ax.set_xticklabels([])
+
+    
+    layer.groupby('unit').max().plot.hist(histtype='step', normed=0, 
+                 bins=100,
+                 ax=ax, range=[lower_bound,0.5])
+    if not n==0:
+        ax.set_ylabel('')
+    plt.xlim(0, .5)
+
+    
+
+
+
+#plt.tight_layout()
+    
+
+ #%%
 plt.style.use('default')
 def cor_over(da1, da2, center_dims, cor_dims):
     das = [da1, da2]
@@ -535,24 +589,39 @@ for freq in freqs:
     da_cor_map2, da_sum_cor2, reg_coefs = reg_on_chan_weights(conv2[128:], A[48:]) 
     da_cor_map = xr.concat([da_sum_cor1, da_sum_cor2], dim='unit')
     da_cor_map_lst.append(da_cor_map)
-
 #%%
-plt.figure(figsize=(3.5,3.5))
-
+plt.figure(figsize=(7,3))
 da_cor_map_freq = xr.concat(da_cor_map_lst, dim='freq').squeeze()
 da_cor_map_freq['freq'] = freqs
+
+plt.subplot(121)
 for perc in [0.75, 0.5, 0.25]:
     da_cor_map_freq[:, :128].quantile(perc, [ 'unit']).plot()
 for i, freq in list(enumerate(freqs))[::4]:
     plt.scatter([freq,]*len(da_cor_map_freq[i, :128]), 
-                da_cor_map_freq[i, :128], s=2, edgecolors='None', c='k', alpha=0.2)
-    
-plt.title('Sinusoidal Fit to Weights')
-plt.xticks(np.linspace(0,12,13))
+                da_cor_map_freq[i, :128], s=2, edgecolors='None', 
+                c='k', alpha=0.2)
+plt.title('Sinusoidal Fit to Weights\nConv2 Group 1')
+plt.xticks(np.linspace(0,12,7))
 plt.legend(['75th', '50th', '25th'], title='Percentile')
 plt.ylim(0,1);
 plt.xlabel('Frequency (cycles/radian)')
 plt.ylabel('Correlation', rotation=0, ha='right')
+
+plt.subplot(122)
+for perc in [0.75, 0.5, 0.25]:
+    da_cor_map_freq[:, 128:].quantile(perc, [ 'unit']).plot()
+for i, freq in list(enumerate(freqs))[::4]:
+    plt.scatter([freq,]*len(da_cor_map_freq[i, :128]), 
+                da_cor_map_freq[i, 128:], s=2, edgecolors='None', 
+                c='k', alpha=0.2)
+plt.title('Conv2 Group 2') 
+plt.xticks(np.linspace(0,12,7))
+plt.yticks([])
+plt.ylim(0,1)
+plt.xlabel('')
+
+
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_cross_ori_spec.pdf', bboxinches='tight')
 
 #%%  
@@ -726,16 +795,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vi
 
 #%%
 opp_list = [spatial_opponency(netwtsd[layer]) for layer in layer_names]
-#%%
-plt.figure(figsize=(2,6))
-for i, layer in enumerate(opp_list):
-    plt.subplot(len(opp_list), 1, i+1)
-    plt.title(str(layer.layer_label[0].values))
-    plt.hist(layer, histtype='step', normed=True, bins=100, range=[-1,1])
-    plt.xlim([-0.2, 1])
-plt.tight_layout()
-#%%
-import matplotlib.gridspec as gridspec
+
 m = len(opp_list)
 n = 1
 
@@ -755,8 +815,8 @@ for layer, n in zip(opp_list,  range(m)):
     if n==0:
         ax = topax
         ax.set_title(str(layer.layer_label[0].values))
-        ax.set_ylabel('Count', rotation=0, labelpad=1, va='center', ha='right')
-        ax.set_xlabel('Opponency')
+        ax.set_ylabel('Count', rotation=0, labelpad=4, va='center', ha='right')
+        ax.set_xlabel('Normed Covariance')
         ax.set_xticks([0,0.5,1])
         ax.set_xticklabels(['0', '0.5', '1'])
         
