@@ -16,7 +16,7 @@ sys.path.append(top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn'
 import xarray as xr
 import pandas as pd
-plt.style.use('default')
+plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
 from math import log10, floor
 plt.rc('text', usetex=False)
 
@@ -94,12 +94,12 @@ def net_vis_square_da(da, m=None, n=None):
     padding = ((0, 0), (ypad, ypad), (xpad, xpad), (0, 0))
     data = np.pad(data, padding, mode='constant', constant_values=0)
     data[...,-1] = 1
-    pad_data = data
+    #pad_data = data
     #data = data.reshape(m*data.shape[1], n*data.shape[2], data.shape[3], order='C')
         # tile the filters into an image
     data = data.reshape((m, n) + data.shape[1:]).transpose((0, 2, 1, 3, 4))
     data = data.reshape((m * data.shape[1], n * data.shape[3], data.shape[4]))
-    return data, pad_data
+    return data
 #%%
 def clean_imshow(da, ax=None):
     if ax == None:
@@ -297,7 +297,7 @@ conv1vis = conv1vis/conv1vis.max(['chan', 'y', 'x'])
 data = net_vis_square_da(conv1vis)
 ax = clean_imshow(data)
 
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters.pdf', bbox_inches='tight')
 
 #%%
 u_da, s_da, v_da = prin_comp_maps(netwtsd['conv2'])
@@ -317,9 +317,9 @@ axis2 = np.imag(np.fft.fft([0,1,0]))
 proj_mat = np.vstack([axis1 ,axis2]).T
 proj_mat /= np.sum(proj_mat**2,0, keepdims=True)**0.5
 rgb_proj = np.dot(rgb, proj_mat)/1.
-fig, axs = plt.subplots(figsize=(12, 8), nrows=8, ncols=12)
+fig, axs = plt.subplots(figsize=(12,4), nrows=4, ncols=12)
 #for ax, c_ind in zip(axs.ravel(), c.argsort()[::-1]):
-for  c_ind, ax in enumerate(axs.ravel()):
+for  c_ind, ax in zip(list(range(96))[48:], axs.ravel()):
     to_proj = wts_c[c_ind].squeeze()
     amp = np.max(np.abs(to_proj))
     to_proj = to_proj/amp
@@ -335,9 +335,9 @@ for  c_ind, ax in enumerate(axs.ravel()):
         ax.spines[spine].set_visible(True)
     _ = ax.scatter(rgb_proj[:,0], rgb_proj[:,1], c='None', edgecolors=rgb)
     _ = ax.scatter(0, 0, c='None', edgecolors='k')
-    ax.text(x=1, y=1, s=str(np.round(opponency_da[c_ind].values,2)), 
-            ha='right', va='top', transform=ax.transAxes, fontsize=10,
-            bbox=dict(facecolor='white', alpha=0.5, pad=0.02))
+    ax.text(x=0.95, y=0.95, s=str(np.round(opponency_da[c_ind].values,2)), 
+            ha='right', va='top', transform=ax.transAxes, 
+            bbox=dict(facecolor='white', alpha=0.5, pad=2), fontsize=12)
 for ax in axs.ravel():
     ax.set_xticks([]);ax.set_yticks([]);ax.axis('equal')
 plt.tight_layout(w_pad=0.01, h_pad=0.01)
@@ -345,36 +345,46 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/1st_layer_filters_ch
 
 #%%
 
-a_fv_da, spatial_freq = PC_spatial_freq(conv1)
+a_fv_da, spatial_freq = PC_spatial_freq(conv1, nomean=False)
 a_fv_da_nrm = a_fv_da/a_fv_da.max(['x', 'y'])
 spec_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=mpl.cm.plasma).to_rgba(np.expand_dims(a_fv_da_nrm.values, -1)))
 spec_vis = xr.DataArray(spec_dat, dims=('unit','y', 'x', 'chan'))
 
-#%%
 data = net_vis_square_da(spec_vis)
 fig = plt.figure()
-ax = fig.add_axes([0.1, 0.05, 0.8, 0.8])
-clean_imshow(data ,ax)
-ax = fig.add_axes([0.15, 0.01, 0.7, 0.05])
-cb1 = mpl.colorbar.ColorbarBase(ax, cmap=mpl.cm.plasma,
-                                orientation='horizontal',
-                                ticks=np.linspace(0, 1, 6))
-cb1.set_label('Fraction Amplitude')
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/spec_conv1.pdf', bboxinches='tight')
+clean_imshow(data)
+#ax = fig.add_axes([0.15, 0.01, 0.7, 0.05])
+#cb1 = mpl.colorbar.ColorbarBase(ax, cmap=mpl.cm.plasma,
+ #                               orientation='horizontal',
+#                                ticks=np.linspace(0, 1, 6))
+#cb1.set_label('Fraction Amplitude')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/spec_conv1.pdf', bbox_inches='tight')
 
-
+#%%%
+plt.figure(figsize=(5,4))
+not_dc = spatial_freq['amp']>0
+plt.scatter(np.rad2deg(spatial_freq['ori'][not_dc]), spatial_freq['amp'][not_dc], alpha=0.5, edgecolor='k',color='none')
+plt.xticks([0,90,180])
+plt.yticks([0,0.5,1])
+plt.xlabel('Orientation')
+plt.ylabel('Spatial Frequency')
+plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/ori_freq_plot.pdf')
 
 #%%
-lw = 5
-plt.figure()
-da_ratio.plot.hist(cumulative=True, bins=100, histtype='step', lw=5)
-da_ratio[:48].plot.hist(cumulative=True, bins=100, histtype='step',range=[0,1], lw=5)
-da_ratio[48:].plot.hist(cumulative=True, bins=100, histtype='step', range=[0,1], lw=5)
+lw = 4
+plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+
+plt.figure(figsize=(6,5))
+da_ratio.plot.hist(cumulative=True, bins=100, histtype='step', lw=lw)
+da_ratio[:48].plot.hist(cumulative=True, bins=100, histtype='step',range=[0,1], lw=lw)
+da_ratio[48:].plot.hist(cumulative=True, bins=100, histtype='step', range=[0,1], lw=lw)
 plt.legend(['All Units', 'Group 1', 'Group 2'], loc=2)
+plt.yticks([0,24,48, 72, 96])
 plt.xlabel('Chromaticity');plt.ylabel('Filter\nCount', rotation=0, ha='right')
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/hist.pdf', bboxinches='tight')
-
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/chrom_hist.pdf', bbox_inches='tight')
+#%%
 plt.figure()
 data = net_vis_square_da(conv1vis[da_ratio.argsort().values])
 ax = clean_imshow(da)
@@ -383,14 +393,14 @@ plt.figure()
 data = net_vis_square_da(conv1vis[:48][da_ratio[:48].argsort().values], m=4,n=12)
 ax = clean_imshow(da)
 ax.set_ylabel('Group 1')
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/group1.pdf', bboxinches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/group1.pdf', bbox_inches='tight')
 
 
 plt.figure()
 data = net_vis_square_da(conv1vis[48:][da_ratio[48:].argsort().values], m=4, n=12)
 ax = clean_imshow(da)
 ax.set_ylabel('Group 2')
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/group2.pdf', bboxinches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/group2.pdf', bbox_inches='tight')
 
 #%%%
 #for variance explained maps for PC and variance explained make it a quantized color distribution
@@ -411,20 +421,18 @@ rfvis_dat = np.squeeze(mpl.cm.ScalarMappable(cmap=c_disc, norm=norm).to_rgba(rfp
 rf_vis = xr.DataArray(rfvis_dat, dims=rf.dims)
 
 data = net_vis_square_da(rf_vis)
-fig = plt.figure(figsize=(8, 8))
-ax = fig.add_axes([0.1, 0.2, 0.8, 0.8])
-
-clean_imshow(data, ax)
-ax = fig.add_axes([0.15, 0.12, 0.7, 0.05])
+fig = plt.figure()
+ax = fig.add_axes([0.1, 0.2, 0.7, 0.7])
+clean_imshow(data ,ax)
+ax = fig.add_axes([0.25, 0.15, 0.4, 0.03])
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 norm=norm,
                                 orientation='horizontal',
                                 extend='max',
                                 ticks=np.linspace(vmin, vmax, N+1))
 cb1.set_label('Percent Variance')
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/rfconv2.pdf', bboxinches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/rfconv2.pdf', bbox_inches='tight')
 
-#%%
 #%%
 rf_list = [receptive_field(netwtsd[layer]) for layer in layer_names]
 rf_list = [layer/layer.sum(['x', 'y']) for layer in rf_list]
@@ -435,7 +443,7 @@ n = 1
 # We'll use two separate gridspecs to have different margins, hspace, etc
 gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
 gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
-fig = plt.figure(figsize=(2,6))
+fig = plt.figure(figsize=(8,16))
 
 # Top (unshared) axes
 topax = fig.add_subplot(gs_top[0,:])
@@ -450,34 +458,28 @@ for layer, n in zip(rf_list,  range(m)):
         ax = topax
         ax.set_title(str(layer.layer_label[0].values))
         ax.set_ylabel('Count', rotation=0, labelpad=4, va='center', ha='right')
-        ax.set_xlabel('Fraction RF Variance of Max')
+        ax.set_xlabel('Frac. RF Variance of Max')
         ax.set_xticks([lower_bound, 0.25, 0.5])
         ax.set_xticklabels(['l.b.', '0.25', '0.5'])
         
     else:
         ax = bottom_axes[n-1]
-        ax.set_title(str(layer.layer_label[0].values), fontsize=12)
+        ax.set_title(str(layer.layer_label[0].values))
 
         ax.set_xticks([lower_bound, 0.25, 0.5])
         ax.set_xticklabels([])
 
     
-    layer.groupby('unit').max().plot.hist(histtype='step', normed=0, 
+    layer.groupby('unit').max().plot.hist(normed=0, 
                  bins=100,
                  ax=ax, range=[lower_bound,0.5])
     if not n==0:
         ax.set_ylabel('')
     plt.xlim(0, .5)
 
-    
-
-
-
-#plt.tight_layout()
-    
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/all_layer_rf.pdf', bbox_inches='tight')
 
  #%%
-plt.style.use('default')
 def cor_over(da1, da2, center_dims, cor_dims):
     das = [da1, da2]
     das = [da - da.mean(center_dims) for da in das]
@@ -529,9 +531,9 @@ m = len(cor_level_near)
 n = 1
 
 # We'll use two separate gridspecs to have different margins, hspace, etc
-gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4)
-gs_base = plt.GridSpec(m, 1, hspace=0.4, left=0.4)
-fig = plt.figure(figsize=(3,10))
+gs_top = plt.GridSpec(m, 1, top=1, left=0.4)
+gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
+fig = plt.figure(figsize=(4,12))
 
 # Top (unshared) axes
 topax = fig.add_subplot(gs_top[0,:])
@@ -544,14 +546,14 @@ bottom_axes = [ax] + other_axes
 for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     if n==0:
         ax = topax
-        ax.set_title('R = ' +np.str(np.round(cor, 2)), fontsize=14)
+        ax.set_title('R = ' +np.str(np.round(cor, 2)))
         ax.set_ylabel('Conv2\nWeight', rotation=0, labelpad=1, va='center', ha='right')
         ax.set_xlabel('Orientation Conv1')
         ax.set_xticks([0,90,180])
         
     else:
         ax = bottom_axes[n-1]
-        ax.set_title(np.str(np.round(cor, 2)), fontsize=12)
+        ax.set_title(np.str(np.round(cor, 2)))
         ax.set_xticks([0,90,180])
         ax.set_xticklabels([])
 
@@ -565,9 +567,9 @@ for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     ax.set_yticklabels(ytick)
     ax.set_ylim([-max_extent*1.2, max_extent*1.2])
     ax.plot(np.rad2deg(rads), smooth_prediction[ind[0],:,ind[1]], color='b', lw=1)
+
     #plt.hist(corr_map.ravel(), histtype='step', range=[0,1])
-#plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/cross_examples.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/cross_examples.pdf', bbox_inches='tight')
 
 #%%
 a_fv_da, spatial_freq = PC_spatial_freq(conv1)
@@ -590,11 +592,12 @@ for freq in freqs:
     da_cor_map = xr.concat([da_sum_cor1, da_sum_cor2], dim='unit')
     da_cor_map_lst.append(da_cor_map)
 #%%
-plt.figure(figsize=(7,3))
+plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+plt.figure(figsize=(6,6))
 da_cor_map_freq = xr.concat(da_cor_map_lst, dim='freq').squeeze()
 da_cor_map_freq['freq'] = freqs
 
-plt.subplot(121)
+plt.subplot(211)
 for perc in [0.75, 0.5, 0.25]:
     da_cor_map_freq[:, :128].quantile(perc, [ 'unit']).plot()
 for i, freq in list(enumerate(freqs))[::4]:
@@ -603,12 +606,13 @@ for i, freq in list(enumerate(freqs))[::4]:
                 c='k', alpha=0.2)
 plt.title('Sinusoidal Fit to Weights\nConv2 Group 1')
 plt.xticks(np.linspace(0,12,7))
-plt.legend(['75th', '50th', '25th'], title='Percentile')
+plt.legend(['75th', '50th', '25th'], title='Percentile', loc=1, borderaxespad=0)
 plt.ylim(0,1);
+plt.yticks([0,0.5,1])
 plt.xlabel('Frequency (cycles/radian)')
-plt.ylabel('Correlation', rotation=0, ha='right')
+plt.ylabel('Correlation',  ha='right')
 
-plt.subplot(122)
+plt.subplot(212)
 for perc in [0.75, 0.5, 0.25]:
     da_cor_map_freq[:, 128:].quantile(perc, [ 'unit']).plot()
 for i, freq in list(enumerate(freqs))[::4]:
@@ -617,12 +621,16 @@ for i, freq in list(enumerate(freqs))[::4]:
                 c='k', alpha=0.2)
 plt.title('Conv2 Group 2') 
 plt.xticks(np.linspace(0,12,7))
-plt.yticks([])
+plt.yticks([0,0.5,1])
+plt.gca().set_yticklabels([])
+plt.gca().set_xticklabels([])
+
 plt.ylim(0,1)
 plt.xlabel('')
+plt.tight_layout()
 
 
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_cross_ori_spec.pdf', bboxinches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_cross_ori_spec.pdf', bbox_inches='tight')
 
 #%%  
 plt.figure()
@@ -652,20 +660,22 @@ data2 = net_vis_square_da(cormap_vis2)
 
 data = np.vstack([data1,data2])
 
-fig = plt.figure(figsize=(8, 8))
+fig = plt.figure()
 ax = fig.add_axes([0.1, 0.2, 0.7, 0.7])
 clean_imshow(data ,ax)
 plt.title('Cross-Orientation Suppresion Maps')
-ax = fig.add_axes([0.15, 0.12, 0.6, 0.05])
+
+ax = fig.add_axes([0.25, 0.15, 0.4, 0.03])
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 norm=norm,
                                 orientation='horizontal',
                                 extend='min',
                                 ticks=np.linspace(vmin, vmax, N+1))
 cb1.set_label('Correlation')
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_cross_ori.pdf', bboxinches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/cor_cross_ori.pdf', bbox_inches='tight')
 #%%
-plt.figure(figsize=(2,2))
+
+plt.figure(figsize=(3,3))
 conv2 = netwtsd['conv2']
 u_da, s_da, v_da = prin_comp_maps(netwtsd['conv2'])
 
@@ -676,11 +686,60 @@ plt.title('Two PC Reconstruction')
 plt.xlabel('Fraction Variance')
 plt.ylabel('Cumulative Fraction')
 plt.grid()
-plt.yticks([0, 0.25,0.5,0.75,1])
-plt.gca().set_yticklabels(['0', '0.25', '0.5', '0.75', '1'])
-plt.xticks([0, 0.25,0.5,0.75,1])
-plt.gca().set_xticklabels(['0', '0.25', '0.5', '0.75', '1'])
+plt.yticks([0, 0.5, 1])
+plt.gca().set_yticklabels(['0',  '0.5', '1'])
+plt.xticks([0, 0.25, 0.5, 0.75, 1])
+plt.gca().set_xticklabels(['0', '','0.5', '', '1'])
 plt.xlim(0,1)
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/two_pc_recon.pdf', bbox_inches='tight')
+#%%
+plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+
+s_list = [prin_comp_maps(netwtsd[layer])[1] for layer in layer_names]
+frac_var_list = [((s.isel(sv=[0])**2).sum('sv')/(s**2).sum('sv')) for s in s_list]
+m = len(frac_var_list)
+n = 1
+
+# We'll use two separate gridspecs to have different margins, hspace, etc
+gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
+gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
+fig = plt.figure(figsize=(8,16))
+
+# Top (unshared) axes
+topax = fig.add_subplot(gs_top[0,:])
+# The four shared axes
+ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
+other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
+bottom_axes = [ax] + other_axes
+
+for layer, n in zip(frac_var_list,  range(m)):
+    if n==0:
+        ax = topax
+        (layer).plot.hist(lw=3, range=[0,1], bins=50, 
+    cumulative=False, normed=0, ax=ax,)
+        ax.set_title(str(layer.layer_label[0].values))
+        ax.set_ylabel('Count', rotation=0, labelpad=4, va='center', ha='right')
+        ax.set_xlabel(r'$\frac{\lambda_1^2}{\sum{\lambda_i^2}}$')
+        ax.set_xticks([0,0.5,1])
+        ax.set_xticklabels(['0', '0.5', '1'])
+        
+    else:
+        ax = bottom_axes[n-1]
+        (layer).plot.hist(lw=3, range=[0,1], bins=50, 
+    cumulative=False, normed=0, ax=ax,)
+        ax.set_title(str(layer.layer_label[0].values))
+        ax.set_xticks([0, 0.5 ,1])
+        ax.set_xticklabels([])
+        ax.set_ylabel('')
+        
+
+
+    ax.set_xlim(0,1)
+
+
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_pc1.pdf',
+            bbox_inches='tight')
+
 
 #%%
 import husl
@@ -721,17 +780,18 @@ cormap_vis1 = xr.DataArray(cormap_dat1, dims=('unit', 'y', 'x', 'chan'))
 
 data = net_vis_square_da(cormap_vis1)
 
-fig = plt.figure(figsize=(8, 8))
+fig = plt.figure()
 ax = fig.add_axes([0.1, 0.2, 0.7, 0.7])
 clean_imshow(data ,ax)
 plt.title('1st PC corr')
-ax = fig.add_axes([0.15, 0.12, 0.6, 0.05])
+ax = fig.add_axes([0.25, 0.15, 0.4, 0.03])
 cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 norm=norm,
                                 orientation='horizontal',
                                 extend='min',
                                 ticks=np.linspace(vmin, vmax, N+1))
 cb1.set_label('Correlation')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/pc_correlation.pdf', bbox_inches='tight')
 
 #%%
 sat_scale = 100
@@ -752,7 +812,7 @@ data = net_vis_square_da(coeffs_pol_rgb)
 clean_imshow(data)
 plt.title('Hue=Angle(PC1 Coef., PC2 Coef.)\nLuminance=Correlation(Reconstruction, Original)')
 
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/layer2_pc_vis.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/layer2_pc_vis.pdf',bbox_inches='tight')
 
 #%%
 plt.rc('text', usetex=False)
@@ -760,7 +820,7 @@ opponency_da = spatial_opponency(conv2)
 da_sum_cor = cor_over(conv2, reconstruction_da, ['chan'], ['chan', 'x','y'])
 
 examples = [36, 200, 233 ]
-plt.figure(figsize=(4,6))
+plt.figure(figsize=(3,6))
 nx, ny = (100, 100)
 x = np.linspace(-1, 1, nx)
 y = np.linspace(-1, 1, ny)
@@ -782,18 +842,24 @@ for example, ind in zip(examples, range(1,6,2)):
     plt.scatter((coefs_da[example, 0, ...]*scale)+shift, 
                 (coefs_da[example, 1, ...]*scale)+shift,
                 s=25, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1),edgecolors='k')
+    [plt.gca().spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
+
     plt.xticks([]);plt.yticks([])
     plt.subplot(3,2, ind)
     plt.title(r'Filter: ' + str(example))
 
     plt.imshow(np.moveaxis(rgb.values, 0, -1), interpolation='nearest')
     plt.xticks([]);plt.yticks([])
+    [plt.gca().spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
+
     
-plt.subplots_adjust(wspace=0.2, hspace=.5)
+plt.subplots_adjust(wspace=0.2, hspace=.3)
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
 
 #%%
+plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+
 opp_list = [spatial_opponency(netwtsd[layer]) for layer in layer_names]
 
 m = len(opp_list)
@@ -802,7 +868,7 @@ n = 1
 # We'll use two separate gridspecs to have different margins, hspace, etc
 gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
 gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
-fig = plt.figure(figsize=(2,6))
+fig = plt.figure(figsize=(8,16))
 
 # Top (unshared) axes
 topax = fig.add_subplot(gs_top[0,:])
@@ -822,11 +888,16 @@ for layer, n in zip(opp_list,  range(m)):
         
     else:
         ax = bottom_axes[n-1]
-        ax.set_title(str(layer.layer_label[0].values), fontsize=12)
+        ax.set_title(str(layer.layer_label[0].values))
         ax.set_xticks([0, 0.5 ,1])
         ax.set_xticklabels([])
+        
 
-    ax.hist(layer, histtype='step', normed=0, bins=100, range=[-1,1])
+    ax.hist(layer, normed=0, bins=100, range=[-1,1])
     ax.set_xlim(-0.2,1)
+
+
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_covariance.pdf',
+            bbox_inches='tight')
 
 #plt.tight_layout()
