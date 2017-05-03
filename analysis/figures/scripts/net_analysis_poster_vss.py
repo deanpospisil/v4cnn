@@ -901,3 +901,25 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_covarian
             bbox_inches='tight')
 
 #plt.tight_layout()
+
+#%%
+ravel_wts = [netwtsd[layer].values.reshape((netwtsd[layer].shape[0],) +
+             (np.product(netwtsd[layer].shape[1:]),)) 
+            for layer in layer_names]
+one_pos = da.isel(x=5,y=5).squeeze()
+layer_resp_list = [one_pos[:, one_pos.layer_label==layer] for layer in layer_names]
+
+num_lays = 7
+for resp, wts, layer_name in zip(layer_resp_list[:num_lays], ravel_wts, layer_names):
+    plt.figure(figsize=(3, 3))
+    plt.scatter(np.tril(np.corrcoef(resp.T),-1).ravel(), 
+                np.tril(np.corrcoef(wts), -1).ravel(), s=0.1)
+    r = (np.corrcoef(np.tril(np.corrcoef(resp.T),-1).ravel(), 
+                np.tril(np.corrcoef(wts), -1).ravel())[0,1])
+    plt.title('R = ' + str(np.round(r,2)) + ' ' + layer_name )
+    
+    plt.xlim(-1,1)
+    plt.ylim(-1,1)
+    plt.xlabel('Response Correlation')
+    plt.ylabel('Weights Correlation')
+
