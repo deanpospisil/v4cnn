@@ -16,7 +16,7 @@ sys.path.append(top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn'
 import xarray as xr
 import pandas as pd
-plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 from math import log10, floor
 plt.rc('text', usetex=False)
 
@@ -373,7 +373,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/ori_freq_plot.pdf')
 
 #%%
 lw = 4
-plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
 plt.figure(figsize=(6,5))
 da_ratio.plot.hist(cumulative=True, bins=100, histtype='step', lw=lw)
@@ -592,7 +592,7 @@ for freq in freqs:
     da_cor_map = xr.concat([da_sum_cor1, da_sum_cor2], dim='unit')
     da_cor_map_lst.append(da_cor_map)
 #%%
-plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 plt.figure(figsize=(6,6))
 da_cor_map_freq = xr.concat(da_cor_map_lst, dim='freq').squeeze()
 da_cor_map_freq['freq'] = freqs
@@ -693,7 +693,7 @@ plt.gca().set_xticklabels(['0', '','0.5', '', '1'])
 plt.xlim(0,1)
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/two_pc_recon.pdf', bbox_inches='tight')
 #%%
-plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
 s_list = [prin_comp_maps(netwtsd[layer])[1] for layer in layer_names]
 frac_var_list = [((s.isel(sv=[0])**2).sum('sv')/(s**2).sum('sv')) for s in s_list]
@@ -858,7 +858,7 @@ plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
 
 #%%
-plt.style.use('/Users/deanpospisil/Desktop/modules/v4cnn/poster/dean_poster.mplstyle')
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
 opp_list = [spatial_opponency(netwtsd[layer]) for layer in layer_names]
 
@@ -923,3 +923,22 @@ for resp, wts, layer_name in zip(layer_resp_list[:num_lays], ravel_wts, layer_na
     plt.xlabel('Response Correlation')
     plt.ylabel('Weights Correlation')
 
+#%%
+ravel_wts = [netwtsd[layer].values.reshape(netwtsd[layer].shape[:2] +
+             (np.product(netwtsd[layer].shape[2:]),)) 
+            for layer in layer_names]
+the_input_names = ['norm1', 'relu3', 'relu4', 'pool5']
+the_inputs = [one_pos[:, one_pos.layer_label==input_name] for input_name in the_input_names]
+group_split = [1, 0 , 1, 1, 0]
+for resp, wts, an_input, split in zip(layer_resp_list[1:num_lays-1], ravel_wts[1:], the_inputs, group_split):
+    print(resp.shape)
+    print(wts.shape)
+    print(an_input.shape)
+    print(' ' )
+    if split:
+        mid_wt = wts.shape[1]
+        mid_unit = wts.shape[0]/2
+    else:
+        mid_wt = wts.shape[0]
+    one_pos_resp = np.dot(np.expand_dims(an_input[:, :mid_wt], 0), wts[:mid_unit, ...])
+    
