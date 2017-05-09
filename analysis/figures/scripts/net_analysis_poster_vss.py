@@ -1006,5 +1006,212 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/response_wts_correla
 #   
 #c_cond = c/np.sum(c, 0, keepdims=True)
 #plt.imshow(np.flipud(np.log(c_cond)))
+#%%
+subsamp =1 
+da = xr.open_dataset(top_dir + '/data/responses/bvlc_reference_caffenet_APC362_pix_width[32.0]_x_(74.0, 154.0, 21)_y_(74.0, 154.0, 21)_amp_None.nc')['resp']
+da = da[:,0,:,:,:]
+da.dims
+da = da.transpose('unit','shapes', 'x', 'y')
+da = da[::subsamp, ...] #subsample
+da = da.load()
+da = da - da[:, 0, 0, 0] #subtract off baseline
+da = da[:, 1:, ...] #get rid of baseline shape   
+from scipy.stats import kurtosis
+#%%
+def ti_av_cov(da):
+    dims = da.coords.dims
+    #get the da in the right shape
+    if ('x' in dims) and ('y' in dims):
+        da = da.transpose('unit','shapes', 'x', 'y')
+    elif ('x' in dims):
+        da = da.transpose('unit', 'shapes', 'x')
+    elif ('y' in dims):
+        da = da.transpose('unit', 'shapes', 'y')
+        
+    #some data to store
+    ti = np.zeros(np.shape(da)[0])
+    dens = np.zeros(np.shape(da)[0])
+    nums = np.zeros(np.shape(da)[0])
+    tot_vars = np.zeros(np.shape(da)[0])
+    kurt_shapes = np.zeros(np.shape(da)[0])
+    kurt_x =  np.zeros(np.shape(da)[0])
 
+    for i, unit_resp in enumerate(da):
+        if len(unit_resp.shape)>2:
+            #unwrap spatial
+            unit_resp = unit_resp.values.reshape(unit_resp.shape[0], unit_resp.shape[1]*unit_resp.shape[2])   
+        else:
+            unit_resp = unit_resp.values
+        unit_resp = unit_resp.astype(np.float64)
+        unit_resp = unit_resp - np.mean(unit_resp, 0, keepdims=True, dtype=np.float64)
+ 
+
+        cov = np.dot(unit_resp.T, unit_resp)
+        cov[np.diag_indices_from(cov)] = 0
+        numerator = np.sum(np.triu(cov))
+
+        vlength = np.linalg.norm(unit_resp, axis=0, keepdims=True)
+        max_cov = np.outer(vlength.T, vlength)
+        max_cov[np.diag_indices_from(max_cov)] = 0
+        denominator= np.sum(np.triu(max_cov))
+
+        kurt_shapes[i] = kurtosis(np.sum(unit_resp**2, 1))
+        kurt_x[i] = kurtosis(np.sum(unit_resp**2, 0))
+        den = np.sum(max_cov)
+        num = np.sum(cov)
+        dens[i] = den
+        nums[i] = num
+        tot_vars[i] = np.sum(unit_resp**2)
+        if den!=0 and num!=0:
+            ti[i] = num/den 
+    return ti, kurt_shapes, kurt_x, dens, nums, tot_vars 
+def wts_av_cov(da, inclmean=True, rtrn_space=False):
+    dims = da.coords.dims
+    #get the da in the right shape
+    if ('x' in dims) and ('y' in dims):
+        da = da.transpose('unit','shapes', 'x', 'y')
+        ti_spc = np.zeros((np.shape(da)[0], np.shape(da)[2], np.shape(da)[3]))
+    elif ('x' in dims):
+        da = da.transpose('unit', 'shapes', 'x')
+        ti_spc = np.zeros((np.shape(da)[0], np.shape(da)[2]))
+    elif ('y' in dims):
+        da = da.transpose('unit', 'shapes', 'y')
+        ti_spc = np.zeros((np.shape(da)[0], np.shape(da)[2]))
+        
+    #some data to store
+    ti = np.zeros(np.shape(da)[0])
     
+    
+    dens = np.zeros(np.shape(da)[0])
+    nums = np.zeros(np.shape(da)[0])
+    tot_vars = np.zeros(np.shape(da)[0])
+    kurt_shapes = np.zeros(np.shape(da)[0])
+    kurt_x =  np.zeros(np.shape(da)[0])
+
+    for i, unit_resp in enumerate(da):
+        if len(unit_resp.shape)>2:
+            #unwrap spatial
+            unit_resp = unit_resp.values.reshape(unit_resp.shape[0], unit_resp.shape[1]*unit_resp.shape[2])   
+        else:
+            unit_resp = unit_resp.values
+        unit_resp = unit_resp.astype(np.float64)
+        if not inclmean:
+            unit_resp = unit_resp - np.mean(unit_resp, 0, keepdims=True, dtype=np.float64)
+ 
+
+        cov = np.dot(unit_resp.T, unit_resp)
+        cov[np.diag_indices_from(cov)] = 0
+        cov_spc = cov.sum(0)
+        numerator = np.sum(np.triu(cov))
+
+        vlength = np.linalg.norm(unit_resp, axis=0, keepdims=True)
+        max_cov = np.outer(vlength.T, vlength)
+        max_cov[np.diag_indices_from(max_cov)] = 0
+        max_cov_spc = max_cov.sum(0)
+        denominator= np.sum(np.triu(max_cov))
+        
+        
+        #trying to output correctly the shape of normalized covariance in a map.
+        
+        den = np.sum(max_cov)
+        num = np.sum(cov)
+        dens[i] = den
+        nums[i] = num
+        tot_vars[i] = np.sum(unit_resp**2)
+        if den!=0 and num!=0:
+            ti[i] = num/den
+            ti_spc[i] = np.reshape(cov_spc / max_cov_spc, np.shape(da)[2:])
+        
+        
+    if rtrn_space:
+        return ti_spc
+    else:
+        return ti
+#%%
+ti_yx, kurt_shapes_yx, kurt_yx, dens, nums, tot_vars_yx = ti_av_cov(da[:, :, :, :])
+#%%
+import pandas as pd
+ti_by_layer = []
+layer_labels = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6']
+for layer, layer_name in zip(netwts, layer_labels):
+    print(layer[1].shape)
+    if len(layer[1].shape)>2:
+        _ = xr.DataArray(layer[1], dims=['unit', 'shapes', 'x', 'y'])
+        ti = wts_av_cov(_)
+        print(len(ti))
+        ti_by_layer.append(ti)
+wt_cov = np.concatenate(ti_by_layer)
+
+non_k_var = (kurt_shapes_yx<42) * (kurt_shapes_yx>2) * (tot_vars_yx>0) 
+keys = ['layer_label', 'unit']
+coord = [da.coords[key].values for key in keys]
+index = pd.MultiIndex.from_arrays(coord, names=keys)
+resp = pd.DataFrame(np.hstack([ti_yx,]), index=index, columns=['ti',])
+layersbyunit = [[name,]*layer_wts[1].shape[0] for name, layer_wts in zip(layer_labels, netwts)]
+keys = ['layer_label',]
+index = pd.MultiIndex.from_arrays([np.concatenate(layersbyunit),], names=keys)
+#%%
+wts = pd.DataFrame(np.vstack([wt_cov,]).T, index=index, columns=['wts_cov',])
+n_plots = len(layer_labels[1:])
+plt.figure(figsize=(4, 12))
+
+for i, layer in enumerate(layer_labels[1:]):
+    plt.subplot(n_plots, 1, i+1)
+    x = wts.loc[layer]['wts_cov'].values
+    y = np.squeeze(resp.loc[layer].values)
+    plt.scatter(x, y, s=1, color='k', edgecolors='none')
+    #plt.semilogx()
+    plt.xlim(-0.1,1);plt.ylim(0,1);plt.xlabel('Weight Covariance'); plt.ylabel('TI')
+    plt.title(layer + ' r= ' + str(np.round(np.corrcoef(x,y)[0,1],2)))
+    plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/wt_cov_vs_TI.pdf', bbox_inches='tight')
+
+#%%
+the_input_names = ['norm1', 'relu2','relu3', 'relu4', 'pool5']
+layer_labels = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6']
+
+group_split = [1, 0 , 1, 1, 0]
+chan_wt_ti_prev_r = []
+for layer_cur, layer_prev, split in zip(layer_labels[1:], the_input_names, group_split):
+    ti_prev = np.squeeze(resp.loc[layer_prev].values)
+    chan_wt_cur = (netwtsd[layer_cur]).sum(['x','y'])
+    if split:
+        mid_unit_in = int(chan_wt_cur.shape[1])
+        mid_unit_out = int(chan_wt_cur.shape[0]/2)
+    else:
+        mid_unit_in = int(chan_wt_cur.shape[1])
+        mid_unit_out = int(chan_wt_cur.shape[0])
+        
+    print(ti_prev.shape)
+    print(chan_wt_cur.shape)
+    _ = np.array([np.corrcoef(ti_prev[:mid_unit_in], chan_wt)[0,1] 
+                for chan_wt in chan_wt_cur[:mid_unit_out,]])
+    print('cor_ out :' + str(_.shape))
+    chan_wt_ti_prev_r.append(_)
+    
+n_plots = len(layer_labels[1:])
+#%%
+plt.figure(figsize=(4, 12))
+for i, layer in enumerate(layer_labels[1:]):
+    plt.subplot(n_plots, 1, i+1)
+    x = chan_wt_ti_prev_r[i]
+    y = np.squeeze(resp.loc[layer].values[:x.shape[0]])
+    plt.scatter(x, y, s=1, color='k', edgecolors='none')
+    #plt.semilogx()
+    plt.xlim(-.5,.5);plt.ylim(0,1);plt.xlabel('R Chan Sum vs TI Input'); plt.ylabel('TI')
+    plt.title(layer + ' r= ' + str(np.round(np.corrcoef(x, y)[0,1],2)))
+    plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/chan_wt_sum_ti_r_vs_ti.pdf', bbox_inches='tight')
+
+#%%
+plt.figure(figsize=(4, 12))
+for i, layer in enumerate(layer_labels[1:]):
+    plt.subplot(n_plots, 1, i+1)
+    x = chan_wt_ti_prev_r[i]
+    y = wts.loc[layer]['wts_cov'].values[:x.shape[0]]
+    plt.scatter(x, y, s=1, color='k', edgecolors='none')
+    #plt.semilogx()
+    plt.xlim(-.5,.5);plt.ylim(0,1);plt.xlabel('R Chan Sum vs TI Input'); plt.ylabel('Wts Cov')
+    plt.title(layer + ' r= ' + str(np.round(np.corrcoef(x, y)[0,1],2)))
+    plt.tight_layout()
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/chan_wt_sum_ti_r_vs_wt_cov.pdf', bbox_inches='tight')
