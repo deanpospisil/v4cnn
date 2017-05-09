@@ -289,8 +289,10 @@ for layer, name in zip(wts_by_layer, layer_names):
 
 
 conv1 = netwtsd['conv1']
+#conv1 = window.reshape(1,1,11,11)*conv1
 conv1vis = conv1 - conv1.min(['chan', 'y', 'x'])
 conv1vis = conv1vis/conv1vis.max(['chan', 'y', 'x'])
+
 #conv1vis = conv1vis/conv1vis.max()
 
 #conv1vis = conv1vis[:, :, :5, :5]
@@ -571,6 +573,14 @@ for ind, cor, n in zip(cor_level_loc, cor_level,  range(m)):
     #plt.hist(corr_map.ravel(), histtype='step', range=[0,1])
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/cross_examples.pdf', bbox_inches='tight')
 
+##%%
+#space_values = np.linspace(-1,1,11)
+#x, y = np.meshgrid(space_values, space_values)
+#dist = (x**2+y**2)**0.5
+#sigma = 0.5
+#window = (1./(2*np.pi*sigma**2)**0.5)*np.exp(-(dist**2)/(2*sigma**2))
+#a_fv_da, spatial_freq = PC_spatial_freq(window.reshape(1,1,11,11)*conv1)
+
 #%%
 a_fv_da, spatial_freq = PC_spatial_freq(conv1)
 da_cor_map_lst = []
@@ -592,12 +602,13 @@ for freq in freqs:
     da_cor_map = xr.concat([da_sum_cor1, da_sum_cor2], dim='unit')
     da_cor_map_lst.append(da_cor_map)
 #%%
+plt.style.use('default')
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
-plt.figure(figsize=(6,6))
+plt.figure(figsize=(4,4))
 da_cor_map_freq = xr.concat(da_cor_map_lst, dim='freq').squeeze()
 da_cor_map_freq['freq'] = freqs
 
-plt.subplot(211)
+plt.subplot(111)
 for perc in [0.75, 0.5, 0.25]:
     da_cor_map_freq[:, :128].quantile(perc, [ 'unit']).plot()
 for i, freq in list(enumerate(freqs))[::4]:
@@ -610,23 +621,23 @@ plt.legend(['75th', '50th', '25th'], title='Percentile', loc=1, borderaxespad=0)
 plt.ylim(0,1);
 plt.yticks([0,0.5,1])
 plt.xlabel('Frequency (cycles/radian)')
-plt.ylabel('Correlation',  ha='right')
+plt.ylabel('Correlation')
 
-plt.subplot(212)
-for perc in [0.75, 0.5, 0.25]:
-    da_cor_map_freq[:, 128:].quantile(perc, [ 'unit']).plot()
-for i, freq in list(enumerate(freqs))[::4]:
-    plt.scatter([freq,]*len(da_cor_map_freq[i, :128]), 
-                da_cor_map_freq[i, 128:], s=2, edgecolors='None', 
-                c='k', alpha=0.2)
-plt.title('Conv2 Group 2') 
-plt.xticks(np.linspace(0,12,7))
-plt.yticks([0,0.5,1])
-plt.gca().set_yticklabels([])
-plt.gca().set_xticklabels([])
+#plt.subplot(212)
+#for perc in [0.75, 0.5, 0.25]:
+#    da_cor_map_freq[:, 128:].quantile(perc, [ 'unit']).plot()
+#for i, freq in list(enumerate(freqs))[::4]:
+#    plt.scatter([freq,]*len(da_cor_map_freq[i, :128]), 
+#                da_cor_map_freq[i, 128:], s=2, edgecolors='None', 
+#                c='k', alpha=0.2)
+#plt.title('Conv2 Group 2') 
+#plt.xticks(np.linspace(0,12,7))
+#plt.yticks([0,0.5,1])
+#plt.gca().set_yticklabels([])
+#plt.gca().set_xticklabels([])
 
-plt.ylim(0,1)
-plt.xlabel('')
+#plt.ylim(0,1)
+#plt.xlabel('')
 plt.tight_layout()
 
 
@@ -902,43 +913,98 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_covarian
 
 #plt.tight_layout()
 
-#%%
-ravel_wts = [netwtsd[layer].values.reshape((netwtsd[layer].shape[0],) +
-             (np.product(netwtsd[layer].shape[1:]),)) 
-            for layer in layer_names]
+##%%
+#ravel_wts = [netwtsd[layer].values.reshape((netwtsd[layer].shape[0],) +
+#             (np.product(netwtsd[layer].shape[1:]),)) 
+#            for layer in layer_names]
 one_pos = da.isel(x=5,y=5).squeeze()
-layer_resp_list = [one_pos[:, one_pos.layer_label==layer] for layer in layer_names]
-
-num_lays = 7
-for resp, wts, layer_name in zip(layer_resp_list[:num_lays], ravel_wts, layer_names):
-    plt.figure(figsize=(3, 3))
-    plt.scatter(np.tril(np.corrcoef(resp.T),-1).ravel(), 
-                np.tril(np.corrcoef(wts), -1).ravel(), s=0.1)
-    r = (np.corrcoef(np.tril(np.corrcoef(resp.T),-1).ravel(), 
-                np.tril(np.corrcoef(wts), -1).ravel())[0,1])
-    plt.title('R = ' + str(np.round(r,2)) + ' ' + layer_name )
-    
-    plt.xlim(-1,1)
-    plt.ylim(-1,1)
-    plt.xlabel('Response Correlation')
-    plt.ylabel('Weights Correlation')
+#layer_resp_list = [one_pos[:, one_pos.layer_label==layer] for layer in layer_names]
+#
+#num_lays = 7
+#for resp, wts, layer_name in zip(layer_resp_list[:num_lays], ravel_wts, layer_names):
+#    plt.figure(figsize=(3, 3))
+#    plt.scatter(np.tril(np.corrcoef(resp.T),-1).ravel(), 
+#                np.tril(np.corrcoef(wts), -1).ravel(), s=0.1)
+#    r = (np.corrcoef(np.tril(np.corrcoef(resp.T),-1).ravel(), 
+#                np.tril(np.corrcoef(wts), -1).ravel())[0,1])
+#    plt.title('R = ' + str(np.round(r,2)) + ' ' + layer_name )
+#    
+#    plt.xlim(-1,1)
+#    plt.ylim(-1,1)
+#    plt.xlabel('Response Correlation')
+#    plt.ylabel('Weights Correlation')
 
 #%%
 ravel_wts = [netwtsd[layer].values.reshape(netwtsd[layer].shape[:2] +
              (np.product(netwtsd[layer].shape[2:]),)) 
             for layer in layer_names]
-the_input_names = ['norm1', 'relu3', 'relu4', 'pool5']
+one_pos = da.isel(x=5,y=5).squeeze()
+the_input_names = ['norm1', 'relu2','relu3', 'relu4', 'pool5']
 the_inputs = [one_pos[:, one_pos.layer_label==input_name] for input_name in the_input_names]
 group_split = [1, 0 , 1, 1, 0]
-for resp, wts, an_input, split in zip(layer_resp_list[1:num_lays-1], ravel_wts[1:], the_inputs, group_split):
-    print(resp.shape)
-    print(wts.shape)
-    print(an_input.shape)
-    print(' ' )
+wt_cors = []
+resp_cors = []
+for resp, wts, an_input, split in zip(layer_resp_list[1:6], ravel_wts[1:], the_inputs, group_split):
     if split:
-        mid_wt = wts.shape[1]
-        mid_unit = wts.shape[0]/2
+        mid_wt = int(wts.shape[1])
+        mid_unit = int(wts.shape[0]/2)
     else:
-        mid_wt = wts.shape[0]
-    one_pos_resp = np.dot(np.expand_dims(an_input[:, :mid_wt], 0), wts[:mid_unit, ...])
+        mid_wt = int(wts.shape[0])
+        mid_unit = int(wts.shape[0]/2)
+
+    one_pos_resp = np.matmul(np.expand_dims(an_input[:, :mid_wt], 0), wts[:mid_unit, ...])
+    resp_cors.append(np.array([np.corrcoef(unit.T) for unit in one_pos_resp]))
+    wt_cors.append(np.array([np.corrcoef(unit.T) for unit in wts[:mid_unit, ...]]))
+    
+#%%
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
+
+m = len(wt_cors)
+n = 1
+# We'll use two separate gridspecs to have different margins, hspace, etc
+gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=0.3)
+gs_base = plt.GridSpec(m, 1, hspace=0.3, left=0.4)
+fig = plt.figure(figsize=(8,16))
+
+# Top (unshared) axes
+topax = fig.add_subplot(gs_top[0, :])
+# The four shared axes
+#ax = fig.add_subplot(gs_base[1, :]) # Need to create the first one to share...
+#other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
+#bottom_axes = [ax] + other_axes
+
+for wt_cor, resp_cor, n, layer_name in zip(wt_cors[:1], resp_cors,  range(m), layer_names[1:]):
+    if n==0:
+        ax = topax
+        #ax.set_title(layer_name)
+        ax.set_ylabel('Response Correlation')
+        ax.set_xlabel('Weight Correlation')
+        ax.set_xticks([-1,-0.5, 0,0.5,1])
+        ax.set_yticks([-1,-0.5, 0,0.5,1])
+        ax.set_yticklabels(['-1', '-0.5', '0', '0.5', '1'])
+        ax.set_xticklabels(['-1', '-0.5', '0', '0.5', '1'])
+        
+    else:
+        ax = bottom_axes[n-1]
+        ax.set_title(layer_name)
+        ax.set_xticks([-1,-0.5, 0,0.5,1])
+        ax.set_yticks([-1,-0.5, 0,0.5,1])
+        ax.set_xticklabels([])
+        
+        
+    ax.set_aspect('equal')
+    ax.scatter(np.tril(wt_cor, -1), np.tril(resp_cor, -1), s=.1)
+    ax.set_xlim(-1,1);ax.set_ylim(-1,1)
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/response_wts_correlation.pdf',
+            bbox_inches='tight')
+
+##%%%
+#plt.figure(figsize=(3,3))
+#(c, x, y, Im) = plt.hist2d(np.tril(wt_cor, -1).ravel(), np.tril(resp_cor, -1).ravel(), bins=100)
+##%%
+#plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
+#   
+#c_cond = c/np.sum(c, 0, keepdims=True)
+#plt.imshow(np.flipud(np.log(c_cond)))
+
     
