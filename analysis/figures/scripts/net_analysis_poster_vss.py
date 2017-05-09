@@ -1153,17 +1153,22 @@ index = pd.MultiIndex.from_arrays([np.concatenate(layersbyunit),], names=keys)
 #%%
 wts = pd.DataFrame(np.vstack([wt_cov,]).T, index=index, columns=['wts_cov',])
 n_plots = len(layer_labels[1:])
-plt.figure(figsize=(4, 12))
+plt.figure(figsize=(12,3))
 
 for i, layer in enumerate(layer_labels[1:]):
-    plt.subplot(n_plots, 1, i+1)
+    plt.subplot(1, n_plots, i+1)
     x = wts.loc[layer]['wts_cov'].values
     y = np.squeeze(resp.loc[layer].values)
     plt.scatter(x, y, s=1, color='k', edgecolors='none')
     #plt.semilogx()
-    plt.xlim(-0.1,1);plt.ylim(0,1);plt.xlabel('Weight Covariance'); plt.ylabel('TI')
-    plt.title(layer + ' r= ' + str(np.round(np.corrcoef(x,y)[0,1],2)))
+    plt.xlim(-0.1,1.01);plt.ylim(0,1.01);
+    if i==0:
+        plt.xlabel('Wts Cov.'); plt.ylabel('T.I.', rotation=0, va='center',ha='right', labelpad=15)
+    plt.yticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_yticklabels(['0','','0.5','','1'])
+    plt.xticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_xticklabels(['0','','0.5','','1'])
+    plt.title(layer + '\nr = ' + str(np.round(np.corrcoef(x,y)[0,1],2)))
     plt.tight_layout()
+    plt.grid()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/wt_cov_vs_TI.pdf', bbox_inches='tight')
 
 #%%
