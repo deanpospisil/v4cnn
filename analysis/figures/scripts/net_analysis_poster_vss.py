@@ -691,20 +691,23 @@ conv2 = netwtsd['conv2']
 u_da, s_da, v_da = prin_comp_maps(netwtsd['conv2'])
 
 frac_var = ((s_da.isel(sv=[0,1])**2).sum('sv')/(s_da**2).sum('sv'))
-(frac_var).plot.hist(histtype='step', 
-lw=3, range=[0,1], bins=1000, cumulative=True, normed=True)
-plt.title('Two PC Reconstruction')
-plt.xlabel('Fraction Variance')
-plt.ylabel('Cumulative Fraction')
-plt.grid()
-plt.yticks([0, 0.5, 1])
-plt.gca().set_yticklabels(['0',  '0.5', '1'])
+(frac_var).plot.hist(histtype='bar', 
+lw=3, range=[0,1], bins=20, cumulative=False, normed=False)
+plt.title('Two PC\nReconstruction')
+plt.xlabel('Fraction Variance\nExplained')
+plt.ylabel('Number\nConv2 Units')
+#plt.grid()
+#plt.yticks([0, 0.5, 1])
+#plt.gca().set_yticklabels(['0',  '0.5', '1'])
 plt.xticks([0, 0.25, 0.5, 0.75, 1])
 plt.gca().set_xticklabels(['0', '','0.5', '', '1'])
 plt.xlim(0,1)
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/two_pc_recon.pdf', bbox_inches='tight')
 #%%
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
+
+ax.scatter(np.tril(wt_cor, -1), np.tril(resp_cor, -1), s=.1)
+
 
 s_list = [prin_comp_maps(netwtsd[layer])[1] for layer in layer_names]
 frac_var_list = [((s.isel(sv=[0])**2).sum('sv')/(s**2).sum('sv')) for s in s_list]
@@ -829,9 +832,20 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/layer2_pc_vis.pdf',b
 plt.rc('text', usetex=False)
 opponency_da = spatial_opponency(conv2)
 da_sum_cor = cor_over(conv2, reconstruction_da, ['chan'], ['chan', 'x','y'])
+use_cor = True
+plt.figure(figsize=(8,8))
+
+ax1 = plt.subplot2grid((6, 4), (0, 1), colspan=1)
+ax3 = plt.subplot2grid((6, 4), (2, 1), colspan=1)
+ax5 = plt.subplot2grid((6, 4), (4, 1), colspan=1)
+
+ax2 = plt.subplot2grid((6, 4), (0, 2), rowspan=2, colspan=2)
+ax4 = plt.subplot2grid((6, 4), (2, 2), rowspan=2, colspan=2)
+ax6 = plt.subplot2grid((6, 4), (4, 2), rowspan=2, colspan=2)
+axlist = [ax1,ax2,ax3,ax4,ax5,ax6] 
+plt.subplots_adjust(wspace=-0.4, hspace=1.1)
 
 examples = [36, 200, 233 ]
-plt.figure(figsize=(3,6))
 nx, ny = (100, 100)
 x = np.linspace(-1, 1, nx)
 y = np.linspace(-1, 1, ny)
@@ -840,33 +854,49 @@ cart = xv*1j + yv
 pol = (np.rad2deg(np.angle(cart)))%360
 mag = abs(cart)
 color_circle = np.apply_along_axis(ziphusl, 2, np.dstack((pol, 100*np.ones_like(mag), 70*np.ones_like(mag))))
-for example, ind in zip(examples, range(1,6,2)):
-    plt.subplot(3,2, ind+1)
-    plt.xlabel(r'PC1');plt.ylabel(r'PC2')
-    plt.title(r"$R^2= $"+ str(np.round(da_sum_cor[example].values**2, 2)))
+for example, ind in zip(examples, range(0,6,2)):
+    #plt.subplot(3,2, ind+1)
+    ax = axlist[ind+1]
+    
+    if use_cor:
+        if ind == 0:
+            ax.set_xlabel('PC1', fontsize=12);ax.set_ylabel('PC2',fontsize=12)
+            ax.set_title(r"$R^2= $"+ str(np.round(da_sum_cor[example].values**2, 2)))
+        else:
+            ax.set_title(str(np.round(da_sum_cor[example].values**2, 2)))
+    else:
+        if ind == 0: 
+            ax.set_xlabel('PC1', fontsize=12);ax.set_ylabel('PC2', fontsize=12)
+            ax.set_title("Wt. Cov.="+ str(np.round(opponency_da[example].values, 2)))
+        else:
+            ax.set_title(str(np.round(opponency_da[example].values, 2)))
     #plt.title('R^2 = ' + str(np.round(da_sum_cor[example].values**2, 2)))
-    plt.imshow(color_circle, interpolation='nearest')
+    ax.imshow(color_circle, interpolation='nearest')
     shift = 50
     scale = 40./np.max((coefs_da[example]**2).sum('chan')**0.5)
     rgb = coeffs_pol_rgb[:, example,...]
     
-    plt.scatter((coefs_da[example, 0, ...]*scale)+shift, 
+    ax.scatter((coefs_da[example, 0, ...]*scale)+shift, 
                 (coefs_da[example, 1, ...]*scale)+shift,
-                s=25, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1),edgecolors='k')
-    [plt.gca().spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
+                s=25, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1), edgecolors='k')
+    [ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
 
-    plt.xticks([]);plt.yticks([])
-    plt.subplot(3,2, ind)
-    plt.title(r'Filter: ' + str(example))
+    ax.set_xticks([]);ax.set_yticks([])
+    #plt.subplot(3,2, ind)
+    ax = axlist[ind]
+    ax.set_title(r'Filter: ' + str(example))
 
-    plt.imshow(np.moveaxis(rgb.values, 0, -1), interpolation='nearest')
-    plt.xticks([]);plt.yticks([])
-    [plt.gca().spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
+    ax.imshow(np.moveaxis(rgb.values, 0, -1), interpolation='nearest')
+
+    ax.set_xticks([]);ax.set_yticks([])
+    [ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
 
     
-plt.subplots_adjust(wspace=0.2, hspace=.3)
-plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis.pdf')
+#plt.tight_layout()
+if use_cor:
+    plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis_cor_title.pdf')
+else:
+    plt.savefig(top_dir + '/analysis/figures/images/early_layer/example_layer2_pc_vis_wt_cov.pdf')
 
 #%%
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
@@ -876,41 +906,32 @@ opp_list = [spatial_opponency(netwtsd[layer]) for layer in layer_names]
 m = len(opp_list)
 n = 1
 
-# We'll use two separate gridspecs to have different margins, hspace, etc
-gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
-gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
-fig = plt.figure(figsize=(8,16))
-
-# Top (unshared) axes
-topax = fig.add_subplot(gs_top[0,:])
-# The four shared axes
-ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
-other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
-bottom_axes = [ax] + other_axes
+plt.figure(figsize=(2,8))
 
 for layer, n in zip(opp_list,  range(m)):
+    ax = plt.subplot(m, 1, n+1)
+    #ax.annotate(str(layer.layer_label[0].values), [0.7,0.7], xycoords='axes fraction', fontsize=16)
+
     if n==0:
-        ax = topax
-        ax.set_title(str(layer.layer_label[0].values))
-        ax.set_ylabel('Count', rotation=0, labelpad=4, va='center', ha='right')
-        ax.set_xlabel('Normed Covariance')
-        ax.set_xticks([0,0.5,1])
-        ax.set_xticklabels(['0', '0.5', '1'])
-        
+        ax.set_ylabel('Count', labelpad=4) 
+        ax.set_xticks([0, 0.5 ,1])
+        ax.set_xticklabels([])
     else:
-        ax = bottom_axes[n-1]
-        ax.set_title(str(layer.layer_label[0].values))
         ax.set_xticks([0, 0.5 ,1])
         ax.set_xticklabels([])
         
-
+    if n==m-1:
+        ax.set_xticks([0,0.5,1])
+        ax.set_xticklabels(['0', '0.5', '1'])
+        
+        
     ax.hist(layer, normed=0, bins=100, range=[-1,1])
     ax.set_xlim(-0.2,1)
 
 
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_covariance.pdf',
             bbox_inches='tight')
-
+#%%
 #plt.tight_layout()
 
 ##%%
@@ -957,6 +978,7 @@ for resp, wts, an_input, split in zip(layer_resp_list[1:6], ravel_wts[1:], the_i
     wt_cors.append(np.array([np.corrcoef(unit.T) for unit in wts[:mid_unit, ...]]))
     
 #%%
+
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
 m = len(wt_cors)
@@ -1010,7 +1032,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/response_wts_correla
 subsamp =1 
 da = xr.open_dataset(top_dir + '/data/responses/bvlc_reference_caffenet_APC362_pix_width[32.0]_x_(74.0, 154.0, 21)_y_(74.0, 154.0, 21)_amp_None.nc')['resp']
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
-da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp']
+da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp'].squeeze()
 
 #da = da[:,0,:,:,:]
 #da.dims
@@ -1162,14 +1184,24 @@ for i, layer in enumerate(layer_labels[1:]):
     plt.subplot(1, n_plots, i+1)
     x = wts.loc[layer]['wts_cov'].values
     y = np.squeeze(resp.loc[layer].values)
-    plt.scatter(x, y, s=3, color='k', edgecolors='none')
+    if i<4:
+        s=4
+    else:
+        s=1
+    plt.scatter(x, y, s=s, color='k', edgecolors='none')
     #plt.semilogx()
-    plt.xlim(-0.1,1.01);plt.ylim(0,1.01);
+    plt.xlim(-0.1,1.02);plt.ylim(-0.1,1.01);
     if i==0:
-        plt.xlabel('Wts Cov.'); plt.ylabel('T.I.', rotation=0, va='center',ha='right', labelpad=15)
-    plt.yticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_yticklabels(['0','','0.5','','1'])
-    plt.xticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_xticklabels(['0','','0.5','','1'])
-    plt.title(layer + '\nr = ' + str(np.round(np.corrcoef(x,y)[0,1],2)))
+        plt.xlabel('Weight Covariance'); plt.ylabel('T.I.', rotation=0, va='center',ha='right', labelpad=15)
+    if layer == 'conv2':
+        plt.yticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_yticklabels(['0','','0.5','','1'])
+        plt.xticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_xticklabels(['0','','0.5','','1'])
+        plt.title(layer + '\nr = ' + str(np.round(np.corrcoef(x,y)[0,1], 2)))
+
+    else:
+        plt.yticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_yticklabels(['','','','',''])
+        plt.xticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_xticklabels(['','','','',''])
+        plt.title(layer + '\n' + str(np.round(np.corrcoef(x,y)[0,1], 2)))
     plt.tight_layout()
     plt.grid()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/34_pix_wt_cov_vs_TI.pdf', bbox_inches='tight')
