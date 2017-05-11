@@ -1,16 +1,18 @@
 # this is for getting responses across a bunch of nets for a set of stimuli.
 #name the directory
 
-import caffe_net_response as cf
 import os
 import sys
 import re
 import numpy as np
-top_dir = os.getcwd().split('v4cnn')[0]
-sys.path.append(top_dir+ 'v4cnn/')
-sys.path.append( top_dir + 'xarray')
-sys.path.append( top_dir + 'common')
+top_dir = os.getcwd().split('v4cnn')[0] 
+sys.path.append(top_dir+ 'v4cnn')
+sys.path.append( top_dir + 'xarray/')
 top_dir = top_dir + 'v4cnn/'
+sys.path.append( top_dir + 'common/')
+sys.path.append( top_dir + 'nets/')
+
+import caffe_net_response as cf
 import d_misc as dm
 import xarray as xr
 import apc_model_fit as ac
@@ -23,7 +25,7 @@ response_folder = '/home/dean/Desktop/v4cnn/data/responses/'
 #response_folder = '/dean_temp/data/responses/'
 baseImageList = ['PC370', 'formlet']
 base_image_nm = 'imgnet_masked'
-#base_image_nm = baseImageList[0]
+base_image_nm = baseImageList[0]
 
 
 all_iter = [
@@ -50,13 +52,13 @@ mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
 s = np.array(mat['shapes'][0])
 boundaries = imp.center_boundary(s)
 scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
-scale = None
+#scale = None
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-y = (center_image-20, center_image+20, 21)
-y = (center_image, center_image, 1)
-x = (center_image-50, center_image+50, 101)
-
+y = (center_image-80, center_image+80, 21)
+##y = (center_image, center_image, 1)
+x = (center_image-80, center_image+80, 21)
+#%%
 #y = (center_image, center_image, 11)
 amp = (255, 255, 1)
 amp = None
@@ -82,7 +84,7 @@ for  iter_name, deploy  in zip(all_iter, deploys):
                              stim_trans_cart_dict,
                              stim_trans_dict,
                              require_provenance=False,
-                             use_boundary=False,
+                             use_boundary=True,
                              deploy=deploy)
 
         da.to_dataset(name='resp').to_netcdf(response_file)

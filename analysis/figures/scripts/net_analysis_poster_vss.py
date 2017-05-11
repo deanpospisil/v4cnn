@@ -918,7 +918,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_covarian
 #             (np.product(netwtsd[layer].shape[1:]),)) 
 #            for layer in layer_names]
 one_pos = da.isel(x=5,y=5).squeeze()
-#layer_resp_list = [one_pos[:, one_pos.layer_label==layer] for layer in layer_names]
+layer_resp_list = [one_pos[:, one_pos.layer_label==layer] for layer in layer_names]
 #
 #num_lays = 7
 #for resp, wts, layer_name in zip(layer_resp_list[:num_lays], ravel_wts, layer_names):
@@ -1009,12 +1009,15 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/response_wts_correla
 #%%
 subsamp =1 
 da = xr.open_dataset(top_dir + '/data/responses/bvlc_reference_caffenet_APC362_pix_width[32.0]_x_(74.0, 154.0, 21)_y_(74.0, 154.0, 21)_amp_None.nc')['resp']
-da = da[:,0,:,:,:]
-da.dims
+net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
+da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp']
+
+#da = da[:,0,:,:,:]
+#da.dims
 da = da.transpose('unit','shapes', 'x', 'y')
 da = da[::subsamp, ...] #subsample
 da = da.load()
-da = da - da[:, 0, 0, 0] #subtract off baseline
+da = da - da[:, 0, :, :] #subtract off baseline
 da = da[:, 1:, ...] #get rid of baseline shape   
 from scipy.stats import kurtosis
 #%%
@@ -1159,7 +1162,7 @@ for i, layer in enumerate(layer_labels[1:]):
     plt.subplot(1, n_plots, i+1)
     x = wts.loc[layer]['wts_cov'].values
     y = np.squeeze(resp.loc[layer].values)
-    plt.scatter(x, y, s=1, color='k', edgecolors='none')
+    plt.scatter(x, y, s=3, color='k', edgecolors='none')
     #plt.semilogx()
     plt.xlim(-0.1,1.01);plt.ylim(0,1.01);
     if i==0:
@@ -1169,7 +1172,7 @@ for i, layer in enumerate(layer_labels[1:]):
     plt.title(layer + '\nr = ' + str(np.round(np.corrcoef(x,y)[0,1],2)))
     plt.tight_layout()
     plt.grid()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/wt_cov_vs_TI.pdf', bbox_inches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/34_pix_wt_cov_vs_TI.pdf', bbox_inches='tight')
 
 #%%
 the_input_names = ['norm1', 'relu2','relu3', 'relu4', 'pool5']
@@ -1206,7 +1209,7 @@ for i, layer in enumerate(layer_labels[1:]):
     plt.xlim(-.5,.5);plt.ylim(0,1);plt.xlabel('R Chan Sum vs TI Input'); plt.ylabel('TI')
     plt.title(layer + ' r= ' + str(np.round(np.corrcoef(x, y)[0,1],2)))
     plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/chan_wt_sum_ti_r_vs_ti.pdf', bbox_inches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/34_pix_chan_wt_sum_ti_r_vs_ti.pdf', bbox_inches='tight')
 
 #%%
 plt.figure(figsize=(4, 12))
@@ -1219,4 +1222,4 @@ for i, layer in enumerate(layer_labels[1:]):
     plt.xlim(-.5,.5);plt.ylim(0,1);plt.xlabel('R Chan Sum vs TI Input'); plt.ylabel('Wts Cov')
     plt.title(layer + ' r= ' + str(np.round(np.corrcoef(x, y)[0,1],2)))
     plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/chan_wt_sum_ti_r_vs_wt_cov.pdf', bbox_inches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/34_pix_chan_wt_sum_ti_r_vs_wt_cov.pdf', bbox_inches='tight')

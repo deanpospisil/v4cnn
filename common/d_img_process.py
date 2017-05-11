@@ -200,7 +200,7 @@ def fft_gauss_blur_img(img, scale, std_cut_off=5):
 
     return sr
 
-def fftDilateImg( img, dilR ):
+def fftDilateImg(img, dilR):
     #just for square images for now
     nPix= np.array(np.shape(img))
     n = np.round(nPix*dilR)
@@ -325,7 +325,7 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
     base_stack = []
     n_imgs = np.size(imgDict['shapes'], 0)
     for ind in range(n_imgs):
-        if imgDict['shapes'][ind] !=-1:#-1 means a blank image
+        if imgDict['shapes'][ind] != -1:#-1 means a blank image
 
             transformed_boundary = shape_boundary[imgDict['shapes'][ind]]
 
@@ -357,6 +357,57 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
             base_stack.append(np.zeros((npixels, npixels)))
 
     return base_stack
+##%%
+#import os
+#import sys
+#import re
+#import numpy as np
+#top_dir = os.getcwd().split('v4cnn')[0] 
+#sys.path.append(top_dir+ 'v4cnn')
+#sys.path.append( top_dir + 'xarray/')
+#top_dir = top_dir + 'v4cnn/'
+#sys.path.append( top_dir + 'common/')
+#sys.path.append( top_dir + 'nets/')
+#
+#import caffe_net_response as cf
+#import d_misc as dm
+#import xarray as xr
+#import apc_model_fit as ac
+#import d_curve as dc
+#import d_img_process as imp
+#import scipy.io as l
+##tests
+#img_n_pix = 227
+#max_pix_width = [ 32.,]
+#
+#mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
+#s = np.array(mat['shapes'][0])
+#boundaries = imp.center_boundary(s)
+#scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
+##scale = None
+#shape_ids = range(-1, 370)
+#center_image = round(img_n_pix/2.)
+#y = (center_image, center_image, 1)
+#x = (center_image+80, center_image+80, 1)
+#
+#amp = (255, 255, 1)
+#amp = None
+#stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
+#                                                                scale=scale,
+#                                                                x=x,
+#                                                                y=y,
+#                                                                amp=amp)
+#import d_curve as dc
+#
+#s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
+#base_stack = dc.center_boundary(s)
+#        #load up a chunk of transformations
+#stim_trans_cart_dict_sect = {}
+#for key in stim_trans_cart_dict:
+#    stim_trans_cart_dict_sect[key] = stim_trans_cart_dict[key][:371]
+#trans_img_stack = np.array(boundary_stack_transform(stim_trans_cart_dict_sect,
+#                                                           base_stack, npixels=227))
+
 
 ##check the dilation function
 #import matplotlib.pyplot as plt
