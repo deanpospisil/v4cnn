@@ -1,11 +1,10 @@
 #Dean Poster Context
 figure.figsize: 12.8, 8.8
-figure.figsize: 12.8, 8.8
-axes.labelsize: 17.6
-axes.titlesize: 19.2
+axes.labelsize: 18
+axes.titlesize: 20
 xtick.labelsize: 16
 ytick.labelsize: 16
-legend.fontsize: 16
+legend.fontsize: 18
 legend.fancybox: False
 
 lines.linewidth: 5
