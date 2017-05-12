@@ -452,13 +452,13 @@ for layer, n in zip(rf_list,  range(m)):
     lower_bound = 1./layer.shape[1]**2.
 
     #ax.annotate(str(layer.layer_label[0].values), [0.7,0.7], xycoords='axes fraction', fontsize=16)
-    ax.set_xticks([0, lower_bound, 0.25, 0.5])
+    ax.set_xticks([lower_bound, 0.25, 0.5])
     ax.set_xticklabels([])
     if n==0:
         ''
         #ax.set_ylabel('Count', labelpad=4) 
     if n==m-1:
-        ax.set_xticklabels(['','l.b.', '0.25', '0.5'])
+        ax.set_xticklabels(['l.b.', '0.25', '0.5'])
         ax.set_xlabel('Fraction RF\nVariance of Max')
         
     _ = layer.groupby('unit').max().values
