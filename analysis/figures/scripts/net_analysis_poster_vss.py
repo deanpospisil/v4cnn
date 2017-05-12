@@ -435,49 +435,36 @@ cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
 cb1.set_label('Percent Variance')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/rfconv2.pdf', bbox_inches='tight')
 
+
 #%%
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
+
 rf_list = [receptive_field(netwtsd[layer]) for layer in layer_names]
 rf_list = [layer/layer.sum(['x', 'y']) for layer in rf_list]
 
 m = len(rf_list)
 n = 1
 
-# We'll use two separate gridspecs to have different margins, hspace, etc
-gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
-gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
-fig = plt.figure(figsize=(8,16))
-
-# Top (unshared) axes
-topax = fig.add_subplot(gs_top[0,:])
-# The four shared axes
-ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
-other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
-bottom_axes = [ax] + other_axes
+plt.figure(figsize=(2,8))
 
 for layer, n in zip(rf_list,  range(m)):
+    ax = plt.subplot(m, 1, n+1)
     lower_bound = 1./layer.shape[1]**2.
+
+    #ax.annotate(str(layer.layer_label[0].values), [0.7,0.7], xycoords='axes fraction', fontsize=16)
+    ax.set_xticks([0, lower_bound, 0.25, 0.5])
+    ax.set_xticklabels([])
     if n==0:
-        ax = topax
-        ax.set_title(str(layer.layer_label[0].values))
-        ax.set_ylabel('Count', rotation=0, labelpad=4, va='center', ha='right')
-        ax.set_xlabel('Frac. RF Variance of Max')
-        ax.set_xticks([lower_bound, 0.25, 0.5])
-        ax.set_xticklabels(['l.b.', '0.25', '0.5'])
+        ''
+        #ax.set_ylabel('Count', labelpad=4) 
+    if n==m-1:
+        ax.set_xticklabels(['','l.b.', '0.25', '0.5'])
+        ax.set_xlabel('Fraction RF\nVariance of Max')
         
-    else:
-        ax = bottom_axes[n-1]
-        ax.set_title(str(layer.layer_label[0].values))
+    _ = layer.groupby('unit').max().values
+    ax.hist(_, normed=0, bins=50, range=[0,.5], align='right')
+    ax.set_xlim(0, 0.5)
 
-        ax.set_xticks([lower_bound, 0.25, 0.5])
-        ax.set_xticklabels([])
-
-    
-    layer.groupby('unit').max().plot.hist(normed=0, 
-                 bins=100,
-                 ax=ax, range=[lower_bound,0.5])
-    if not n==0:
-        ax.set_ylabel('')
-    plt.xlim(0, .5)
 
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/all_layer_rf.pdf', bbox_inches='tight')
 
@@ -706,54 +693,38 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/two_pc_recon.pdf', b
 #%%
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
-ax.scatter(np.tril(wt_cor, -1), np.tril(resp_cor, -1), s=.1)
 
 
 s_list = [prin_comp_maps(netwtsd[layer])[1] for layer in layer_names]
 frac_var_list = [((s.isel(sv=[0])**2).sum('sv')/(s**2).sum('sv')) for s in s_list]
+
 m = len(frac_var_list)
 n = 1
 
-# We'll use two separate gridspecs to have different margins, hspace, etc
-gs_top = plt.GridSpec(m, 1, top=0.95, left=0.4, hspace=1)
-gs_base = plt.GridSpec(m, 1, hspace=0.7, left=0.4)
-fig = plt.figure(figsize=(8,16))
-
-# Top (unshared) axes
-topax = fig.add_subplot(gs_top[0,:])
-# The four shared axes
-ax = fig.add_subplot(gs_base[1,:]) # Need to create the first one to share...
-other_axes = [fig.add_subplot(gs_base[i,:], sharex=ax) for i in range(2, m)]
-bottom_axes = [ax] + other_axes
+plt.figure(figsize=(2,8))
 
 for layer, n in zip(frac_var_list,  range(m)):
+    ax = plt.subplot(m, 1, n+1)
+
     if n==0:
-        ax = topax
-        (layer).plot.hist(lw=3, range=[0,1], bins=50, 
-    cumulative=False, normed=0, ax=ax,)
-        ax.set_title(str(layer.layer_label[0].values))
-        ax.set_ylabel('Count', rotation=0, labelpad=4, va='center', ha='right')
-        ax.set_xlabel(r'$\frac{\lambda_1^2}{\sum{\lambda_i^2}}$')
-        ax.set_xticks([0,0.5,1])
-        ax.set_xticklabels(['0', '0.5', '1'])
-        
-    else:
-        ax = bottom_axes[n-1]
-        (layer).plot.hist(lw=3, range=[0,1], bins=50, 
-    cumulative=False, normed=0, ax=ax,)
-        ax.set_title(str(layer.layer_label[0].values))
+        #ax.set_ylabel('Count', labelpad=4) 
         ax.set_xticks([0, 0.5 ,1])
         ax.set_xticklabels([])
-        ax.set_ylabel('')
+    else:
+        ax.set_xticks([0, 0.5 ,1])
+        ax.set_xticklabels([])
         
-
-
+    if n==m-1:
+        ax.set_xticks([0,0.5,1])
+        ax.set_xticklabels(['0', '0.5', '1'])
+        ax.set_xlabel(r'$\frac{\lambda_1^2}{\sum{\lambda_i^2}}$')
+        
+    ax.hist(layer.values, lw=3, range=[0,1], bins=50, cumulative=False, normed=0,)
     ax.set_xlim(0,1)
-
-
+    ax.annotate(str(layer.layer_label[0].values), [1.05,0.5], 
+                xycoords='axes fraction', fontsize=16)
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_pc1.pdf',
             bbox_inches='tight')
-
 
 #%%
 import husl
@@ -923,6 +894,7 @@ for layer, n in zip(opp_list,  range(m)):
     if n==m-1:
         ax.set_xticks([0,0.5,1])
         ax.set_xticklabels(['0', '0.5', '1'])
+        ax.set_xlabel('Normalized\nWeight Covariance')
         
         
     ax.hist(layer, normed=0, bins=100, range=[-1,1])
