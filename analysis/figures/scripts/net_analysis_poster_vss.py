@@ -363,12 +363,15 @@ clean_imshow(data)
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/spec_conv1.pdf', bbox_inches='tight')
 
 #%%%
-plt.figure(figsize=(5,4))
+plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
+
+plt.figure(figsize=(4,3))
 not_dc = spatial_freq['amp']>0
-plt.scatter(np.rad2deg(spatial_freq['ori'][not_dc]), spatial_freq['amp'][not_dc], alpha=0.5, edgecolor='k',color='none')
+plt.scatter(np.rad2deg(spatial_freq['ori'][not_dc]), spatial_freq['amp'][not_dc],
+            alpha=0.5, edgecolor='k',color='none')
 plt.xticks([0,90,180])
 plt.yticks([0,0.5,1])
-plt.xlabel('Orientation')
+plt.xlabel('Orientation (degrees)')
 plt.ylabel('Spatial Frequency')
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/ori_freq_plot.pdf')
@@ -377,13 +380,14 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/ori_freq_plot.pdf')
 lw = 4
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
-plt.figure(figsize=(6,5))
+plt.figure(figsize=(5,4))
 da_ratio.plot.hist(cumulative=True, bins=100, histtype='step', lw=lw)
 da_ratio[:48].plot.hist(cumulative=True, bins=100, histtype='step',range=[0,1], lw=lw)
 da_ratio[48:].plot.hist(cumulative=True, bins=100, histtype='step', range=[0,1], lw=lw)
 plt.legend(['All Units', 'Group 1', 'Group 2'], loc=2)
-plt.yticks([0,24,48, 72, 96])
-plt.xlabel('Chromaticity');plt.ylabel('Filter\nCount', rotation=0, ha='right')
+plt.yticks([0,48, 96])
+plt.xticks([0,0.5,1])
+plt.xlabel('Chromaticity (C)');plt.ylabel('Filter Count')
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/chrom_hist.pdf', bbox_inches='tight')
 #%%
@@ -432,7 +436,7 @@ cb1 = mpl.colorbar.ColorbarBase(ax, cmap=c_disc,
                                 orientation='horizontal',
                                 extend='max',
                                 ticks=np.linspace(vmin, vmax, N+1))
-cb1.set_label('Percent Variance')
+cb1.set_label('Percent Power')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/rfconv2.pdf', bbox_inches='tight')
 
 
@@ -459,7 +463,7 @@ for layer, n in zip(rf_list,  range(m)):
         #ax.set_ylabel('Count', labelpad=4) 
     if n==m-1:
         ax.set_xticklabels(['l.b.', '0.25', '0.5'])
-        ax.set_xlabel('Fraction RF\nVariance of Max')
+        ax.set_xlabel('Fraction RF\nPower of Max')
         
     _ = layer.groupby('unit').max().values
     ax.hist(_, normed=0, bins=50, range=[0,.5], align='right')
@@ -604,7 +608,8 @@ for i, freq in list(enumerate(freqs))[::4]:
                 c='k', alpha=0.2)
 plt.title('Sinusoidal Fit to Weights\nConv2 Group 1')
 plt.xticks(np.linspace(0,12,7))
-plt.legend(['75th', '50th', '25th'], title='Percentile', loc=1, borderaxespad=0)
+leg = plt.legend(['75th', '50th', '25th'], title='Percentile', loc=1, borderaxespad=0, fontsize=16)
+plt.setp(leg.get_title(),fontsize=16)
 plt.ylim(0,1);
 plt.yticks([0,0.5,1])
 plt.xlabel('Frequency (cycles/radian)')
@@ -703,20 +708,20 @@ n = 1
 
 plt.figure(figsize=(2,8))
 
-for layer, n in zip(frac_var_list,  range(m)):
+for layer, sv,  n in zip(frac_var_list, s_list,  range(m)):
     ax = plt.subplot(m, 1, n+1)
-
+    lb = sv.shape[1]**-1
     if n==0:
         #ax.set_ylabel('Count', labelpad=4) 
-        ax.set_xticks([0, 0.5 ,1])
+        ax.set_xticks([lb, 0.5 ,1])
         ax.set_xticklabels([])
     else:
-        ax.set_xticks([0, 0.5 ,1])
+        ax.set_xticks([lb, 0.5 ,1])
         ax.set_xticklabels([])
         
     if n==m-1:
-        ax.set_xticks([0,0.5,1])
-        ax.set_xticklabels(['0', '0.5', '1'])
+        ax.set_xticks([lb,0.5,1])
+        ax.set_xticklabels(['l.b.', '0.5', '1'])
         ax.set_xlabel(r'$\frac{\lambda_1^2}{\sum{\lambda_i^2}}$')
         
     ax.hist(layer.values, lw=3, range=[0,1], bins=50, cumulative=False, normed=0,)
