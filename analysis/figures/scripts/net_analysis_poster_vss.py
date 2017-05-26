@@ -365,7 +365,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/spec_conv1.pdf', bbo
 #%%%
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
-plt.figure(figsize=(4,3))
+plt.figure(figsize=(4,2.8))
 not_dc = spatial_freq['amp']>0
 plt.scatter(np.rad2deg(spatial_freq['ori'][not_dc]), spatial_freq['amp'][not_dc],
             alpha=0.5, edgecolor='k',color='none')
@@ -374,17 +374,17 @@ plt.yticks([0,0.5,1])
 plt.xlabel('Orientation (degrees)')
 plt.ylabel('Spatial Frequency')
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/ori_freq_plot.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/ori_freq_plot.pdf', bbox_inches='tight')
 
 #%%
 lw = 4
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
-plt.figure(figsize=(5,4))
+plt.figure(figsize=(4,3))
 da_ratio.plot.hist(cumulative=True, bins=100, histtype='step', lw=lw)
 da_ratio[:48].plot.hist(cumulative=True, bins=100, histtype='step',range=[0,1], lw=lw)
 da_ratio[48:].plot.hist(cumulative=True, bins=100, histtype='step', range=[0,1], lw=lw)
-plt.legend(['All Units', 'Group 1', 'Group 2'], loc=2)
+plt.legend(['All Units', 'Group 1', 'Group 2'], loc=2, fontsize=12)
 plt.yticks([0,48, 96])
 plt.xticks([0,0.5,1])
 plt.xlabel('Chromaticity (C)');plt.ylabel('Filter Count')
@@ -854,7 +854,8 @@ for example, ind in zip(examples, range(0,6,2)):
     
     ax.scatter((coefs_da[example, 0, ...]*scale)+shift, 
                 (coefs_da[example, 1, ...]*scale)+shift,
-                s=25, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1), edgecolors='k')
+                s=34, c=np.moveaxis(rgb.values.reshape(3, 25), 0, -1), 
+                edgecolors='k')
     [ax.spines[pos].set_visible(False) for pos in ['left','right','bottom','top']]
 
     ax.set_xticks([]);ax.set_yticks([])
@@ -1006,7 +1007,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/response_wts_correla
 #c_cond = c/np.sum(c, 0, keepdims=True)
 #plt.imshow(np.flipud(np.log(c_cond)))
 #%%
-subsamp =1 
+subsamp = 1 
 da = xr.open_dataset(top_dir + '/data/responses/bvlc_reference_caffenet_APC362_pix_width[32.0]_x_(74.0, 154.0, 21)_y_(74.0, 154.0, 21)_amp_None.nc')['resp']
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
 da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp'].squeeze()
@@ -1133,16 +1134,16 @@ def wts_av_cov(da, inclmean=True, rtrn_space=False):
 ti_yx, kurt_shapes_yx, kurt_yx, dens, nums, tot_vars_yx = ti_av_cov(da[:, :, :, :])
 #%%
 import pandas as pd
-ti_by_layer = []
+wt_cov_by_layer = []
 layer_labels = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6']
 for layer, layer_name in zip(netwts, layer_labels):
     print(layer[1].shape)
     if len(layer[1].shape)>2:
         _ = xr.DataArray(layer[1], dims=['unit', 'shapes', 'x', 'y'])
-        ti = wts_av_cov(_)
-        print(len(ti))
-        ti_by_layer.append(ti)
-wt_cov = np.concatenate(ti_by_layer)
+        wt_cov = wts_av_cov(_)
+        print(len(wt_cov))
+        wt_cov_by_layer.append(wt_cov)
+wt_covs = np.concatenate(ti_by_layer)
 
 non_k_var = (kurt_shapes_yx<42) * (kurt_shapes_yx>2) * (tot_vars_yx>0) 
 keys = ['layer_label', 'unit']
@@ -1181,7 +1182,7 @@ for i, layer in enumerate(layer_labels[1:]):
         plt.title(layer + '\n' + str(np.round(np.corrcoef(x,y)[0,1], 2)))
     plt.tight_layout()
     plt.grid()
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/34_pix_wt_cov_vs_TI.pdf', bbox_inches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/early_layer/pix_wt_cov_vs_TI.pdf', bbox_inches='tight')
 
 #%%
 the_input_names = ['norm1', 'relu2','relu3', 'relu4', 'pool5']
