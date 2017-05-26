@@ -209,7 +209,7 @@ def img2polar(img, center, final_radius, initial_radius = None, phase_width = 30
 
     return polar_img
 
-def PC_spatial_freq(da, nomean=True):
+def PC_spatial_freq(da, nomean=True, n=None):
     da = da.transpose('unit', 'chan', 'y', 'x')
     u_da, s_da, v_da = prin_comp_maps(da)
     v_da_0 = v_da[:, 0]
@@ -362,7 +362,51 @@ clean_imshow(data)
 #cb1.set_label('Fraction Amplitude')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/spec_conv1.pdf', bbox_inches='tight')
 
-#%%%
+#%%%upsampled spatial freq
+plt.figure(figsize=(4,4))
+u_da, s_da, v_da = prin_comp_maps(conv1)
+v_da_0 = v_da[:, 0] 
+v_da_0 = v_da_0 - v_da_0.mean(['x','y'])
+n_small = 11
+n_large = 121
+x = np.fft.fftfreq(n_small)
+y = x
+xv, yv = np.meshgrid(x, y)
+cart_small = xv*1j + yv
+a_small = np.abs(np.fft.fftshift(np.fft.fft2(v_da_0.values,s=(n_small, n_small))))
+
+x = np.fft.fftfreq(n_large)
+y = x
+xv, yv = np.meshgrid(x, y)
+cart_large = xv*1j + yv
+a_large = np.abs(np.fft.fftshift(np.fft.fft2(v_da_0.values,s=(n_large, n_large))))
+c_small = np.array([cart_small.ravel()[np.argmax(a_filt)] for a_filt in a_small])
+mag_small = np.abs(c)
+ang_small = np.rad2deg((np.angle(c) + np.pi)%np.pi)
+
+c_large = np.array([cart_large.ravel()[np.argmax(a_filt)] for a_filt in a_large])
+mag_large = np.abs(c)
+ang_large = np.rad2deg((np.angle(c) + np.pi)%np.pi)
+plt.plot(angle(c_large*(-c_small)), lw=1)
+#plt.scatter(ang_large, ang_small)
+#%%
+plt.scatter(ang, mag, alpha=0.5)
+plt.ylim(0,1)
+
+for i, a_filt in enumerate(a):
+    plt.subplot(10,10, i+1);
+    plt.imshow(a_filt)
+    plt.xticks([])
+    plt.yticks([])
+plt.figure() 
+for i, a_filt in enumerate(a):
+    plt.subplot(10,10, i+1);
+    plt.imshow(a_filt)
+    plt.xticks([])
+    plt.yticks([])
+
+
+#%%
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
 plt.figure(figsize=(4,3))
@@ -915,7 +959,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/deep_layers_covarian
 #ravel_wts = [netwtsd[layer].values.reshape((netwtsd[layer].shape[0],) +
 #             (np.product(netwtsd[layer].shape[1:]),)) 
 #            for layer in layer_names]
-one_pos = da.isel(x=5,y=5).squeeze()
+one_pos = da.isel(x=5, y=5).squeeze()
 layer_resp_list = [one_pos[:, one_pos.layer_label==layer] for layer in layer_names]
 #
 #num_lays = 7
