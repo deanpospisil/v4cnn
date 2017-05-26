@@ -30,12 +30,12 @@ net = caffe.Net(ann_dir + 'deploy_fixing_relu_saved.prototxt', ann_dir + ann_fn 
 layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 print([net.params[name][0].data.shape for name in layer_names])
 
-for i, name in enumerate(layer_names):
-    wts = net.params[name][0].data
-    wts_f = wts.reshape((wts.shape[0], np.product(wts.shape[1:])))
-    net.params[name][0].data[...] = np.random.permutation(wts_f.T).T.reshape(wts.shape)
-    net.save( ann_dir+ 'bvlc_caffenet_reference_shuffle_layer_'+ str(i) +'.caffemodel')
-    net.params[name][0].data[...] = wts
+#for i, name in enumerate(layer_names):
+#    wts = net.params[name][0].data
+#    wts_f = wts.reshape((wts.shape[0], np.product(wts.shape[1:])))
+#    net.params[name][0].data[...] = np.random.permutation(wts_f.T).T.reshape(wts.shape)
+#    net.save( ann_dir+ 'bvlc_caffenet_reference_shuffle_layer_'+ str(i) +'.caffemodel')
+#    net.params[name][0].data[...] = wts
 
 
 
