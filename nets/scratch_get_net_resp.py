@@ -27,7 +27,7 @@ import apc_model_fit as ac
 import d_curve as dc
 import d_img_process as imp
 import scipy.io as l
-
+#%%
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 response_folder = '/home/dean/Desktop/v4cnn/data/responses/'
 #response_folder = '/dean_temp/data/responses/'
@@ -37,10 +37,13 @@ base_image_nm = baseImageList[0]
 
 
 all_iter = [
-'bvlc_reference_caffenet',
-'bvlc_caffenet_reference_increase_wt_cov_0.5',
-'bvlc_caffenet_reference_increase_wt_cov_0.75',
-'bvlc_caffenet_reference_increase_wt_cov_0.95'
+'bvlc_caffenet_reference_increase_wt_cov_conv5_0.1',
+'bvlc_caffenet_reference_increase_wt_cov_conv5_0.95'
+
+#'bvlc_reference_caffenet',
+#'bvlc_caffenet_reference_increase_wt_cov_0.5',
+#'bvlc_caffenet_reference_increase_wt_cov_0.75',
+#'bvlc_caffenet_reference_increase_wt_cov_0.95'
 #'blvc_caffenet_iter_1',
 ]
 #base_name = 'bvlc_caffenet_reference_shuffle_layer_'
