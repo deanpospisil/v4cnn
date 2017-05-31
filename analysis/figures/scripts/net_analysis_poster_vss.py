@@ -362,49 +362,49 @@ clean_imshow(data)
 #cb1.set_label('Fraction Amplitude')
 plt.savefig(top_dir + '/analysis/figures/images/early_layer/spec_conv1.pdf', bbox_inches='tight')
 
-#%%%upsampled spatial freq
-plt.figure(figsize=(4,4))
-u_da, s_da, v_da = prin_comp_maps(conv1)
-v_da_0 = v_da[:, 0] 
-v_da_0 = v_da_0 - v_da_0.mean(['x','y'])
-n_small = 11
-n_large = 121
-x = np.fft.fftfreq(n_small)
-y = x
-xv, yv = np.meshgrid(x, y)
-cart_small = xv*1j + yv
-a_small = np.abs(np.fft.fftshift(np.fft.fft2(v_da_0.values,s=(n_small, n_small))))
-
-x = np.fft.fftfreq(n_large)
-y = x
-xv, yv = np.meshgrid(x, y)
-cart_large = xv*1j + yv
-a_large = np.abs(np.fft.fftshift(np.fft.fft2(v_da_0.values,s=(n_large, n_large))))
-c_small = np.array([cart_small.ravel()[np.argmax(a_filt)] for a_filt in a_small])
-mag_small = np.abs(c)
-ang_small = np.rad2deg((np.angle(c) + np.pi)%np.pi)
-
-c_large = np.array([cart_large.ravel()[np.argmax(a_filt)] for a_filt in a_large])
-mag_large = np.abs(c)
-ang_large = np.rad2deg((np.angle(c) + np.pi)%np.pi)
-plt.plot(angle(c_large*(-c_small)), lw=1)
-#plt.scatter(ang_large, ang_small)
+##%%%upsampled spatial freq
+#plt.figure(figsize=(4,4))
+#u_da, s_da, v_da = prin_comp_maps(conv1)
+#v_da_0 = v_da[:, 0] 
+#v_da_0 = v_da_0 - v_da_0.mean(['x','y'])
+#n_small = 11
+#n_large = 121
+#x = np.fft.fftfreq(n_small)
+#y = x
+#xv, yv = np.meshgrid(x, y)
+#cart_small = xv*1j + yv
+#a_small = np.abs(np.fft.fftshift(np.fft.fft2(v_da_0.values,s=(n_small, n_small))))
+#
+#x = np.fft.fftfreq(n_large)
+#y = x
+#xv, yv = np.meshgrid(x, y)
+#cart_large = xv*1j + yv
+#a_large = np.abs(np.fft.fftshift(np.fft.fft2(v_da_0.values,s=(n_large, n_large))))
+#c_small = np.array([cart_small.ravel()[np.argmax(a_filt)] for a_filt in a_small])
+#mag_small = np.abs(c)
+#ang_small = np.rad2deg((np.angle(c) + np.pi)%np.pi)
+#
+#c_large = np.array([cart_large.ravel()[np.argmax(a_filt)] for a_filt in a_large])
+#mag_large = np.abs(c)
+#ang_large = np.rad2deg((np.angle(c) + np.pi)%np.pi)
+##plt.plot(angle(c_large*(-c_small)), lw=1)
+##plt.scatter(ang_large, ang_small)
 #%%
-plt.scatter(ang, mag, alpha=0.5)
-plt.ylim(0,1)
-
-for i, a_filt in enumerate(a):
-    plt.subplot(10,10, i+1);
-    plt.imshow(a_filt)
-    plt.xticks([])
-    plt.yticks([])
-plt.figure() 
-for i, a_filt in enumerate(a):
-    plt.subplot(10,10, i+1);
-    plt.imshow(a_filt)
-    plt.xticks([])
-    plt.yticks([])
-
+#plt.scatter(ang, mag, alpha=0.5)
+#plt.ylim(0,1)
+#
+#for i, a_filt in enumerate(a):
+#    plt.subplot(10,10, i+1);
+#    plt.imshow(a_filt)
+#    plt.xticks([])
+#    plt.yticks([])
+#plt.figure() 
+#for i, a_filt in enumerate(a):
+#    plt.subplot(10,10, i+1);
+#    plt.imshow(a_filt)
+#    plt.xticks([])
+#    plt.yticks([])
+#
 
 #%%
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
@@ -1052,7 +1052,7 @@ plt.savefig(top_dir + '/analysis/figures/images/early_layer/response_wts_correla
 #plt.imshow(np.flipud(np.log(c_cond)))
 #%%
 subsamp = 1 
-da = xr.open_dataset(top_dir + '/data/responses/bvlc_reference_caffenet_APC362_pix_width[32.0]_x_(74.0, 154.0, 21)_y_(74.0, 154.0, 21)_amp_None.nc')['resp']
+#da = xr.open_dataset(top_dir + '/data/responses/bvlc_reference_caffenet_APC362_pix_width[32.0]_x_(74.0, 154.0, 21)_y_(74.0, 154.0, 21)_amp_None.nc')['resp']
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
 da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp'].squeeze()
 
@@ -1064,7 +1064,7 @@ da = da.load()
 da = da - da[:, 0, :, :] #subtract off baseline
 da = da[:, 1:, ...] #get rid of baseline shape   
 from scipy.stats import kurtosis
-#%%
+
 def ti_av_cov(da):
     dims = da.coords.dims
     #get the da in the right shape
@@ -1187,7 +1187,7 @@ for layer, layer_name in zip(netwts, layer_labels):
         wt_cov = wts_av_cov(_)
         print(len(wt_cov))
         wt_cov_by_layer.append(wt_cov)
-wt_covs = np.concatenate(ti_by_layer)
+wt_covs = np.concatenate(wt_cov_by_layer)
 
 non_k_var = (kurt_shapes_yx<42) * (kurt_shapes_yx>2) * (tot_vars_yx>0) 
 keys = ['layer_label', 'unit']
