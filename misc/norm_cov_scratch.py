@@ -238,8 +238,8 @@ for resp_av_cov, wt_av_cov in zip(resp_av_covs, wt_av_covs):
             plt.title(layer + '\nr = ' + str(np.round(np.corrcoef(x,y)[0,1], 2)))
     
         else:
-            plt.yticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_yticklabels(['','','','',''])
-            plt.xticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_xticklabels(['','','','',''])
+            plt.yticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_yticklabels(['','','','',''])
+            plt.xticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_xticklabels(['','','','',''])
             plt.title(layer + '\n' + str(np.round(np.corrcoef(x,y)[0,1], 2)))
         plt.tight_layout()
         plt.grid()
