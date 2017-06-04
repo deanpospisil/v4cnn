@@ -176,7 +176,16 @@ adj_resps=[
 'bvlc_caffenet_reference_increase_wt_cov_0.75pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
 'bvlc_caffenet_reference_increase_wt_cov_0.95pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
 'bvlc_caffenet_reference_increase_wt_cov_conv5_0.1pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
-'bvlc_caffenet_reference_increase_wt_cov_conv5_0.95pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
+'bvlc_caffenet_reference_increase_wt_cov_conv5_0.95pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.1pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.95pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.2pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.3pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.4pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.5pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.6pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.7pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.8pix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc',
 ]
 
 
@@ -186,7 +195,16 @@ adj_netwts = [
 'netwtsd_0.75.p',    
 'netwtsd_0.95.p',
 'netwtsd_conv5_0.1.p',
-'netwtsd_conv5_0.95.p'] 
+'netwtsd_conv5_0.95.p',
+'netwtsd_fc6_0.1.p',
+'netwtsd_fc6_0.95.p',
+'netwtsd_fc6_0.2.p',
+'netwtsd_fc6_0.3.p',
+'netwtsd_fc6_0.4.p',
+'netwtsd_fc6_0.5.p',
+'netwtsd_fc6_0.6.p',
+'netwtsd_fc6_0.7.p',
+'netwtsd_fc6_0.8.p',] 
 #%%
 wt_av_covs = []
 resp_av_covs = []
@@ -201,7 +219,7 @@ for netwts, net_name in zip(adj_netwts[:], adj_resps[:]):
     da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp']
     da = da.squeeze()
     da = da.transpose('unit','shapes', 'x', 'y')
-    da = da[:5472:1]
+    da = da[:7808:1]
     da = da - da[:, 0, :, :] #subtract off baseline
     da = da[:, 1:, ...] #get rid of baseline shape 
     

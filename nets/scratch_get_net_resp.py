@@ -37,8 +37,15 @@ base_image_nm = baseImageList[0]
 
 
 all_iter = [
-'bvlc_caffenet_reference_increase_wt_cov_conv5_0.1',
-'bvlc_caffenet_reference_increase_wt_cov_conv5_0.95'
+
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.2',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.3',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.4',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.5',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.6',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.7',
+'bvlc_caffenet_reference_increase_wt_cov_fc6_0.8',
+
 
 #'bvlc_reference_caffenet',
 #'bvlc_caffenet_reference_increase_wt_cov_0.5',

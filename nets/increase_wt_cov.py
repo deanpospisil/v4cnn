@@ -146,13 +146,18 @@ net = caffe.Net(net_proto_name, net_wts_name, caffe.TEST)
 layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 print([net.params[name][0].data.shape for name in layer_names])
 
-layer_names = ['conv5',]
-for r in [0.10, 0.95]:
+layer_names = ['fc6',]
+for r in [  0.5, 0.6, 0.7, 0.8 ]:
     for i, name in enumerate(layer_names):
         wts = netwtsd[name]
-        net.params[name][0].data[...] = adjust_layer_wtcov(wts, r)
-        net.save(ann_dir + 'bvlc_caffenet_reference_increase_wt_cov_conv5_'+ str(r) + '.caffemodel')
-        net.params[name][0].data[...] = wts
+        
+        if name == 'fc6':
+            adj_vals = adjust_layer_wtcov(wts, r).values
+            net.params[name][0].data[...] = adj_vals.reshape((adj_vals.shape[0], np.product(adj_vals.shape[1:])))
+        else:
+            net.params[name][0].data[...] = adjust_layer_wtcov(wts, r).values
+            
+        net.save(ann_dir + 'bvlc_caffenet_reference_increase_wt_cov_fc6_'+ str(r) + '.caffemodel')
 #%%
 #from scipy.stats import kurtosis
 #def ti_av_cov(da):
