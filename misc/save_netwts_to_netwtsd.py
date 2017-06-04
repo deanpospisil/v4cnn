@@ -19,13 +19,25 @@ import caffe
 net_proto_name = ann_dir + 'deploy_fixing_relu_saved.prototxt'
 
 
-ann_fns = ['bvlc_reference_caffenet',
-           'bvlc_caffenet_reference_increase_wt_cov_0.5',
-           'bvlc_caffenet_reference_increase_wt_cov_0.75',
-           'bvlc_caffenet_reference_increase_wt_cov_0.95',
-           'bvlc_caffenet_reference_increase_wt_cov_conv5_0.1',
-           'bvlc_caffenet_reference_increase_wt_cov_conv5_0.95']
-for label, ann_fn in zip(['orig', '0.5', '0.75', '0.95', 'conv5_0.1', 'conv5_0.95'], ann_fns):
+ann_fns = [
+#        'bvlc_reference_caffenet',
+#           'bvlc_caffenet_reference_increase_wt_cov_0.5',
+#           'bvlc_caffenet_reference_increase_wt_cov_0.75',
+#           'bvlc_caffenet_reference_increase_wt_cov_0.95',
+#           'bvlc_caffenet_reference_increase_wt_cov_conv5_0.1',
+#           'bvlc_caffenet_reference_increase_wt_cov_conv5_0.95',
+#           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.1',
+#           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.95',
+           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.2',
+           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.3',
+           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.4',
+           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.5',
+           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.6',
+           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.7',
+           'bvlc_caffenet_reference_increase_wt_cov_fc6_0.8',]
+labels_models = ['orig', '0.5', '0.75', '0.95', 'conv5_0.1', 'conv5_0.95', 'fc6_0.1', 'fc6_0.95']
+labels_models = ['fc6_0.2', 'fc6_0.3','fc6_0.4','fc6_0.5', 'fc6_0.6', 'fc6_0.7', 'fc6_0.8']
+for label, ann_fn in zip(labels_models[:], ann_fns[:]):
     net_wts_name = ann_dir + ann_fn + '.caffemodel'
     net = caffe.Net(net_proto_name, net_wts_name, caffe.TEST)
     layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
@@ -57,13 +69,13 @@ for label, ann_fn in zip(['orig', '0.5', '0.75', '0.95', 'conv5_0.1', 'conv5_0.9
                coords=[range(n) for n in np.shape(layer)])
         netwtsd[name].coords['unit'] = _ 
     pickle.dump(netwtsd, open(top_dir + '/nets/netwtsd_'+ label +'.p', "wb" ) )
-#%%
-goforit=True      
-if 'netwtsd' not in locals() or goforit:
-    with open(top_dir + '/nets/netwtsd.p', 'rb') as f:    
-        try:
-            netwtsd = pickle.load(f, encoding='latin1')
-        except:
-            netwtsd = pickle.load(f)
-    
+##%%
+#goforit=True      
+#if 'netwtsd' not in locals() or goforit:
+#    with open(top_dir + '/nets/netwtsd.p', 'rb') as f:    
+#        try:
+#            netwtsd = pickle.load(f, encoding='latin1')
+#        except:
+#            netwtsd = pickle.load(f)
+#    
     
