@@ -180,8 +180,8 @@ resps = an[0][net_num]
 layer_name = 'fc6'  
 x = wts[wts.layer_label==wt_layer_name_dict[layer_name]]
 y = resps[resps.layer_label.values.astype(str)==layer_name]
-bins1 = np.linspace(0, 0.5, 100)
-bins2 = bins1+0.01
+bins1 = np.linspace(0.1, 0.4, 5)
+bins2 = bins1 + bins1[1] - bins1[0]
 binx_mean = []
 biny_mean = []
 biny_sd = []
@@ -197,7 +197,7 @@ for bin1, bin2 in zip(bins1, bins2):
         biny_mean.append(np.mean(y_in_bin))
         biny_sd.append(np.std(y_in_bin))
 
-
+#%%
 plt.errorbar(binx_mean, biny_mean, biny_sd, color='b')
         
         
