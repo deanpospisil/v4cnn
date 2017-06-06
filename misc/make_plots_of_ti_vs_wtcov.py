@@ -55,7 +55,7 @@ wt_layer_name_dict = {'relu1':'conv1', 'norm1':'conv1', 'pool1':'conv1', 'conv1'
                       'relu4':'conv4', 'conv4':'conv4',
                       'relu5':'conv5', 'conv5':'conv5', 'pool5':'conv5',
                       'fc6':'fc6', 'relu6':'fc6'}
-def ti_wt_cov_scatters(net_nums, layer_names, an):
+def ti_wt_cov_scatters(net_nums, layer_names, an, alpha=1, figsize=None):
 #net_nums = range(len(an[1][:]))
     i = 0 
     wt_layer_name_dict = {'relu1':'conv1', 'norm1':'conv1', 'pool1':'conv1', 'conv1':'conv1',
@@ -64,7 +64,10 @@ def ti_wt_cov_scatters(net_nums, layer_names, an):
                       'relu4':'conv4', 'conv4':'conv4',
                       'relu5':'conv5', 'conv5':'conv5', 'pool5':'conv5',
                       'fc6':'fc6', 'relu6':'fc6'} 
-    fig = plt.figure(figsize=(len(layer_names)*2, len(net_nums)*2))
+    if figsize is None:
+        fig = plt.figure(figsize=(len(layer_names)*2, len(net_nums)*2))
+    else:
+        fig = plt.figure(figsize=(figsize))
     for j, net_num in enumerate(net_nums):
         wts = an[1][net_num]
         resps = an[0][net_num]  
@@ -73,7 +76,7 @@ def ti_wt_cov_scatters(net_nums, layer_names, an):
             plt.subplot(len(net_nums), len(layer_names), i)
             x = wts[wts.layer_label==wt_layer_name_dict[layer_name]]
             y = resps[resps.layer_label.values.astype(str)==layer_name]
-            plt.scatter(x, y, s=2, edgecolors='none', color='k')
+            plt.scatter(x, y, s=2, edgecolors='none', color='k', alpha=alpha)
             plt.axis('square')
             plt.xlim(-0.1,1);plt.ylim(-0.1,1)
             plt.yticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_yticklabels(['','','','',''])
@@ -174,13 +177,18 @@ plt.axis('square')
 plt.xlim(-0.1,1);plt.ylim(-0.1,1)
 
 #%%
+net_nums = [0,]
+layer_names = ['fc6',]
+ti_wt_cov_scatters(net_nums, layer_names, an, alpha=0.2, figsize=(4,4)) 
+
+
 net_num = 0
 wts = an[1][net_num]
 resps = an[0][net_num]
 layer_name = 'fc6'  
-x = wts[wts.layer_label==wt_layer_name_dict[layer_name]]
-y = resps[resps.layer_label.values.astype(str)==layer_name]
-bins1 = np.linspace(0.1, 0.4, 5)
+x = wts[wts.layer_label==wt_layer_name_dict[layer_name]].values
+y = resps[resps.layer_label.values.astype(str)==layer_name].values
+bins1 = np.linspace(0., 0.4, 10)
 bins2 = bins1 + bins1[1] - bins1[0]
 binx_mean = []
 biny_mean = []
@@ -189,20 +197,31 @@ i = 0
 for bin1, bin2 in zip(bins1, bins2):
     i = i+1
     print(i)
-    x_ind = (bin1>=x)*(bin2<x)
-    if sum(x_ind)>0:
+    x_ind = (bin1<=x)*(bin2>x)
+    
+    if np.sum(x_ind)>0:
         x_in_bin = x[x_ind]
         y_in_bin = y[x_ind]
         binx_mean.append((bin1+bin2)/2.)
         biny_mean.append(np.mean(y_in_bin))
         biny_sd.append(np.std(y_in_bin))
 
-#%%
-plt.errorbar(binx_mean, biny_mean, biny_sd, color='b')
-        
-        
-        
-    
+plt.errorbar(binx_mean, biny_mean, biny_sd, color='k')
+x = np.array(x_lst)
+
+y = np.array(y_lst)[:, 0]
+y_err = np.array(y_lst)[:, 1]
+plt.errorbar(x, y, y_err, color='c', alpha=0.8)
+plt.plot(x, y + y_err, color='c', alpha=0.4)
+plt.plot(x, y - y_err, color='c', alpha=0.4)
+
+plt.axis('square')
+plt.xlim(-0.1,1);plt.ylim(-0.1,1)        
+plt.annotate('Wt. Cov. Adj.', [0.5,0.5], color='c', fontsize=12)    
+plt.annotate('Wt. Cov. Orig.', [0.15,0.1], color='k', fontsize=12) 
+   
+plt.savefig(top_dir+'/analysis/figures/images/ti/fc6_adj_vs_orig.pdf', bbox_inches='tight')
+  
     
     
 
