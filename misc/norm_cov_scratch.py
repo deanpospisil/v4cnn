@@ -219,7 +219,7 @@ for netwts, net_name in zip(adj_netwts[:], adj_resps[:]):
     da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp']
     da = da.squeeze()
     da = da.transpose('unit','shapes', 'x', 'y')
-    da = da[:7808:1]
+    da = da[:11904]
     da = da - da[:, 0, :, :] #subtract off baseline
     da = da[:, 1:, ...] #get rid of baseline shape 
     
@@ -229,7 +229,7 @@ for netwts, net_name in zip(adj_netwts[:], adj_resps[:]):
     wt_av_covs.append(wt_av_cov)
     resp_av_covs.append(resp_av_cov)
 
-pickle.dump([resp_av_covs, wt_av_covs], open(top_dir + '/data/an_results/ti_vs_wt_cov_exps_.p', "wb" ) )
+pickle.dump([resp_av_covs, wt_av_covs], open(top_dir + '/data/an_results/ti_vs_wt_cov_exps_all_lays.p', "wb" ) )
 
 ##%%
 #layer_labels = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6']
