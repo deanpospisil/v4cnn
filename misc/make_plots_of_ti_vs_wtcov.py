@@ -10,6 +10,8 @@ import xarray as xr
 import os, sys
 import matplotlib.pyplot as plt
 import pickle
+from scipy.stats import linregress
+
 layer_labels_b = [b'conv2', b'conv3', b'conv4', b'conv5', b'fc6']
 layer_labels = ['conv2', 'conv3', 'conv4', 'conv5', 'fc6']
 
@@ -77,6 +79,11 @@ def ti_wt_cov_scatters(net_nums, layer_names, an, alpha=1, figsize=None):
             x = wts[wts.layer_label==wt_layer_name_dict[layer_name]]
             y = resps[resps.layer_label.values.astype(str)==layer_name]
             plt.scatter(x, y, s=2, edgecolors='none', color='k', alpha=alpha)
+            slope, intercept, rvalue, pvalue, stderr = linregress(x,y)
+            plt.plot([np.min(x), np.max(x)], [(np.min(x)*slope+intercept), np.max(x)*slope+intercept])
+            plt.scatter([-0.1,],[np.median(y),], color='r', s=10)
+            plt.scatter([np.median(x),], [-0.1,], color='r', s=10)
+
             plt.axis('square')
             plt.xlim(-0.1,1);plt.ylim(-0.1,1)
             plt.yticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_yticklabels(['','','','',''])
@@ -119,6 +126,10 @@ def ti_ti_cov_scatters(net_nums1, net_nums2,  layer_names, an):
             plt.yticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_yticklabels(['','','','',''])
             plt.xticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_xticklabels(['','','','',''])
             
+            plt.scatter([-0.1,],[np.median(y),], color='r', s=12)
+            plt.scatter([np.median(x),], [-0.1,], color='r', s=12)
+            plt.scatter([np.median(x),],[np.median(y),], color='r', s=12)
+            
             plt.title(str(np.round(np.corrcoef(x,y)[0,1], 2)))
             if i == 1:
                 plt.yticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_yticklabels(['0','','0.5','','1'])
@@ -131,18 +142,25 @@ def ti_ti_cov_scatters(net_nums1, net_nums2,  layer_names, an):
         
     return fig
 #%%
+imtype ='.png'
+net_nums = [0,]
+layer_names = ['conv2', 'conv3','conv4', 'conv5', 'fc6']
+ti_wt_cov_scatters(net_nums, layer_names, an)  
+ 
+plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_orig_just_conv' + imtype, bbox_inches='tight')
+#%%
 net_nums = [0,]
 layer_names = ['conv2', 'relu2','pool2', 'norm2', 'conv3','relu3', 
                'conv4','relu4', 'conv5', 'relu5','pool5', 'fc6', 'relu6']
 ti_wt_cov_scatters(net_nums, layer_names, an)  
  
-plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_orig.pdf', bbox_inches='tight')    
+plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_orig' + imtype, bbox_inches='tight')    
 #%%
 net_nums = [0, 1, 2, 3]
 layer_names = ['conv2', 'conv3','conv4', 'conv5', 'fc6']
 ti_wt_cov_scatters(net_nums,layer_names, an) 
 plt.tight_layout()
-plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_conv2_adj.png', bbox_inches='tight')    
+plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_conv2_adj' + imtype, bbox_inches='tight')    
 
 #%%
 net_nums1 = [0, 0,]
@@ -151,7 +169,7 @@ layer_names = ['conv2', 'conv3','conv4', 'conv5', 'fc6']
 
 ti_ti_cov_scatters(net_nums1, net_nums2,  layer_names, an)
 plt.tight_layout()
-plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_conv2_adj_ti_comp.png', bbox_inches='tight')
+plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_conv2_adj_ti_comp' + imtype, bbox_inches='tight')
 
 #%%%
 net_nums = [6,8,9,10,11,12,13,14,7]
@@ -196,7 +214,6 @@ biny_sd = []
 i = 0
 for bin1, bin2 in zip(bins1, bins2):
     i = i+1
-    print(i)
     x_ind = (bin1<=x)*(bin2>x)
     
     if np.sum(x_ind)>0:
@@ -220,11 +237,15 @@ plt.xlim(-0.1,1);plt.ylim(-0.1,1)
 plt.annotate('Wt. Cov. Adj.', [0.5,0.5], color='c', fontsize=12)    
 plt.annotate('Wt. Cov. Orig.', [0.15,0.1], color='k', fontsize=12) 
    
-plt.savefig(top_dir+'/analysis/figures/images/ti/fc6_adj_vs_orig.pdf', bbox_inches='tight')
+plt.savefig(top_dir+'/analysis/figures/images/ti/fc6_adj_vs_orig' + imtype, bbox_inches='tight')
   
-    
-    
 
+    
+#%%
+net_num = 0
+wts = an[1][net_num]
+resps = an[0][net_num]
+netwtsd['conv3']
 
 
 

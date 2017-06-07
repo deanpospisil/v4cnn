@@ -923,7 +923,7 @@ else:
 plt.style.use(top_dir + '/poster/dean_poster.mplstyle')
 
 opp_list = [spatial_opponency(netwtsd[layer]) for layer in layer_names]
-
+#%%
 m = len(opp_list)
 n = 1
 
@@ -948,6 +948,7 @@ for layer, n in zip(opp_list,  range(m)):
         
         
     ax.hist(layer, normed=0, bins=100, range=[-1,1])
+    ax.scatter([np.median(layer),], [0,], color='r', s=10)
     ax.set_xlim(-0.2,1)
 
 
