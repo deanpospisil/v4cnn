@@ -17,7 +17,7 @@ layer_labels = ['conv2', 'conv3', 'conv4', 'conv5', 'fc6']
 
 
 top_dir = os.getcwd().split('v4cnn')[0]
-top_dir = top_dir + 'v4cnn'
+top_dir = top_dir + '/v4cnn'
 
 with open(top_dir + '/data/an_results/ti_vs_wt_cov_exps_all_lays.p', 'rb') as f:    
     try:
@@ -247,18 +247,20 @@ wts = an[1][net_num]
 resps = an[0][net_num]
 netwtsd['conv3']
 
+#%%
+net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
 
+da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp'].load()
+#%%
+da = da.squeeze()
+da = da.transpose('unit','shapes', 'x', 'y')
+da = da[:11904]
+da = da - da[:, 0, :, :] #subtract off baseline
+da = da[:, 1:, ...] #get rid of baseline shape 
 
-
-
-
-
-
-
-
-
-
-
+#%%
+x = da.coords['x'].values
+y = da.coords['y'].values
 
 
     

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pickle
 
 top_dir = os.getcwd().split('v4cnn')[0]
-top_dir = top_dir + 'v4cnn'
+top_dir = top_dir + '/v4cnn'
 def norm_avcov(x):
     x = x.astype(np.float64)
     
@@ -83,7 +83,6 @@ def kurtosis_da(resp):
     dims = resp.coords.dims   
     
     if ('x' in resp) and ('y' in dims):
-        resp = resp.transpose('unit','shapes', 'x', 'y')
     elif ('x' in dims):
         resp = resp.transpose('unit', 'shapes', 'x')
     elif ('y' in dims):
@@ -231,58 +230,3 @@ for netwts, net_name in zip(adj_netwts[:], adj_resps[:]):
 
 pickle.dump([resp_av_covs, wt_av_covs], open(top_dir + '/data/an_results/ti_vs_wt_cov_exps_all_lays.p', "wb" ) )
 
-##%%
-#layer_labels = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6']
-#
-#for resp_av_cov, wt_av_cov in zip(resp_av_covs, wt_av_covs):
-#    plt.figure(figsize=(12,3))
-#
-#    for i, layer in enumerate(layer_labels[1:]):
-#        n_plots = len(layer_labels)
-#        plt.subplot(1, n_plots, i+1)
-#        layer_labels_ind = np.array(map(str, wt_av_cov.coords['layer_label'].values))
-#        x = wt_av_cov[layer_labels_ind==layer].values
-#        y = resp_av_cov[layer_labels_ind==layer].values
-#        if i<4:
-#            s=4
-#        else:
-#            s=1
-#        plt.scatter(x, y, s=s, color='k', edgecolors='none')
-#        #plt.semilogx()
-#        plt.xlim(-0.2,1.02);plt.ylim(-0.2,1.01);
-#        if i==0:
-#            plt.xlabel('Weight Covariance'); plt.ylabel('T.I.', rotation=0, va='center',ha='right', labelpad=15)
-#        if layer == 'conv2':
-#            plt.yticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_yticklabels(['0','','0.5','','1'])
-#            plt.xticks([0,0.25,0.5, 0.75, 1]);plt.gca().set_xticklabels(['0','','0.5','','1'])
-#            plt.title(layer + '\nr = ' + str(np.round(np.corrcoef(x,y)[0,1], 2)))
-#    
-#        else:
-#            plt.yticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_yticklabels(['','','','',''])
-#            plt.xticks([0, 0.25, 0.5, 0.75, 1]);plt.gca().set_xticklabels(['','','','',''])
-#            plt.title(layer + '\n' + str(np.round(np.corrcoef(x,y)[0,1], 2)))
-#        plt.tight_layout()
-#        plt.grid()
-##%%
-#plt.figure(figsize=(4,4))
-#plt.scatter(resp_av_covs[0][layer_labels_ind=='conv5'], 
-#            resp_av_covs[-1][layer_labels_ind=='conv5'], s=1)
-#plt.xlim(-0.1, 1);plt.ylim(-0.1, 1)
-#plt.xlabel('Conv2 Orig. TI')
-#plt.ylabel('Conv2 Adj. TI')
-#plt.plot([0,1],[0,1])
-##%%
-#plt.hist(resp_av_covs[0][layer_labels_ind=='conv2'], cumulative=True, bins=100, histtype='step')
-#plt.hist(resp_av_covs[3][layer_labels_ind=='conv2'], cumulative=True, bins=100, histtype='step')
-#plt.legend(['orig','adj'], loc=5)
-#
-##%%
-#
-#plt.scatter(resp_av_covs[0][layer_labels_ind=='fc6'], 
-#            resp_av_covs[-1][layer_labels_ind=='fc6'], s=1)
-#plt.xlim(-0.1, 1);plt.ylim(-0.1, 1)
-#plt.xlabel('Conv2 Orig. TI')
-#plt.ylabel('Conv2 Adj. TI')
-#plt.plot([0,1],[0,1])
-#plt.axis('equal')
-#
