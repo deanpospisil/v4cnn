@@ -11,8 +11,8 @@ import warnings
 import os, sys
 from collections import OrderedDict as ord_d
 
-top_dir = os.getcwd().split('net_code')[0]
-sys.path.append(top_dir + 'xarray')
+top_dir = os.getcwd().split('v4cnn')[0]
+sys.path.append(top_dir + 'xarray/')
 top_dir = top_dir+ 'net_code/'
 sys.path.append(top_dir)
 sys.path.append(top_dir + 'common')

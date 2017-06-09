@@ -11,7 +11,10 @@ import os, sys
 import matplotlib.pyplot as plt
 import pickle
 from scipy.stats import linregress
-
+if sys.platform == 'linux2': 
+    data_dir = '/loc6tb/dean/'
+else:
+    data_dir = top_dir
 layer_labels_b = [b'conv2', b'conv3', b'conv4', b'conv5', b'fc6']
 layer_labels = ['conv2', 'conv3', 'conv4', 'conv5', 'fc6']
 
@@ -250,17 +253,24 @@ netwtsd['conv3']
 #%%
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
 
-da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp'].load()
+da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp'].load()
 #%%
 da = da.squeeze()
 da = da.transpose('unit','shapes', 'x', 'y')
 da = da[:11904]
+
 da = da - da[:, 0, :, :] #subtract off baseline
 da = da[:, 1:, ...] #get rid of baseline shape 
+
 
 #%%
 x = da.coords['x'].values
 y = da.coords['y'].values
+
+x_dist = x[:, np.newaxis] - x[:, np.newaxis].T
+y_dist = y[:, np.newaxis] - y[:, np.newaxis].T
+dist_mat = (x_dist**2 + y_dist**2)**0.5
+stim_diam = 32
 
 
     

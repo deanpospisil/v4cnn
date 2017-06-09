@@ -125,13 +125,13 @@ def cartesian_axes(ax, x_line=True, y_line=True, unity=False):
     
     if x_line:
         #ax.spines['bottom'].set_position('center')
-        ax.plot([xlim[0], xlim[1]], [0, 0], color=more_grey,lw=2, alpha=0.5)
+        ax.plot([xlim[0], xlim[1]], [0, 0], color=more_grey,lw=1, alpha=0.5)
     if y_line:
         #ax.spines['left'].set_position('center')
-        ax.plot([0, 0], [ylim[0], ylim[1]], color=more_grey,lw=2,alpha=0.5)
+        ax.plot([0, 0], [ylim[0], ylim[1]], color=more_grey,lw=1,alpha=0.5)
     
     if unity:
-        ax.plot(xlim, xlim, color=more_grey, lw=2,alpha=0.5)
+        ax.plot(xlim, xlim, color=more_grey, lw=1,alpha=0.5)
 
     
         
@@ -334,10 +334,15 @@ no_blank_image = trans_img_stack[1:]
 a = np.hstack((range(14), range(18, 318)));a = np.hstack((a, range(322, 370)))
 no_blank_image = no_blank_image[a]/255.
 #%%
+if sys.platform == 'linux2': 
+    data_dir = '/loc6tb/dean/'
+else:
+    data_dir = top_dir
 
 goforit = 1
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
+    
     v4_name = 'V4_362PC2001'
     v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
     v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
@@ -370,12 +375,14 @@ if 'cnn_an' not in locals() or goforit:
     v4_resp_apc = v4_resp_apc.transpose('shapes','unit')
     for unit in range(len(v4_resp_apc_null.coords['unit'])):
         v4_resp_apc_null[:, unit] = np.random.permutation(v4_resp_apc[:, unit].values)
-
+        
     null_v4 = process_V4(v4_resp_apc_null, v4_resp_ti_null, dmod)
     
     cnn_names =['bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',]
-    
-    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp']
+    if sys.platform == 'linux2':
+        da = xr.open_dataset(data_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp']
+    else:
+        da = xr.open_dataset(top_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp']
     da = da.sel(unit=slice(0, None, 1)).squeeze()
     middle = np.round(len(da.coords['x'])/2.).astype(int)
     da_0 = da.sel(x=da.coords['x'][middle])
@@ -605,19 +612,25 @@ for leg in hist_dat_leg:
     leg['labelspacing'] = 0
 for i, ax_ind in enumerate(hist_pos):
     ax = ax_list[ax_ind]
-    if not (ax_ind==hist_pos[-1]):
+    if i==0:
+        colors = ['r','g','b','m','c', 'k', '0.5']
+    elif i==1:
         colors = ['k','g','b','m','c', 'k', '0.5']
     else:
         colors = cm.copper(np.linspace(0,1,len(hist_dat[i])))
         colors[-1] = [1, 0, 0, 0]
-        colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
-                  [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
-        colors = colors / np.array([[255,255,255,1]])
+        #colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
+                  #[54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
+        #colors = colors / np.array([[255,255,255,1]])
         
 
     for apc_vals, color in zip(hist_dat[i], colors):
         x = apc_vals.dropna().values
-        y_c, bins_c = d_hist(ax, np.sqrt(x), cumulative=True, color=color, alpha=0.75, lw=2)   
+        if i==2:
+            lw=1
+        else:
+            lw=2
+        y_c, bins_c = d_hist(ax, np.sqrt(x), cumulative=True, color=color, alpha=0.75, lw=lw)   
     bins_c = np.concatenate([apc_vals.dropna().values for apc_vals in hist_dat[i]]).ravel()
     beautify(ax, spines_to_remove=['top','right'])
     ax.set_xticks([0,0.5,1])
@@ -641,22 +654,21 @@ for i, ax_ind in enumerate(hist_pos):
     
 ax_list[0].set_title('Cumulative Distribution', fontsize=12) 
 ax_list[0].set_ylabel('Fraction < r', labelpad=0, fontsize=12) 
-ax_list[0].text(0.6, 0.1, 'V4', transform=ax_list[0].transAxes)
+ax_list[0].text(0.6, 0.1, 'V4', transform=ax_list[0].transAxes, fontsize=12)
 ax_list[0].text(0.05,0.6, 'Shuffled', transform=ax_list[0].transAxes, color='g', rotation=80)
-ax_list[0].text(0.4,0.6, 'Unshuffled', transform=ax_list[0].transAxes, color='k',rotation=45)
+ax_list[0].text(0.4,0.6, 'Unshuffled', transform=ax_list[0].transAxes, color='r',rotation=45)
 
 
 ax_list[3].text(0.5, 0.1, 'CNN all layers', transform=ax_list[3].transAxes)
-ax_list[3].text(0.2,0.75, 'Untrained', transform=ax_list[3].transAxes, color='b', rotation=60)
+ax_list[3].text(0.24,0.75, 'Untrained', transform=ax_list[3].transAxes, color='b', rotation=60)
 
 ax_list[6].text(0.5, 0.1, 'CNN by layer', transform=ax_list[6].transAxes)
-ax_list[6].text(0.22,0.5, 'conv1',transform=ax_list[6].transAxes, color=colors[0])
-ax_list[6].text(0.65,0.5, 'fc8', transform=ax_list[6].transAxes, 
-                color=colors[-2], fontsize=14)
+for name in layer_names:
+    ax_list[6].text(0.22,0.5, 'conv1',transform=ax_list[6].transAxes, color=colors[0])
+ax_list[6].text(0.65,0.5, 'fc8', transform=ax_list[6].transAxes, color=colors[-2], fontsize=14)
 ax_list[6].text(0.12, 0.09, 'V4', transform=ax_list[6].transAxes, 
-                color=colors[-1], fontsize=10)
+                color=colors[-1], fontsize=10, color='r')
 ax_list[6].set_xlabel('APC fit r', labelpad=0, fontsize=12)
-
 
 example_cell_inds = [1,4,7]
 v4 = cnn_an.loc['resp'].loc['v4']
@@ -690,11 +702,11 @@ hi_curv_resp = hi_curv_resp.reindex_like(model_resp)
 scatter_dat.append([hi_curv_resp, model_resp, b_unit])
                 
 
-kw = {'s':2., 'linewidths':0, 'c':'r'}
+kw = {'s':2., 'linewidths':0, 'c':'k'}
 colorbar = 1
 for ax_ind, dat in zip(example_cell_inds, scatter_dat):
     ax = ax_list[ax_ind]
-    x,y= scatter_lsq(ax, dat[0].values, dat[1].values, lsq=True,
+    x,y = scatter_lsq(ax, dat[0].values, dat[1].values, lsq=True,
                      mean_subtract=True, **kw)
     frac_var = np.corrcoef(x.T, y.T)[0,1]
     cartesian_axes(ax, x_line=True, y_line=True, unity=True)
@@ -769,7 +781,7 @@ gs.tight_layout(plt.gcf())
 
 labels = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.']
 for ax, label in zip(ax_list, labels):
-    ax.text(-0.05, 1.1, label, transform=ax.transAxes,
+    ax.text(-0, 1.1, label, transform=ax.transAxes,
       fontsize=fs+2, fontweight='bold', va='top', ha='right')
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+
             str(figure_num[fig_ind])+ '_apc_figs_v4cnn.pdf', bbox_inches='tight', dpi=500)
@@ -1187,18 +1199,20 @@ plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
 fig_ind += 1
 
 #%%
+un_inds = xr.open_dataset(top_dir + '/data/models/apc_models_362_16X16.nc')['resp'].coords['shapes'].values
 layers_to_examine = ['conv1', 'relu1', 'norm1',  'conv2', 'fc6', 'prob']
+layer_names = ['Conv1', 'Relu1', 'Norm1',  'Conv2', 'FC6', 'Prob']
 #layers_to_examine = 'all'
 name = 'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51).nc'
-cnn = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'].sel(x=114), ]
+cnn = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'].sel(x=114), ]
 
 name = 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(114.0, 114.0, 1)_amp_(100, 255, 2).nc'
-cnns = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'].sel(amp=amp) for amp in [255, 100]] + cnn
+cnns = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'].sel(amp=amp) for amp in [255, 100]] + cnn
 
 name = 'bvlc_reference_caffenet_nat_image_resp_371.nc'
-cnn = [xr.open_dataset(top_dir + 'data/responses/' + name)['resp'],]   
+cnn = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'],]   
 cnns = cnns + cnn
-cnns = [cnns[0], cnns[-1], cnns[1], cnns[2]]
+cnns = [cnns[0], cnns[2], cnns[1], cnns[-1]]
 
 n_plot = len(layers_to_examine)
 plt.figure(figsize=(3/1.5,n_plot*1.5/1.5))
@@ -1217,26 +1231,27 @@ for i, a_lay in enumerate(layers_to_examine):
         var = a_cnn[...,all_lays==a_lay].values.ravel()
         all_nets.append(var)
     the_range.append(np.abs([np.max(np.array(all_nets)), np.min(np.array(all_nets))]).max())
-        
+colors = ['b', 'c', 'g', 'r']     
 for i, a_lay in enumerate(layers_to_examine):
     ax = ax_list[i]
 
-    for a_cnn in cnns:
+    for j, a_cnn in enumerate(cnns):
 
         all_lays = a_cnn.coords['unit'].layer_label.values.astype(str)
-        var = a_cnn[...,all_lays==a_lay].values.ravel()
+        var = a_cnn[...,all_lays==a_lay].values[1:,:][un_inds].ravel()
         n, bins = np.histogram(var, bins=100, normed=False) 
         
         n =  n/float(len(var));
-        ax.plot(bins[1:], np.convolve(gaussian(np.linspace(-1,1,20), 0, 0.15), n, mode='same'))
+        ax.plot(bins[1:], np.convolve(gaussian(np.linspace(-1,1,20), 0, 0.15), 
+                n, mode='same'), color=colors[j])
     ax.semilogy(nonposy='clip')
     ax.set_ylim(10/len(var), 1)
     ax.set_xlim(-the_range[i], the_range[i])
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.set_xticks([0,])
-    ax.set_xticklabels([' ',])
-    ax.set_title(a_lay,)
+    ax.set_xticks([0, ax.get_xlim()[1]])
+    ax.set_xticklabels([' ', int(np.round(ax.get_xlim()[1],0))])
+    ax.set_title(layer_names[i],)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
     
@@ -1244,16 +1259,19 @@ for i, a_lay in enumerate(layers_to_examine):
     ax.set_yticklabels(['',''])
     ax.tick_params('y', length=0, width=0, which='minor')
 
-ax_list[0].legend(['Amp. 255, Width 32 Pix.', 'Photographs', 'Amp. 100, Width 32 Pix.', 
-                    'Amp. 255, Width 64 Pix.', ], loc=(-0.3, 1.5), frameon=0, 
+#ax_list[0].legend(['Amp. 255, Width 32 Pix.', 'Photographs', 'Amp. 100, Width 32 Pix.', 
+#                    'Amp. 255, Width 64 Pix.', ], loc=(-0.3, 1.5), frameon=0, 
+#                    fontsize=7, markerfirst=False)
+ax_list[0].legend(['Standard Shapes', 'Dimmer Shapes', 
+                    'Larger Shapes', 'Photographs',  ], loc=(-0.3, 1.5), frameon=0, 
                     fontsize=7, markerfirst=False)
-ax_list[0].set_ylabel('log(%)')
+ax_list[-1].set_ylabel('%')
 #ax_list[0].set_xlabel('Response', labelpad=0)
-ax_list[0].text(-0.1,-.27, 'Response', transform=ax_list[0].transAxes, color='k', rotation=0)
-ax_list[0].set_yticklabels(['1', '.01'])
-ax_list[0].set_xticklabels([0,])
+ax_list[-1].text(0.2,-.8, 'Response', transform=ax_list[-1].transAxes, color='k', rotation=0)
+ax_list[-1].set_yticklabels(['1', '.01'])
+ax_list[-1].set_xticklabels([0, 1])
 
-
+fig_ind = 4
 plt.tight_layout(h_pad=0.2)
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
             +str(figure_num[fig_ind])+'_dynamic_range.pdf',
