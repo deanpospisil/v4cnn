@@ -83,6 +83,7 @@ def kurtosis_da(resp):
     dims = resp.coords.dims   
     
     if ('x' in resp) and ('y' in dims):
+        resp = resp.transpose('unit', 'shapes', 'x', 'y')
     elif ('x' in dims):
         resp = resp.transpose('unit', 'shapes', 'x')
     elif ('y' in dims):
@@ -110,10 +111,16 @@ def tot_var(resp):
     
 
 #%%
+if sys.platform == 'linux2': 
+    data_dir = '/loc6tb/dean/'
+else:
+    data_dir = top_dir
+
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
-da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp']
+da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp']
 da = da.squeeze()
 da = da.transpose('unit','shapes', 'x', 'y')
+#%%
 da = da[:5472:1]
 da = da - da[:, 0, :, :] #subtract off baseline
 da = da[:, 1:, ...] #get rid of baseline shape   

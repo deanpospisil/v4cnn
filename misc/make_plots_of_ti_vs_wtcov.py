@@ -4,21 +4,27 @@ Created on Tue May 30 20:36:19 2017
 
 @author: deanpospisil
 """
-
-import numpy as np
-import xarray as xr
 import os, sys
 import matplotlib.pyplot as plt
 import pickle
 from scipy.stats import linregress
+import numpy as np
+
+top_dir = os.getcwd().split('v4cnn')[0]
+sys.path.append(top_dir+'xarray/')
+#%%
+import xarray as xr
+top_dir = top_dir + '/v4cnn'
+
+#%%
+if sys.platform == 'linux2': 
+    data_dir = '/loc6tb/dean/'
+else:
+    data_dir = top_dir
 
 layer_labels_b = [b'conv2', b'conv3', b'conv4', b'conv5', b'fc6']
 layer_labels = ['conv2', 'conv3', 'conv4', 'conv5', 'fc6']
-
-
-top_dir = os.getcwd().split('v4cnn')[0]
-top_dir = top_dir + '/v4cnn'
-
+    
 with open(top_dir + '/data/an_results/ti_vs_wt_cov_exps_all_lays.p', 'rb') as f:    
     try:
         an = pickle.load(f, encoding='latin1')
@@ -250,17 +256,37 @@ netwtsd['conv3']
 #%%
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
 
-da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp'].load()
+da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp'].load()
 #%%
 da = da.squeeze()
 da = da.transpose('unit','shapes', 'x', 'y')
 da = da[:11904]
+
 da = da - da[:, 0, :, :] #subtract off baseline
 da = da[:, 1:, ...] #get rid of baseline shape 
 
 #%%
+rf = (da**2).sum('shapes')>0
+#%%
 x = da.coords['x'].values
 y = da.coords['y'].values
+#%%
+x_grid = np.tile(x, (len(y), 1)).ravel()
+y_grid = np.tile(y[:, np.newaxis], (1, len(x))).ravel()
+x_dist = x_grid[:, np.newaxis] - x_grid[:, np.newaxis].T
+y_dist = y_grid[:, np.newaxis] - y_grid[:, np.newaxis].T
+
+dist_mat = (x_dist**2 + y_dist**2)**0.5
+stim_diam = 32
+stim_in = dist_mat<(stim_diam*1.)
+#%%
+in_rf_num = []
+for an_rf in rf[:10000]:
+    resp_plus_close = an_rf.values.ravel()[:, np.newaxis] * stim_in
+    in_rf = np.sum(resp_plus_close, 0) == np.sum(stim_in, 0)
+    in_rf_num.append(sum(in_rf))
+plt.plot(in_rf_num)
+    
 
 
     

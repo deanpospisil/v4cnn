@@ -37,17 +37,14 @@ base_image_nm = baseImageList[0]
 
 
 all_iter = [
-
+'bvlc_reference_caffenet',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.2',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.3',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.4',
-'bvlc_caffenet_reference_increase_wt_cov_fc6_0.5',
-'bvlc_caffenet_reference_increase_wt_cov_fc6_0.6',
-'bvlc_caffenet_reference_increase_wt_cov_fc6_0.7',
-'bvlc_caffenet_reference_increase_wt_cov_fc6_0.8',
-
-
-#'bvlc_reference_caffenet',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.5',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.6',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.7',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.8',
 #'bvlc_caffenet_reference_increase_wt_cov_0.5',
 #'bvlc_caffenet_reference_increase_wt_cov_0.75',
 #'bvlc_caffenet_reference_increase_wt_cov_0.95'
@@ -67,7 +64,7 @@ else:
     all_iter = all_iter*len(deploys)
 
 img_n_pix = 227
-max_pix_width = [ 32.,]
+max_pix_width = [ 25.,]
 
 mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
 s = np.array(mat['shapes'][0])
