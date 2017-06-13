@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os, sys
 top_dir = os.getcwd().split('v4cnn')[0]
-#%%
 sys.path.append(top_dir+ 'v4cnn')
 sys.path.insert(0, top_dir + 'xarray/');
 top_dir = top_dir + 'v4cnn/';
 sys.path.append( top_dir + 'common')
 sys.path.append(top_dir +'/nets')
+#%%
 import pickle as pk
 import xarray as xr
 import pandas as pd
@@ -663,11 +663,15 @@ ax_list[3].text(0.5, 0.1, 'CNN all layers', transform=ax_list[3].transAxes)
 ax_list[3].text(0.24,0.75, 'Untrained', transform=ax_list[3].transAxes, color='b', rotation=60)
 
 ax_list[6].text(0.5, 0.1, 'CNN by layer', transform=ax_list[6].transAxes)
-for name in layer_names:
-    ax_list[6].text(0.22,0.5, 'conv1',transform=ax_list[6].transAxes, color=colors[0])
-ax_list[6].text(0.65,0.5, 'fc8', transform=ax_list[6].transAxes, color=colors[-2], fontsize=14)
-ax_list[6].text(0.12, 0.09, 'V4', transform=ax_list[6].transAxes, 
-                color=colors[-1], fontsize=10, color='r')
+colors = list(cm.copper(np.linspace(0, 1, 8)))
+colors.append('r')
+layers_to_examine.append('V4')
+layer_names = ['Conv1', 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4']
+spaces = np.linspace(0.85, 0.02, len(layer_names))
+
+for name, color, space in zip(layer_names, colors, spaces):
+    ax_list[6].text(0.05, space, name, transform=ax_list[6].transAxes,
+           color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
 ax_list[6].set_xlabel('APC fit r', labelpad=0, fontsize=12)
 
 example_cell_inds = [1,4,7]
@@ -722,13 +726,13 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
         ax.set_xlabel('Unit', labelpad=0)
     params = 'Curv. $(\mu=$' +  str(np.round(dat[1].coords['cur_mean'].values,2))\
     +', $\sigma=$'+ str(np.round(dat[1].coords['cur_sd'].values,2)) + ')'\
-    +'\nOri. $(\mu=$'+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values)))\
+    +'\n \nOri. $(\mu=$'+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values)))\
     +', $\sigma=$' + str(np.round(np.rad2deg(dat[1].coords['or_sd'].values),0)) + ')' 
     if ax_ind==1:
         ax.set_title('Example units')
         ax.text(0.5, 0.3, '$r=$' +str(np.round(frac_var, 3)), 
                 transform=ax.transAxes, fontsize=10)
-        ax.text(0.35, 0.1, params, 
+        ax.text(0.35, 0.07, params, 
                 transform=ax.transAxes, fontsize=7, linespacing=0.5)
     else:
         ax.text(0.6, 0.2, '$r=$' +str(np.round(frac_var, 3)), 
@@ -778,7 +782,6 @@ c = matplotlib.transforms.Bbox([[0.71, 0.75], [0.91, .9]])
 #left=None, bottom=None, right=None, top=None,
 #ax_list[2].set_title('Preferred Shapes', fontsize=12, labelpad=10)
 gs.tight_layout(plt.gcf())
-
 labels = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.']
 for ax, label in zip(ax_list, labels):
     ax.text(-0, 1.1, label, transform=ax.transAxes,
@@ -1101,6 +1104,9 @@ plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
 fig_ind += 1
 
 #%%
+colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
+          [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
+colors = colors / np.array([[255,255,255,1]])
 plt.figure(figsize=(5,3))
 gs = gridspec.GridSpec(1,2, width_ratios=[1,2],
                         height_ratios=[1,]*1) 
@@ -1112,7 +1118,7 @@ for ax, label in zip(ax_list, labels):
 ax = ax_list[0]
 n_samples=100
 apc_cor = apc**0.5
-for layer, color in zip(['conv2','fc7'],[colors[0],colors[-3]]):
+for layer, color in zip(['conv2','fc7'],[colors[1],colors[6]]):
     ax.scatter(ti_cnn.loc['resp'].loc[layer][:n_samples], 
                apc_cor.loc['resp'].loc[layer][:n_samples], 
                color=color, s=1, alpha=0.5)
@@ -1120,7 +1126,7 @@ ax.set_xlim(0,1)
 ax.set_ylim(0,1)
 ax.set_aspect(1)
 beautify(ax)
-ax.grid()
+#ax.grid()
 ax.set_xlim(0,1.01)
 ax.set_xticks([0,0.5,1])
 ax.set_yticks([0,0.5,1])
@@ -1134,14 +1140,19 @@ v4ness = ((1-ti_cnn.loc['resp'])**2 + (1-apc_cor.loc['resp'])**2)**0.5
 (layer,num)= v4ness.argmin()
 y = apc_cor.loc['resp'].loc[layer].loc[num]
 x = ti_cnn.loc['resp'].loc[layer].loc[num]
-ax.scatter(x, y, color=colors[-2], marker='*',s=4)
+ax.scatter(x, y, color=colors[6], marker='*',s=4)
+
 
 best_v4_ti = ti_cnn.loc['resp'].loc['v4'].max()
 best_v4_apc = apc_cor.loc['resp'].loc['v4'].max()
-ax.scatter(best_v4_ti, best_v4_apc, color='r', marker='x',s=4)
-ax.legend(['conv2', 'fc7', 'Best AN', 'Best V4*'], fontsize=5, loc=3, 
+ax.scatter(best_v4_ti, best_v4_apc, color='K', marker='x',s=4)
+ax.legend(['Conv2', 'FC7', 'Best AN', 'Best V4'], fontsize=5, loc=3, 
           labelspacing = 0, scatterpoints=1)
 
+avg_ti_v4 = ti_cnn.loc['resp'].loc['v4'].mean()
+avg_apc_v4 = apc_cor.loc['resp'].mean()
+ax.plot([0, avg_ti_v4], [avg_apc_v4, avg_apc_v4], color='grey', lw=0.5)
+ax.plot([avg_ti_v4, avg_ti_v4], [0, avg_apc_v4], color='grey', lw=0.5)
 #ti_cnn.loc['resp'].drop('v4', level='layer_label').max()
 
 ax = ax_list[1]
@@ -1149,7 +1160,7 @@ layers_to_examine = ['conv2','conv3','conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 hist_dat = []
 hist_dat = [v4ness.drop('v4', level='layer_label').loc[layer]
                  for layer in layers_to_examine]
-for v4ness_val, color in zip(hist_dat, colors):
+for v4ness_val, color in zip(hist_dat, colors[1:]):
     x = v4ness_val.dropna().values
     y_c, bins_c = d_hist(ax, x, cumulative=True, color=color, alpha=1, lw=1.1) 
     ax.scatter([np.min(x),], [0,], color=color, marker='|')
@@ -1178,23 +1189,23 @@ joint_hist = np.expand_dims(v4_apc_hist,1)[::-1] * np.expand_dims(v4_ti_hist, 0)
 #plt.figure()
 #plt.imshow(joint_hist)
 x, y = np.meshgrid(bins[1:][::-1], bins[1:])
-dist = (x**2+y**2)**0.5
+dist = (x**2 + y**2)**0.5
 dist_sort = np.argsort(dist.ravel())
 cum_hist = np.cumsum(joint_hist.ravel()[dist_sort])
 cum_hist = cum_hist/max(cum_hist)
 end = np.sum((1-best_v4_apc)**2 + (1-best_v4_ti)**2)**0.5
 dist_sort_val = dist.ravel()[dist_sort]
-plt.plot(dist_sort_val[dist_sort_val>end], cum_hist[dist_sort_val>end], color='r')
+plt.plot(dist_sort_val[dist_sort_val>end], cum_hist[dist_sort_val>end], color='k')
 ax.scatter([end,], [0,], color=color, marker='|')
+layer_names = [ 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4']
+colors = list(colors)
+colors.append('k')
+for name, color, space in zip(layer_names, colors[1:], spaces):
+    ax.text(0.05, space, name, transform=ax.transAxes,
+           color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
+    
 
-ax.text(0.3, 0.65, 'conv2',ha='center', va='bottom', fontstyle='italic',
-transform=ax.transAxes, fontsize=14, color='k')
-ax.text(.65, 0.35, 'fc8', ha='center', va='bottom', fontstyle='italic',
-transform=ax.transAxes, fontsize=16, color=colors[-2])
-ax.text(.2, 0.25, 'v4',ha='center', va='bottom', fontstyle='italic',
-transform=ax.transAxes, fontsize=14, color='r')
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
-            +str(figure_num[fig_ind])+'_v4_ness.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+str(figure_num[fig_ind])+'_v4_ness.pdf')
 
 fig_ind += 1
 

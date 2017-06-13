@@ -267,16 +267,26 @@ da = da[:, 1:, ...] #get rid of baseline shape
 
 #%%
 rf = (da**2).sum('shapes')>0
+#%%
 x = da.coords['x'].values
 y = da.coords['y'].values
+#%%
+x_grid = np.tile(x, (len(y), 1)).ravel()
+y_grid = np.tile(y[:, np.newaxis], (1, len(x))).ravel()
+x_dist = x_grid[:, np.newaxis] - x_grid[:, np.newaxis].T
+y_dist = y_grid[:, np.newaxis] - y_grid[:, np.newaxis].T
 
-x_dist = x[:, np.newaxis] - x[:, np.newaxis].T
-y_dist = y[:, np.newaxis] - y[:, np.newaxis].T
 dist_mat = (x_dist**2 + y_dist**2)**0.5
 stim_diam = 32
-stim_in = dist_mat<stim_diam*1.5
+stim_in = dist_mat<(stim_diam*1.)
 #%%
-for an_rf in rf:
+in_rf_num = []
+for an_rf in rf[:10000]:
+    resp_plus_close = an_rf.values.ravel()[:, np.newaxis] * stim_in
+    in_rf = np.sum(resp_plus_close, 0) == np.sum(stim_in, 0)
+    in_rf_num.append(sum(in_rf))
+plt.plot(in_rf_num)
+    
 
 
     
