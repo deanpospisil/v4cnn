@@ -254,22 +254,49 @@ resps = an[0][net_num]
 netwtsd['conv3']
 
 #%%
-net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
+net_name = 'bvlc_reference_caffenetpix_width[25.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
+#net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370.nc'
 
-da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp'].load()
+data_dir = top_dir
+
+
+da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp']
+#%%
+
+da = da[:100]
 #%%
 da = da.squeeze()
 da = da.transpose('unit','shapes', 'x', 'y')
-da = da[:11904]
-
 da = da - da[:, 0, :, :] #subtract off baseline
 da = da[:, 1:, ...] #get rid of baseline shape 
 
 #%%
 rf = (da**2).sum('shapes')>0
 #%%
-x = da.coords['x'].values
-y = da.coords['y'].values
+resp = da
+dims = resp.coords.dims
+if ('x' in resp) and ('y' in dims):
+    resp = resp.transpose('unit','shapes', 'x', 'y')
+    
+    x = resp.coords['x'].values
+    y = resp.coords['y'].values
+    
+    x_grid = np.tile(x, (len(y), 1)).ravel()
+    y_grid = np.tile(y[:, np.newaxis], (1, len(x))).ravel()
+    
+    x_dist = x_grid[:, np.newaxis] - x_grid[:, np.newaxis].T
+    y_dist = y_grid[:, np.newaxis] - y_grid[:, np.newaxis].T
+    
+    dist_mat = (x_dist**2 + y_dist**2)**0.5
+    stim_diam = 32
+    stim_in = dist_mat<=(stim_diam*1.5)
+        
+elif ('x' in dims):
+    resp = resp.transpose('unit', 'shapes', 'x')
+elif ('y' in dims):
+    resp = resp.transpose('unit', 'shapes', 'y')
+    resp_vals = resp.values
+
 #%%
 x_grid = np.tile(x, (len(y), 1)).ravel()
 y_grid = np.tile(y[:, np.newaxis], (1, len(x))).ravel()
@@ -278,7 +305,7 @@ y_dist = y_grid[:, np.newaxis] - y_grid[:, np.newaxis].T
 
 dist_mat = (x_dist**2 + y_dist**2)**0.5
 stim_diam = 32
-stim_in = dist_mat<(stim_diam*1.)
+stim_in = dist_mat<(stim_diam*1.5)
 #%%
 in_rf_num = []
 for an_rf in rf[:10000]:

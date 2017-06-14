@@ -15,6 +15,7 @@ import d_net_analysis as dn
 import numpy as np
 import d_misc as dm
 from scipy import io
+import matplotlib.pyplot as plt
 
 data = 'v4cnn/data/'
 dmod = xr.open_dataset(top_dir + data + 'models/apc_models_362_16X16.nc',
@@ -25,5 +26,6 @@ da = xr.DataArray(da, dims=['unit', 'x', 'shapes'])
 #cor = ac.cor_resp_to_model(da_c, dmod)
 rf = dn.in_rf(da, 32)
 rf[10:50] = 1
-ti = dn.ti_av_cov(da[:,20:40,:], rf=None)
+ti = dn.ti_av_cov(da[:,12:30,:], rf=None)
 print(ti)
+plt.plot(da.sum('shapes').squeeze())
