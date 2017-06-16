@@ -1829,7 +1829,7 @@ def adjust_to_r(static_vector, shift_vector, desired_r):
     beta = phi - theta
     mag_b = np.linalg.norm(b)#adjacent length
     mag_e = np.linalg.norm(e)#opposite length
-    #solve for scaling of a to the opposite side for beta
+    #solve for git stscaling of a to the opposite side for beta
     a = (mag_b * np.tan(beta))/mag_e
     shifted_vector = a * e + b # now shift b with a*e
     return shifted_vector
