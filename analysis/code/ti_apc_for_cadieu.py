@@ -29,6 +29,7 @@ da = da.transpose('unit', 'x', 'shapes')
 ti =na.ti_in_rf(da, stim_width=64)
 #%%
 plt.hist(ti, bins=1000, histtype='step', cumulative=True)
+plt.xlim(0,1)
 
 #da = da.reshape(1,65,368)
 #da = xr.DataArray(da, dims=['unit', 'x', 'shapes'])
