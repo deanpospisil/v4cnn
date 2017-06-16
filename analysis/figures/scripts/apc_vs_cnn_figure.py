@@ -150,8 +150,10 @@ def cor2(a,b):
         a = np.expand_dims(a,1)
     if len(b.shape)<=1:
         b = np.expand_dims(b,1)
-    a -= a.mean(0);b-=b.mean(0)
-    a /= np.linalg.norm(a, axis=0);b /= np.linalg.norm(b, axis=0);
+    a -= a.mean(0);
+    b -= b.mean(0)
+    a /= np.linalg.norm(a, axis=0);
+    b /= np.linalg.norm(b, axis=0);
     corrcoef = np.dot(a.T, b)       
     return corrcoef
     
@@ -215,17 +217,15 @@ models.append(dmod)
 #cross_val fit
 n_splits = 50
 for model in models:
-    ss = ShuffleSplit(n_splits=n_splits, test_size=1/5,
+    ss = ShuffleSplit(n_splits=n_splits, test_size=1/5.,
         random_state=0)
     cv_score = []
     model_ind_list = []
     for train_index, test_index in ss.split(X):
-        cor_v4_model = cor2(model.values[train_index], 
-                               v4_resp_apc.values[train_index])
+        cor_v4_model = cor2(model.values[train_index], v4_resp_apc.values[train_index])
         cor_v4_model[np.isnan(cor_v4_model)] = 0
         model_sel = cor_v4_model.argmax(0)
-        cor_v4_model_cv = np.array([cor2(v4_resp_apc[test_index, i], 
-                            model[test_index, model_ind])
+        cor_v4_model_cv = np.array([cor2(v4_resp_apc[test_index, i], model[test_index, model_ind])
                             for i, model_ind in enumerate(model_sel)]).squeeze()
         model_ind_list.append(model_sel)
         cor_v4_model_cv[np.isnan(cor_v4_model_cv)] = 0

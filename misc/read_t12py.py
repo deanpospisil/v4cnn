@@ -34,6 +34,7 @@ for cell in cells:
     
     keys = open(top_dir + 'data/responses/ShapeList.txt', "r").readlines()
     keys = np.array([list(map(int, key.split())) for key in keys[3:]])
+    
     a = {0:0, 45:1, 90:2, 135:3,180:4, 225:5, 270:6, 315:7}
     keys[:,-1] = np.array([a[key[-1]] for key in keys])
     keys = np.concatenate( ([[0,0,0]], keys), 0) #add blank stim
