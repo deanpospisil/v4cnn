@@ -73,9 +73,9 @@ scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 #scale = None
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-y = (center_image-80, center_image+80, 11)
+y = (center_image-80, center_image+80, 21)
 #x = (center_image, center_image, 1)
-x = (center_image-80, center_image+80, 11)
+x = (center_image-80, center_image+80, 21)
 #y = (30, 180, 51)
 
 #%%

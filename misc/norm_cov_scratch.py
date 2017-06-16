@@ -19,11 +19,6 @@ def norm_avcov(x):
     
     return norm_cov
 
-def only_rf(resp, stim_width=32):
-    x = resp - np.mean(resp, 1, keepdims=True)
-    x_var = np.sum(resp**2, 1)>0
-    #need to figure out relationship between sampling width,
-    #and kernel to convole map with to determine in-rf regions
     
 def norm_avcov_iter(x, subtract_mean=True):
     x = x.astype(np.float64)

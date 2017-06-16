@@ -336,6 +336,7 @@ no_blank_image = no_blank_image[a]/255.
 #%%
 if sys.platform == 'linux2': 
     data_dir = '/loc6tb/dean/'
+    data_dir = top_dir
 else:
     data_dir = top_dir
 
@@ -378,7 +379,7 @@ if 'cnn_an' not in locals() or goforit:
         
     null_v4 = process_V4(v4_resp_apc_null, v4_resp_ti_null, dmod)
     
-    cnn_names =['bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',]
+    cnn_names =['bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',]
     if sys.platform == 'linux2':
         da = xr.open_dataset(data_dir + 'data/responses/' + cnn_names[0] + '.nc')['resp']
     else:
@@ -789,6 +790,99 @@ for ax, label in zip(ax_list, labels):
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+
             str(figure_num[fig_ind])+ '_apc_figs_v4cnn.pdf', bbox_inches='tight', dpi=500)
 fig_ind += 1
+
+#%%
+plt.figure()
+import d_net_analysis as na
+
+y_nm = 'bvlc_reference_caffenetpix_width[32.0]_x_(114.0, 114.0, 1)_y_(64, 164, 51)_amp_NonePC370.nc'
+x_nm = 'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370.nc'
+ti = []
+k = []
+for net_name in [y_nm, x_nm]:
+    da = xr.open_dataset(top_dir + '/data/responses/'+ net_name)['resp'].squeeze()
+    k.append(na.kurtosis_da(da))
+    ti.append(na.ti_in_rf(da, stim_width=32))
+non_k_var = (k[0][1]<42) * (k[1][1]<42) * (k[0][0]<6) * (k[1][0]<6)
+
+ti_x_f = ti[1][non_k_var]
+ti_y_f = ti[0][non_k_var]
+ti_x_f = np.ma.masked_invalid(ti_x_f)
+ti_y_f = np.ma.masked_invalid(ti_y_f)
+
+n_intervals = 10.
+interval_space = 1/n_intervals
+intervals = np.linspace(0, 1-interval_space, n_intervals)
+
+c_means_x = []
+c_means_y = []
+c_sd_x = []
+c_sd_y = []
+
+for interval in intervals:
+    cond_y = ti_y_f[(ti_x_f>interval)*(ti_x_f<=interval+interval_space)]
+    cond_x = ti_x_f[(ti_y_f>interval)*(ti_y_f<=interval+interval_space)]
+    c_means_x.append(cond_x.mean())
+    c_means_y.append(cond_y.mean())
+    c_sd_x.append(np.percentile(cond_x[np.isfinite(cond_x)], [5, 95]))
+    c_sd_y.append(np.percentile(cond_y[np.isfinite(cond_y)], [5, 95]))
+
+
+c_sd_y_err = np.ma.abs((np.array(c_sd_y) - np.array(c_means_y).reshape(n_intervals,1)).T)
+c_sd_x_err = np.ma.abs((np.array(c_sd_x) - np.array(c_means_x).reshape(n_intervals,1)).T)
+
+plt.axis('square')
+fs = 12
+plt.xlim(-0.1, 1)
+plt.ylim(-0.1, 1)
+plt.errorbar(intervals+interval_space/2, c_means_y, yerr=c_sd_y_err, color='k',fmt='.', lw=1)
+plt.scatter(ti_x_f, ti_y_f, s=2,  c='c', edgecolors='none')
+plt.xlabel('TI X', fontsize=fs)
+plt.ylabel('TI Y', fontsize=fs)
+plt.tight_layout()
+plt.xticks(np.linspace(0,1,11))
+plt.gca().set_xticklabels(['0','','0.2','','0.4','','0.6', '','0.8','', '1'])
+plt.yticks([0,0.2,0.4,0.6, 0.8, 1])
+plt.gca().set_yticklabels(['0','0.2','0.4','0.6', '0.8', '1'])
+plt.plot([0,1],[0,1])
+plt.grid(True, which='both')
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/ti_x_vs_y_all.pdf' )
+
+ti_x = ti[1]
+ti_y = ti[0]
+layers = da.coords['layer'].values
+layer_labels = da.coords['layer_label'].values
+n_plots = len(np.sort(np.unique(layers))[4:])
+plt.figure(figsize=(2,2*n_plots))
+for i, layer in enumerate(np.sort(np.unique(layers))[4:]):
+    plt.subplot(n_plots, 1, i+1)
+    layer_ind = layer == layers
+    layer_label = layer_labels[layer_ind][0]
+    plt.scatter(np.array(ti_x[layer_ind]), np.array(ti_y[layer_ind]),s=4, edgecolors='none')
+    
+    plt.plot([0,1],[0,1])
+    plt.xlim(-0.1, 1.1)
+    plt.ylim(-0.1, 1.1)
+
+    plt.axis('square')
+    if i==n_plots-1:
+        plt.xlabel('TI X')
+        plt.ylabel('TI Y')
+        plt.title(layer_label)
+        plt.xticks([0,0.5,1])
+        plt.yticks([0,0.5,1])
+
+    else:
+        plt.title(layer_label)
+        plt.xticks([]);plt.yticks([])
+        plt.xticks([0,0.5,1])
+        plt.yticks([0,0.5,1])
+        plt.gca().set_yticklabels(['','',''])
+        plt.gca().set_xticklabels(['','',''])
+
+plt.tight_layout()
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/ti_x_vs_y.pdf' )
+
 #%%
 m = 1
 n = 2
@@ -1392,8 +1486,8 @@ ax.hist(v4_resp_apc[:, np.argmin(k_apc)], histtype='step', bins=n_bins, range=[0
 #            fontsize=7.6, frameon=False, columnspacing=0)
 ax.legend(['Max.', 
            'Median', 
-           'Min.'], loc=[0,0], markerfirst=True, 
-            fontsize=6.5, frameon=False, columnspacing=0, title='Kurtosis')
+           'Min.'], loc=[0.05,0], markerfirst=True, 
+            fontsize=6, frameon=False, columnspacing=0, title='Kurtosis')
 ax.tick_params('y', which = 'both', right=0)
 
 ax.set_yticks([1, 0.1, 0.01])
@@ -1477,7 +1571,7 @@ ax.set_title('Kurtosis Distribution\nCNN')
 
 [[layer] for layer in alt.index.levels[0]]
 
-[beautify(ax) for ax in ax_list]
+[beautify(an_ax) for an_ax in ax_list]
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
             +str(figure_num[fig_ind])+'_kurtosis.pdf')
@@ -1725,10 +1819,5 @@ if  not schematic_gaussian:
 
     plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/apc_encoding.svg')
     
-#plt.savefig(top_dir + 'v4cnn/analysis/figures/images/apc_encoding_gaussian_params.pdf', 
-#            bbox_inches='tight',)
-
-
-
-#plt.savefig(top_dir + 'v4cnn/analysis/figures/images/apc_encoding_just_ellipse.pdf', 
- #           bbox_inches='tight',)
+#%%
+os.listdir(top_dir+'/analysis/figures/images/v4cnn_cur/')
