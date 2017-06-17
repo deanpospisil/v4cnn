@@ -850,6 +850,8 @@ plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/ti_x_vs_y_all.pdf' )
 #%%
 ti_x = ti[1]
 ti_y = ti[0]
+layer_names = ['Conv2','Relu2', 'Pool2', 'Norm2', 'Conv3', 'Relu3','Conv4', 
+               'Relu4','Conv5', 'Relu5', 'Pool5', 'FC6', 'Relu6', 'FC7', 'Relu7', 'FC8',]
 layers = da.coords['layer'].values
 layer_labels = da.coords['layer_label'].values
 n_plots = len(np.sort(np.unique(layers))[4:-1])
@@ -868,12 +870,12 @@ for i, layer in enumerate(np.sort(np.unique(layers))[4:-1]):
     if i==0:
         plt.xlabel('TI X')
         plt.ylabel('TI Y')
-        plt.title(layer_label)
+        plt.title(layer_names[i])
         plt.xticks([0,0.5,1])
         plt.yticks([0,0.5,1])
 
     else:
-        plt.title(layer_label)
+        plt.title(layer_names[i])
         plt.xticks([]);plt.yticks([])
         plt.xticks([0,0.5,1])
         plt.yticks([0,0.5,1])
@@ -881,7 +883,7 @@ for i, layer in enumerate(np.sort(np.unique(layers))[4:-1]):
         plt.gca().set_xticklabels(['','',''])
 
 plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/ti_x_vs_y.pdf' )
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/fig9_2_ti_x_vs_y.pdf' )
 
 #%%
 m = 1
@@ -1099,6 +1101,14 @@ plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+str(figure_num[fi
 fig_ind += 1
 
 #%%
+from scipy import io
+
+da = io.loadmat(top_dir + 'data/responses/cadieu_109.mat')['all']
+resp = np.reshape(da, (65, 109, 368), order='F')
+da = xr.DataArray(resp, dims=['x', 'unit','shapes'], coords=[range(0, 65*4, 4), range(109),  range(368)])
+da = da.transpose('unit', 'x', 'shapes')
+ti = na.ti_in_rf(da, stim_width=64)
+
 
 plt.figure(figsize=(4,4))
 gs = gridspec.GridSpec(2,1, width_ratios=[1,]*1,
@@ -1106,15 +1116,16 @@ gs = gridspec.GridSpec(2,1, width_ratios=[1,]*1,
 ax_list = [plt.subplot(gs[pos]) for pos in range(2)]
 labels = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.']
 for ax, label in zip(ax_list, labels):
-    ax.text(-0.1, 1.1, label, transform=ax.transAxes,
+    ax.text(-0.1, 1.15, label, transform=ax.transAxes,
       fontsize=14, fontweight='bold', va='top', ha='right')
 ti_cnn = cnn_an[~cnn_an['ti_av_cov'].isnull()]
 ti_cnn = ti_cnn[(ti_cnn['k']>2)&(ti_cnn['k']<40)]['ti_av_cov']
 
 hist_pos = [1,0]
 hist_dat_leg = []
-hist_dat = [[ti_cnn.loc['resp'].drop('v4', level='layer_label'),
-            ti_cnn.loc['init. net'].drop('v4', level='layer_label')]]
+hist_dat = []
+hist_dat.append([ti_cnn.loc['init. net'].drop('v4', level='layer_label').loc[layer]
+                 for layer in layers_to_examine])
 hist_dat_leg.append({'labels':['CN', 'CN init.'], 
                      'fontsize':'xx-small','frameon':False,'loc':(-0.2,1) })
 
@@ -1137,25 +1148,30 @@ for i, ax_ind in enumerate(hist_pos):
     if i ==0:
         #ax.set_title('Effect of Training on\nTranslation Invariance',fontsize=16)
         colors = ['c', 'b']
-        lw=2.5
-        ax.text(.25, .70, 'Untrained',
+        colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
+              [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
+        colors = colors / np.array([[255,255,255,1]])
+        lw=1.5
+        ax.text(.2, .70, 'Untrained',
         ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color=colors[1])
-        ax.text(.6, .5, 'Trained',
-        ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color=colors[0])
+        transform=ax.transAxes, fontsize=14, color='k')
+#        ax.text(.6, .5, 'Trained',
+#        ha='center', va='bottom', fontstyle='italic',
+#        transform=ax.transAxes, fontsize=14, color=colors[0])
     else:
         #ax.set_title('Translation Invariance\nby Layer',fontsize=16)
         colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
                   [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
         colors = colors / np.array([[255,255,255,1]])
         lw=2
-        ax.text(.30, 0.35, 'conv2',ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color=colors[1])
-        ax.text(.85, 0.35, 'fc8', ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=16, color=colors[-2])
-        ax.text(.55, 0.25, 'V4',ha='center', va='bottom', fontstyle='normal',
-        transform=ax.transAxes, fontsize=14, color=colors[-1])
+        y_c, bins_c = d_hist(ax, ti, cumulative=True, color='c', alpha=1,lw=lw)
+
+#        ax.text(.30, 0.35, 'conv2',ha='center', va='bottom', fontstyle='italic',
+#        transform=ax.transAxes, fontsize=14, color=colors[1])
+#        ax.text(.85, 0.35, 'fc8', ha='center', va='bottom', fontstyle='italic',
+#        transform=ax.transAxes, fontsize=16, color=colors[-2])
+#        ax.text(.55, 0.25, 'V4',ha='center', va='bottom', fontstyle='normal',
+#        transform=ax.transAxes, fontsize=14, color=colors[-1])
         #ax.set_title('Translation Invariance',fontsize=16)
 
         colors = colors     
@@ -1163,7 +1179,8 @@ for i, ax_ind in enumerate(hist_pos):
 
     for ti_val, color in zip(hist_dat[i], colors):
         x = ti_val.dropna().values
-        y_c, bins_c = d_hist(ax, x, cumulative=True, color=color, alpha=1,lw=lw)   
+        y_c, bins_c = d_hist(ax, x, cumulative=True, color=color, alpha=1, lw=lw)
+
     bins_c = np.concatenate([ti_val.dropna().values for ti_val in hist_dat[i]]).ravel()
     beautify(ax, spines_to_remove=['top','right'])
     #data_spines(ax, bins_c, y_c, mark_zero=[True, False], sigfig=2, fontsize=fs, 
@@ -1174,11 +1191,11 @@ for i, ax_ind in enumerate(hist_pos):
         ax.spines[spine_name].set_bounds(0,1)
     ax.set_xlim(0, 1.1)
     ax.set_xticks([0,0.5,1])
-    ax.set_xticklabels(['0', '0.5', '1'], fontsize=12)
+    ax.set_xticklabels(['0', '0.5', '1'], fontsize=10)
 
     ax.set_ylim(-0.1,1.001)
     ax.set_yticks([0,0.5,1])
-    ax.set_yticklabels(['0', ' ', '1'], fontsize=12)
+    ax.set_yticklabels(['0', ' ', '1'], fontsize=10)
     #ax.set_ylabel('Fraction Units', fontsize=14)
     #leg = ax.legend(**hist_dat_leg[i],ncol=3)
     #plt.setp(leg.get_title(),fontsize=fs)
@@ -1188,9 +1205,17 @@ for i, ax_ind in enumerate(hist_pos):
 
     #ax.set_xlabel('Translation Invariance', fontsize=14)
 ax_list[0].set_xticklabels([])
-ax_list[0].set_ylabel('Fraction Units', labelpad=0, fontsize=14)
+ax_list[0].set_ylabel('Fraction Units', labelpad=0, fontsize=10)
 ax_list[1].set_xlabel('Translation invariance', labelpad=0, fontsize=14)
 
+spaces = np.linspace(0.9, 0.15, len(layer_names))
+layer_names = [ 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4', 'Cadieu']
+colors = list(colors)
+colors.append('c')
+for name, color, space in zip(layer_names, colors[1:], spaces):
+    ax_list[0].text(0.05, space, name, transform=ax.transAxes,
+           color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
+    
 
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
@@ -1256,7 +1281,7 @@ hist_dat = [v4ness.drop('v4', level='layer_label').loc[layer]
                  for layer in layers_to_examine]
 for v4ness_val, color in zip(hist_dat, colors[1:]):
     x = v4ness_val.dropna().values
-    y_c, bins_c = d_hist(ax, x, cumulative=True, color=color, alpha=1, lw=1.1) 
+    y_c, bins_c = d_hist(ax, x, cumulative=True, color=color, alpha=1, lw=1.4) 
     ax.scatter([np.min(x),], [0,], color=color, marker='|')
 
 ax.set_xlim(1,0)
@@ -1299,7 +1324,8 @@ for name, color, space in zip(layer_names, colors[1:], spaces):
            color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
     
 
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+str(figure_num[fig_ind])+'_v4_ness.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+
+            str(5)+'_v4_ness.pdf')
 
 fig_ind += 1
 
