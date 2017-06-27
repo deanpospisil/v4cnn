@@ -14,12 +14,10 @@ sys.path.insert(0, top_dir + 'xarray/');
 top_dir = top_dir + 'v4cnn/';
 sys.path.append( top_dir + 'common')
 sys.path.append(top_dir +'/nets')
-#%%
 import pickle as pk
 import xarray as xr
 import pandas as pd
 import apc_model_fit as ac
-import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import d_plot as dp
 import scipy.io as  l
@@ -28,6 +26,9 @@ import d_img_process as imp
 import d_net_analysis as dn
 from sklearn.neighbors import KernelDensity
 import caffe_net_response as cf
+from matplotlib.backends.backend_pdf import PdfPages
+
+#%%
 
 def beautify(ax=None, spines_to_remove = ['top', 'right']):
     almost_black = '#262626'
@@ -312,7 +313,7 @@ def process_V4(v4_resp_apc, v4_resp_ti, dmod):
     return v4
 #%%
 figure_num = [6, 7, 8, 9, 10, 4, 5, 1]
-fig_ind = 0
+figure_num = [6, 10, 11, 7, 8, 9, 12, 4, 5, 1]
 #shape image set up
 img_n_pix = 100
 max_pix_width = [80,]
@@ -340,7 +341,7 @@ if sys.platform == 'linux2':
 else:
     data_dir = top_dir
 
-goforit = 1
+goforit = False
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     
@@ -406,16 +407,16 @@ if 'cnn_an' not in locals() or goforit:
 
 
 #%%
-plt.hist(alt.loc['conv2']['ti_av_cov'], histtype='step',  bins=20)
-plt.hist(init.loc['conv2']['ti_av_cov'], histtype='step', bins=20)
-plt.hist(alt.loc['v4']['ti_av_cov'].dropna(), histtype='step', bins=20)
-plt.legend(['trained', 'untrained', 'V4'], loc=6, frameon=False)
-plt.xlabel('Translation Invariance', fontsize=15)
-plt.ylabel('Unit Count', fontsize=15)
-
-beautify(plt.gca())
-plt.savefig(top_dir + '/analysis/figures/images/early_layer/TI_conv2', bbox_inches='tight')
-
+#plt.hist(alt.loc['conv2']['ti_av_cov'], histtype='step',  bins=20)
+#plt.hist(init.loc['conv2']['ti_av_cov'], histtype='step', bins=20)
+#plt.hist(alt.loc['v4']['ti_av_cov'].dropna(), histtype='step', bins=20)
+#plt.legend(['trained', 'untrained', 'V4'], loc=6, frameon=False)
+#plt.xlabel('Translation Invariance', fontsize=15)
+#plt.ylabel('Unit Count', fontsize=15)
+#
+#beautify(plt.gca())
+#plt.savefig(top_dir + '/analysis/figures/images/early_layer/TI_conv2', bbox_inches='tight')
+#
 
 
 #%%
@@ -575,8 +576,8 @@ def plot_resp_on_sort_shapes(ax, shapes, resp, top=25, fs=20, shrink=.5, colorba
     #beautify(ax, ['top','right','left','bottom'])
     return data
 fs = 9  
-
-plt.figure(figsize=(6*1,5*1))
+figsize= (6,5)
+plt.figure(figsize=figsize)
 import matplotlib.gridspec as gridspec
 conds = ['resp', 's. resp', 'init. net']
 apc = cnn_an['apc'][cnn_an['k']<40]
@@ -787,9 +788,10 @@ labels = ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.', 'I.']
 for ax, label in zip(ax_list, labels):
     ax.text(-0, 1.1, label, transform=ax.transAxes,
       fontsize=fs+2, fontweight='bold', va='top', ha='right')
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+
-            str(figure_num[fig_ind])+ '_apc_figs_v4cnn.pdf', bbox_inches='tight', dpi=500)
-fig_ind += 1
+
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'+
+            str(figure_num[0]) + '_apc_figs_v4cnn.pdf', bbox_inches='tight',
+            dpi=500)
 
 #%%
 plt.figure()
@@ -846,7 +848,10 @@ plt.yticks([0,0.2,0.4,0.6, 0.8, 1])
 plt.gca().set_yticklabels(['0','0.2','0.4','0.6', '0.8', '1'])
 plt.plot([0,1],[0,1])
 plt.grid(True, which='both')
-plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/ti_x_vs_y_all.pdf' )
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'+str(figure_num[1])+ 
+            '_ti_x_vs_y_all.pdf', bbox_inches='tight')
+
+
 #%%
 ti_x = ti[1]
 ti_y = ti[0]
@@ -883,7 +888,8 @@ for i, layer in enumerate(np.sort(np.unique(layers))[4:-1]):
         plt.gca().set_xticklabels(['','',''])
 
 plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/fig9_2_ti_x_vs_y.pdf' )
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/' + str(figure_num[2]) 
+            + '_ti_x_vs_y.pdf' )
 
 #%%
 m = 1
@@ -975,9 +981,10 @@ for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
     #ax.set_xlim([0, 166])
     #ax.set_ylim([0, 166])
 plt.tight_layout()
-plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/fig'
-            +str(figure_num[fig_ind])+'_ti_v4.pdf', bbox_inches='tight')
-fig_ind += 1
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'
+            +str(figure_num[3])+'_ti_v4.pdf', bbox_inches='tight')
+
+
 #%%
 # just example cells
 m = 3
@@ -1096,9 +1103,9 @@ ax_list[4].text(.5,1.01, 'Unit 12604', ha='center', va='bottom',
                 transform=ax_list[4].transAxes, fontsize=12, fontstyle='italic')
 ax_list[2].set_title('Unit 3190', fontstyle='italic')
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+str(figure_num[fig_ind])+'_ti_example_and_avg_v4cnn.pdf', bbox_inches='tight')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'+str(figure_num[4])+
+            '_ti_example_and_avg_v4cnn.pdf', bbox_inches='tight')
 
-fig_ind += 1
 
 #%%
 from scipy import io
@@ -1124,12 +1131,13 @@ ti_cnn = ti_cnn[(ti_cnn['k']>2)&(ti_cnn['k']<40)]['ti_av_cov']
 hist_pos = [1,0]
 hist_dat_leg = []
 hist_dat = []
+layers_to_examine = ['conv1','conv2','conv3','conv4', 'conv5', 'fc6', 'fc7', 'fc8']
+
 hist_dat.append([ti_cnn.loc['init. net'].drop('v4', level='layer_label').loc[layer]
                  for layer in layers_to_examine])
 hist_dat_leg.append({'labels':['CN', 'CN init.'], 
                      'fontsize':'xx-small','frameon':False,'loc':(-0.2,1) })
 
-layers_to_examine = ['conv1','conv2','conv3','conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 #layers_to_examine = ['relu1','relu2','relu3','relu4', 'relu5', 'relu6', 'relu7', 'fc8']
 hist_dat.append([ti_cnn.loc['resp'].drop('v4', level='layer_label').loc[layer]
                  for layer in layers_to_examine] + [ti_cnn.loc['resp'].loc['v4'],])
@@ -1207,9 +1215,9 @@ for i, ax_ind in enumerate(hist_pos):
 ax_list[0].set_xticklabels([])
 ax_list[0].set_ylabel('Fraction Units', labelpad=0, fontsize=10)
 ax_list[1].set_xlabel('Translation invariance', labelpad=0, fontsize=14)
+layer_names = [ 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4', 'Cadieu']
 
 spaces = np.linspace(0.9, 0.15, len(layer_names))
-layer_names = [ 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4', 'Cadieu']
 colors = list(colors)
 colors.append('c')
 for name, color, space in zip(layer_names, colors[1:], spaces):
@@ -1219,8 +1227,7 @@ for name, color, space in zip(layer_names, colors[1:], spaces):
 
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
-            +'fig9'+'_ti_training_and_layer.pdf')
-fig_ind += 1
+            +str(figure_num[5])+'_ti_training_and_layer.pdf')
 
 #%%
 colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
@@ -1324,11 +1331,8 @@ for name, color, space in zip(layer_names, colors[1:], spaces):
            color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
     
 
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'+
-            str(5)+'_v4_ness.pdf')
-
-fig_ind += 1
-
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'+
+             str(figure_num[6]) + '_v4_ness.pdf')
 #%%
 un_inds = xr.open_dataset(top_dir + '/data/models/apc_models_362_16X16.nc')['resp'].coords['shapes'].values
 layers_to_examine = ['conv1', 'relu1', 'norm1',  'conv2', 'fc6', 'prob']
@@ -1403,11 +1407,10 @@ ax_list[-1].set_yticklabels(['1', '.01'])
 ax_list[-1].set_xticklabels([0, 1])
 
 plt.tight_layout(h_pad=0.2)
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
-            +str(figure_num[fig_ind])+'_dynamic_range.pdf',
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
+            +str(figure_num[7])+'_dynamic_range.pdf',
             bbox_inches='tight')
-fig_ind += 1
-
+plt.close()
 #%%
 #kurtosis v4 example
 def beautify(ax=None, spines_to_remove = ['top', 'right']):
@@ -1486,9 +1489,9 @@ for ax, label in zip(ax_list, labels):
       fontsize=14, fontweight='bold', va='top', ha='right')
 
 v4_name = 'V4_362PC2001'
-v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
-v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
-k_apc = kurtosis(v4_resp_apc).values
+v4_resp_apc_b = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
+v4_resp_apc_b = v4_resp_apc.transpose('shapes', 'unit')
+k_apc = kurtosis(v4_resp_apc_b).values
 
 ax = ax_list[0]
 ax.set_xlabel('Normalized Firing Rate')
@@ -1496,22 +1499,21 @@ ax.set_ylabel('Fraction Responses', labelpad=0)
 ax.set_xticks([0,1])
 ax.set_title('Example Response\nDistributions V4')
 n_bins = 10
-var = v4_resp_apc[:, np.argmax(k_apc)]
+var = v4_resp_apc_b[:, np.argmax(k_apc)]
+print(var)
 n_samps = len(var)
-ax.hist(var, bins=n_bins, histtype='step', weights=[1/n_samps,]*n_samps,  range=[0,1],
-         color='r', log=True)
-ax.hist(v4_resp_apc[:, np.argsort(k_apc)[len(k_apc)//2]], histtype='step', bins=n_bins, 
-        range=[0,1], weights=[1/n_samps,]*n_samps, color='b')
-ax.hist(v4_resp_apc[:, np.argmin(k_apc)], histtype='step', bins=n_bins, range=[0,1],
+ax.hist(v4_resp_apc_b[:, np.argmax(k_apc)], bins=n_bins, histtype='step', 
+        weights=[1/n_samps,]*n_samps,  range=[0,1], color='r', log=True)
+ax.hist(v4_resp_apc_b[:, np.argsort(k_apc)[len(k_apc)//2]], histtype='step',
+        bins=n_bins, range=[0,1], weights=[1/n_samps,]*n_samps, color='b')
+ax.hist(v4_resp_apc_b[:, np.argmin(k_apc)], histtype='step', bins=n_bins, range=[0,1],
         weights=[1/n_samps,]*n_samps, color='g')
 
 #ax.legend(['Max Kurtosis: ' + str(round(np.max(k_apc),1)), 
 #           'Median Kurtosis: ' + str(round(np.median(k_apc),1)), 
 #           'Min Kurtosis: ' + str(round(np.min(k_apc),1))], loc='upper right', 
 #            fontsize=7.6, frameon=False, columnspacing=0)
-ax.legend(['Max.', 
-           'Median', 
-           'Min.'], loc=[0.05,0], markerfirst=True, 
+ax.legend(['Max.', 'Median', 'Min.'], loc=[0.05,0], markerfirst=True, 
             fontsize=6, frameon=False, columnspacing=0, title='Kurtosis')
 ax.tick_params('y', which = 'both', right=0)
 
@@ -1591,16 +1593,15 @@ ax.tick_params('y', which = 'both', right=0)
 ax.legend(['All Layers', 
            'Rectified', 
            'Unrectified'], loc=[0.3, 0.55], 
-            fontsize=7.6, frameon=False, columnspacing=0,borderpad=0)
+            fontsize=7.6, frameon=False, columnspacing=0, borderpad=0)
 ax.set_title('Kurtosis Distribution\nCNN')
 
 [[layer] for layer in alt.index.levels[0]]
 
 [beautify(an_ax) for an_ax in ax_list]
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
-            +str(figure_num[fig_ind])+'_kurtosis.pdf')
-fig_ind += 1
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
+            +str(figure_num[8])+'_kurtosis.pdf')
 
 #%%
 import pickle
@@ -1635,15 +1636,195 @@ for filt in wts:
     ax.imshow(filt.T, interpolation = 'nearest')        
     ax.set_xticks([]);ax.set_yticks([]);
 plt.tight_layout()
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/fig'
-            +str(figure_num[fig_ind])+ '_1stfilters.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
+            +str(figure_num[9])+ '_1stfilters.pdf')
 
 #%%
+def boot_strap_se(a, bstraps=1000):
+    stats = []
+    for ind in range(bstraps):
+        resample = np.random.randint(0, high=np.shape(a)[0], size=np.shape(a)[::-1])
+        stats.append([np.mean(a[col, i]) for i, col in enumerate(resample)])
+    return np.percentile(np.array(stats), [1,99], axis=0)
+
+def cor2(a,b):
+    if len(a.shape)<=1:
+        a = np.expand_dims(a,1)
+    if len(b.shape)<=1:
+        b = np.expand_dims(b,1)
+    a -= a.mean(0);
+    b -= b.mean(0)
+    a /= np.linalg.norm(a, axis=0);
+    b /= np.linalg.norm(b, axis=0);
+    corrcoef = np.dot(a.T, b)       
+    return corrcoef
+ 
+#v4 fit to CNN and APC
+v4_name = 'V4_362PC2001'
+v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
+v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
+file = open(top_dir + 'data/responses/v4_apc_109_neural_labels.txt', 'r')
+wyeth_labels = [label.split(' ')[-1] for label in 
+            file.read().split('\n') if len(label)>0]
+v4_resp_apc['w_lab'] = ('unit', wyeth_labels)
+fn = top_dir + 'data/models/' + 'apc_models_362.nc'
+
+if 'apc_fit_v4' not in locals():
+    dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
+    apc_fit_v4 = ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), 
+                                      dmod.chunk({}), 
+                                      fit_over_dims=None, 
+                                      prov_commit=False)**2
+
+cnn_names =['bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
+            'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)']
+colors = ['r','g','b','m','c', 'k', '0.5']
+from sklearn.model_selection import ShuffleSplit
+X = np.arange(362)
+cv_scores = []
+model_ind_lists = []
+models = []
+for cnn_name in cnn_names:
+    da = xr.open_dataset(top_dir + 'data/responses/' + cnn_name + '.nc')['resp']
+    da = da.sel(unit=slice(0, None, 1)).squeeze()
+    middle = np.round(len(da.coords['x'])/2.).astype(int)
+    da_0 = da.sel(x=da.coords['x'][middle])
+    da_0 = da_0.sel(shapes=v4_resp_apc.coords['shapes'].values)
+    models.append(da_0)
+models.append(dmod)
+
+#cross_val fit
+n_splits = 50
+for model in models:
+    ss = ShuffleSplit(n_splits=n_splits, test_size=1/5.,
+        random_state=0)
+    cv_score = []
+    model_ind_list = []
+    for train_index, test_index in ss.split(X):
+        cor_v4_model = cor2(model.values[train_index], v4_resp_apc.values[train_index])
+        cor_v4_model[np.isnan(cor_v4_model)] = 0
+        model_sel = cor_v4_model.argmax(0)
+        cor_v4_model_cv = np.array([cor2(v4_resp_apc[test_index, i], model[test_index, model_ind])
+                            for i, model_ind in enumerate(model_sel)]).squeeze()
+        model_ind_list.append(model_sel)
+        cor_v4_model_cv[np.isnan(cor_v4_model_cv)] = 0
+        cv_score.append(cor_v4_model_cv)
+    cv_scores.append(cv_score)
+    model_ind_lists.append(model_ind_list)
+model_ind_lists_cv = np.array(model_ind_lists)
+cor_v4_models_cv = np.array(cv_scores)
 
 
+#direct fit
+model_ind_lists = []
+cor_v4_models = []
+for model in models:
+    cor_v4_model = cor2(model.values, v4_resp_apc.values)
+    cor_v4_model[np.isnan(cor_v4_model)] = 0
+    model_sel = cor_v4_model.argmax(0)
+    model_cor = cor_v4_model.max(0)
+    
+    cor_v4_models.append(model_cor)
+    model_ind_lists.append(model_sel)
+
+    
+model_ind_lists_dirfit = np.array(model_ind_lists)
+cor_v4_models_dirfit = np.array(cor_v4_models)
+
+
+cv_scores = np.array(cv_scores)
+mean_scores = cv_scores.mean(1)
+#bsci_scores= np.array([boot_strap_se(cv_score) for cv_score in cv_scores])
+bsci_scores= np.array([np.percentile(np.array(cv_score), [5,95], axis=0) for cv_score in cv_scores])
+
+bsci_scores = bsci_scores - np.expand_dims(mean_scores,1)
+
+ax_list=[]
+plt.figure(figsize=(4,4))
+ax = plt.subplot(221)
+ax_list.append(ax)
+ax.locator_params(nbins=5)
+ax.set_title('V4 Models Comparison\n')
+x = mean_scores[0]
+y = mean_scores[2]
+xsd = bsci_scores[0]
+ysd = bsci_scores[2]
+ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o', 
+            alpha=0, markersize=0, color='r', ecolor='0.5')
+colors= np.array(['k',]*len(x))
+colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+ax.scatter(x,y, color=colors, s=3)
+#ax.scatter(x, y, alpha=0.5, s=2)
+ax.plot([0,1],[0,1], color='0.5')
+#ax.set_xlabel('Trained Net')
+ax.set_ylabel('APC\nR',labelpad=0)
+ax.yaxis.set_label_coords(-0.4, 0.5)
+
+ax.set_ylim(0,1)
+ax.set_xlim(0,1)
+ax.set_xticks([0,0.5,1])
+ax.set_xticklabels([])
+ax.set_yticks([0, 0.5, 1])
+plt.grid()
+ind_bfitcnn = cor_v4_models_dirfit[0].argsort()[-1]
+ind_bfit_trut = (cor_v4_models_dirfit[0] - cor_v4_models_dirfit[1]).argsort()[-1]
+
+
+ax.annotate(s='a9501', xy=[x[ind_bfitcnn], y[ind_bfitcnn]+0.03], xytext=[x[ind_bfitcnn], y[ind_bfitcnn]+0.3],
+            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
+ax.annotate(s='b8302', xy=[x[ind_bfit_trut], y[ind_bfit_trut]+0.03], xytext=[x[ind_bfit_trut], y[ind_bfit_trut]+0.3],
+           arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
+beautify(ax)
+
+ax = plt.subplot(223)
+ax_list.append(ax)
+
+ax.locator_params(nbins=5)
+x = mean_scores[0]
+y = mean_scores[1]
+xsd = bsci_scores[0]
+ysd = bsci_scores[1]
+
+#ax.scatter(x, y, alpha=0.5, s=2)
+ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o', 
+            alpha=0, markersize=0, color='r', ecolor='0.5')
+colors= np.array(['k',]*len(x))
+colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+       ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+ax.scatter(x,y, color=colors, s=3)
+ax.plot([0,1],[0,1], color='0.5')
+ax.set_ylim(0,1)
+ax.set_xlim(0,1)
+ax.set_xticks([0, 0.5, 1])
+ax.set_yticks([0, 0.5, 1])
+beautify(ax)
+ax.annotate(s='a9501', xy=[x[ind_bfitcnn], y[ind_bfitcnn]+0.03], xytext=[x[ind_bfitcnn], y[ind_bfitcnn]+0.3],
+            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'},    
+        ha='right')
+ax.annotate(s='b8302', xy=[x[ind_bfit_trut]+0.03, y[ind_bfit_trut]], xytext=[x[ind_bfit_trut]+0.3, y[ind_bfit_trut]],
+            arrowprops={'shrink':0.0, 'headwidth':10, 'frac':0.1, 'facecolor':'none'})
+ax.set_xlabel('R\nTrained Net',labelpad=5)
+
+ax.set_ylabel('Untrained Net', labelpad=12)
+ax.yaxis.set_label_coords(-0.52, 0.5)
+plt.tight_layout()
+plt.grid()
+
+labels = ['A.', 'B.']
+for ax, label in zip(ax_list, labels):
+    ax.text(-0.35, 1.12, label, transform=ax.transAxes,
+      fontsize=14, fontweight='bold', va='top', ha='right')
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/13_apc_vs_cnn.pdf')
+
+
+
+
+#%%
+import matplotlib as mpl
 frac_of_image = 0.25
 
-def cur_or_dict(s,norm=True):
+def cur_or_dict(s, norm=True):
     cs = s[:, 1]*1j + s[:, 0]
     downsamp = 1
     if norm:
@@ -1692,7 +1873,7 @@ cmap = cm.bwr
 mat = l.loadmat(top_dir + '/img_gen/'+ 'PC3702001ShapeVerts.mat')
 s = np.array(mat['shapes'][0])
 s = [shape[:-1,:] for shape in s]
-s = bg.center_boundary(s)
+s = dc.center_boundary(s)
 
 normed = True
 shape_id = 105
@@ -1700,7 +1881,7 @@ rect_len = 8
 
 shape_dict_list_dense = (cur_or_dict(ashape / np.max(np.abs(ashape)), norm=normed)
                          for ashape in s)
-ws = itertools.islice(shape_dict_list_dense, shape_id, shape_id+1).__next__()
+ws = itertools.islice(shape_dict_list_dense, shape_id, shape_id+1).next()
 dense_val = np.array([ws['curvature'], 
                       ws['orientation']]).T
 
@@ -1742,20 +1923,20 @@ if schematic_gaussian:
     sd_ori = .7
     
     e = Ellipse(xy=[m_ori, m_curv], width=sd_ori*2, height=sd_curv*2)
-    e.set_facecolor('w')
+    e.set_facecolor([0.5,0.5,0.5,0.5])
     ax.add_artist(e)
 
     curv_x = np.linspace(-1,1,100)  
     curv_gaus = gaussian(curv_x, m_curv, sd_curv)
     or_x = np.linspace(0, 2*np.pi, 100)
     or_gaus = gaussian(or_x, m_ori, sd_ori)
-    fs=16
+    fs=12
     plt.plot( or_x, (0.3*or_gaus-1.05), color='k')
     plt.plot([m_ori, m_ori], [-1, m_curv-sd_curv], color='k')
     plt.plot([m_ori-sd_ori, m_ori-sd_ori], [-1, m_curv],  color='0.5')
     plt.plot([m_ori+sd_ori, m_ori+sd_ori], [-1, m_curv], color='0.5',)
-    ax.text(m_ori, m_curv*2, '$\mu_a$', fontsize=fs)
-    ax.text(m_ori+sd_ori, m_curv*2, '$\sigma_a$', fontsize=fs)
+    ax.text(m_ori + 0.1, -0.5, '$\mu_a$', fontsize=fs)
+    ax.text(m_ori+sd_ori+0.1, -0.5, '$\sigma_a$', fontsize=fs)
     
     plt.plot(0.7*curv_gaus+left, curv_x, color='k')
     plt.plot([left, m_ori-sd_ori],[m_curv, m_curv], color='k')
@@ -1798,7 +1979,8 @@ ax.tick_params(axis='both', length=0)
 ax.set_xlabel('Angular Position ($^\circ$)',fontsize=15)
 ax.set_ylabel('Curvature', fontsize=15)
 ax.set_aspect(2.5)
-plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/shape_example.svg')
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/shape_example.svg', 
+            bbox_inches='tight')
 
 
 if  not schematic_gaussian:
@@ -1829,169 +2011,8 @@ if  not schematic_gaussian:
     plt.tight_layout()
 #cbar.set_label('Curvature', fontsize=15)
 
-    plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/apc_encoding.svg')
+    plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/apc_encoding.svg', bbox_inches='tight')
     
-#%%
-
-def adjust_to_r(static_vector, shift_vector, desired_r):
-    #center both vectors
-    if np.corrcoef(shift_vector, static_vector)[0,1]<0:
-        shift_vector = -shift_vector
-    b = shift_vector
-    b = b - b.mean()
-    x = static_vector
-    x = x - x.mean()
-    
-    #project x onto b
-    s = np.dot(x, b)/np.linalg.norm(b)**2
-    b = b * s
-    #get the error vector, or vecto pointing from tip of b to x
-    e = x - b
-    #convert desired r to angle    
-    theta = np.arccos(desired_r)
-    #get current angle between x and b
-    phi = np.arccos(np.corrcoef(x, b)[0,1])
-    #how much angle to shift b
-    beta = phi - theta
-    mag_b = np.linalg.norm(b)#adjacent length
-    mag_e = np.linalg.norm(e)#opposite length
-    #solve for git stscaling of a to the opposite side for beta
-    a = (mag_b * np.tan(beta))/mag_e
-    shifted_vector = a * e + b # now shift b with a*e
-    return shifted_vector
-
-v4_resp_mean = xr.open_dataset(top_dir + 
-                               'data/responses/V4_362PC2001.nc')['resp'].load()
-v4_resp_trials = xr.open_dataset(top_dir +
-                                 'data/responses/apc_orig/apc370_with_trials.nc')
-v4_resp_trials = v4_resp_trials['resp'].load().transpose('shapes','unit','trials')
-v4_resp_trials = v4_resp_trials.loc[v4_resp_mean.coords['shapes'].values, :, :]
-v4_resp_mean = v4_resp_trials.mean('trials')
-#%%
-m_cor_list = []
-for cell in range(v4_resp_mean.shape[1]):
-    x = v4_resp_mean[:,cell]
-    nstim = x.shape[0]
-    correlations = [1,]
-    n_model_resample = 20
-    n_noise_resample = 20
-    n_trials = 5
-    r_list = []
-
-    for desired_r in correlations:
-        gen_vec = np.random.randn(n_model_resample, nstim)
-        for vec in gen_vec:
-            shift_vec = adjust_to_r(x, vec, desired_r)
-            sim_resp = np.random.poisson(x, size=(n_noise_resample, n_trials, nstim))
-            r = [np.corrcoef(resp, shift_vec)[0, 1] for resp in sim_resp.mean(1)]
-        r_list.append(r)
-
-    r_list = np.abs(np.array(r_list))
-    m_cor_list.append(np.mean(r_list))
-#%%
-_=plt.hist(np.array(m_cor_list), histtype='step')
-plt.title('Distribution of correlation to perfect model after noise')
-plt.xlabel('Correlation');plt.ylabel('Count');
-
-#%%
-
-import apc_model_fit as ac
-
-
-v4_name = 'V4_362PC2001'
-v4_resp_apc = xr.open_dataset(top_dir +
-                              'data/responses/' + v4_name + '.nc')['resp'].load()
-v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
-v4_resp_apc = v4_resp_mean
-file = open(top_dir + 'data/responses/v4_apc_109_neural_labels.txt', 'r')
-wyeth_labels = [label.split(' ')[-1] for label in 
-            file.read().split('\n') if len(label)>0]
-v4_resp_apc['w_lab'] = ('unit', wyeth_labels)
-fn = top_dir + 'data/models/' + 'apc_models_362.nc'
-dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
-
-apc_fit_v4 = ac.cor_resp_to_model(v4_resp_apc.chunk({'shapes': 370}), 
-                                  dmod.chunk({}), 
-                                  fit_over_dims=None, 
-                                  prov_commit=False)
-#%%
-fit_mod = []
-from scipy.stats import linregress
-for i, fit in enumerate(apc_fit_v4):
-    mod = dmod[:, int(fit.models.values)]
-    dat = v4_resp_apc[:, i].values
-    slope, inter, r, p, sterr = linregress(mod.values, dat)
-    if r>0.6:
-        fit_mod.append(slope*mod + inter)
-#    plt.figure()
-#    plt.scatter(fit_mod, dat)
-#    plt.title(np.round(r,2))
-#    plt.axis('equal')
-    
-
-#%%
-r_thresh = [0.3, 0.5, 0.6, 0.7]
-m_cor_r_thresh_list = []
-for an_r_thresh in r_thresh:
-    print(an_r_thresh)
-    fit_mod = []
-    for i, fit in enumerate(apc_fit_v4):
-        mod = dmod[:, int(fit.models.values)]
-        dat = v4_resp_apc[:, i].values
-        slope, inter, r, p, sterr = linregress(mod.values, dat)
-        if r>an_r_thresh:
-            fit_mod.append(slope*mod + inter)
-        
-    m_cor_list = []
-    for i, a_fit_mod in enumerate(fit_mod):
-        #print(i)
-        x = a_fit_mod
-        if sum(x<0)>0:
-            x = x - x.min()
-        nstim = x.shape[0]
-        n_noise_resample = 10
-        n_trials = 5
-        r_list = []
-    
-        shift_vec = x
-        sim_resp = np.random.poisson(x, size=(n_noise_resample, n_trials, nstim))
-        r = [np.corrcoef(resp, shift_vec)[0, 1] for resp in sim_resp.mean(1)]
-        r_list.append(r)
-    
-        r_list = np.abs(np.array(r_list))
-        m_cor_list.append(np.mean(r_list))
-    m_cor_r_thresh_list.append(np.array(m_cor_list))
-
-#%%
-plt.figure(figsize=(4,8))
-for i, m_cor_list in enumerate(m_cor_r_thresh_list):
-    
-    plt.subplot(len(r_thresh), 1, i+1)
-    if i ==0:
-        plt.title('Noise added apc model fit to V4 unit' +'\nV4 apc model fit >=' + str(np.round(r_thresh[i],2)))
-    else:
-        plt.title(str(np.round(r_thresh[i],2)))
-
-    _=plt.hist(np.array(m_cor_list), histtype='step')
-    plt.xlabel('Correlation');plt.ylabel('Count');
-    plt.xlim(0,1)
-plt.tight_layout()
-#%%
-
-
-
-#%%
-os.listdir(top_dir+'/analysis/figures/images/v4cnn_cur/')
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -179,8 +179,8 @@ no_blank_image = trans_img_stack[1:]
 a = np.hstack((range(14), range(18, 318)));a = np.hstack((a, range(322, 370)))
 no_blank_image = no_blank_image[a]/255.
 
- #%%   
-#v4 fit to CNN and APC
+#%%   
+#v4 fit to CNN and APC 
 v4_name = 'V4_362PC2001'
 v4_resp_apc = xr.open_dataset(top_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
 v4_resp_apc = v4_resp_apc.transpose('shapes', 'unit')
@@ -385,7 +385,7 @@ ax.set_ylabel('Untrained Net', labelpad=12)
 ax.yaxis.set_label_coords(-0.52, 0.5)
 plt.tight_layout()
 plt.grid()
-plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/fig11_apc_vs_cnn.pdf')
+plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/13_apc_vs_cnn.pdf')
 
 #%%
 labels = ['A.', 'B.']
@@ -442,7 +442,7 @@ ax = plt.subplot(122)
 plot_resp_on_shapes(ax, no_blank_image, cnb_resp, image_square = 10)
 ax.set_title('V4 Response')
 
-plt.savefig(top_dir + '/analysis/figures/images/apc_vs_cnn_resp.pdf')
+plt.savefig(top_dir + '/analysis/figures/images/14_apc_vs_cnn_resp.pdf')
 
 '''  
 to_compare=cv_scores.mean(1) 
