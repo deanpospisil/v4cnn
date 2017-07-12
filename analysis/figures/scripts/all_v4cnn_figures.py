@@ -24,7 +24,6 @@ import scipy.io as  l
 import d_curve as dc
 import d_img_process as imp
 import d_net_analysis as dn
-from sklearn.neighbors import KernelDensity
 import caffe_net_response as cf
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -276,13 +275,13 @@ def plot_resp_on_shapes(ax, imgStack, resp, image_square=19):
     im = vis_square(ax, sortStack[0:image_square**2])
     return im
 
-def open_cnn_analysis(fn,layer_label):
+def open_cnn_analysis(fn, layer_label):
     try:
         an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'), 
                    encoding='latin1')
     except:
         an=pk.load(open(top_dir + 'data/an_results/' + fn,'rb'))
-    fvx = an[0].sel(concat_dim='r2')
+    fvx = an[0].sel(concat_dim='r')
     rf = an[0].sel(concat_dim='rf')
     cnn = an[1]
     return fvx, rf, cnn
@@ -304,7 +303,7 @@ def process_V4(v4_resp_apc, v4_resp_ti, dmod):
     index = pd.MultiIndex.from_arrays([np.array(['v4']*len(apc)), 
                                        np.arange(len(apc))], 
                                        names=keys)
-    coords_to_take= ['cur_mean', 'cur_sd', 'or_mean', 'or_sd', 'models']
+    coords_to_take= ['cur_mean', 'cur_sd', 'or_mean', 'or_sd',]
     apc_coords = [apc.coords[coord].values for coord in coords_to_take]
     v4pdapc  = pd.DataFrame(np.array([apc.values,] + apc_coords + [k_apc,]).T, 
                index=index, 
@@ -341,7 +340,7 @@ if sys.platform == 'linux2':
 else:
     data_dir = top_dir
 
-goforit = False
+goforit = True
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     
@@ -394,15 +393,17 @@ if 'cnn_an' not in locals() or goforit:
     fns = [
     'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
     'blvc_caffenet_iter_1APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
-    'bvlc_caffenet_reference_shuffle_layer_APC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_analysis.p',
     'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)_null_analysis.p'
     ]
-
+    fns = [
+    'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_analysis.p',
+    'blvc_caffenet_iter_1pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_analysis.p',
+    'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_null_analysis.p'
+    ]
     alt = pd.concat([open_cnn_analysis(fns[0], layer_label)[-1], alt_v4], axis=0)
     init = open_cnn_analysis(fns[1], layer_label)[-1]
-    shuf = open_cnn_analysis(fns[2], layer_label)[-1]
-    null = pd.concat([open_cnn_analysis(fns[3], layer_label)[-1], null_v4], axis=0)
-    cnn_an = pd.concat([alt, null, init, shuf ], 
+    null = pd.concat([open_cnn_analysis(fns[2], layer_label)[-1], null_v4], axis=0)
+    cnn_an = pd.concat([alt, null, init], 
               axis=0, keys=['resp', 's. resp', 'init. net', 's. layer wts'], names=['cond','layer_label','unit'])
 
 
@@ -580,7 +581,7 @@ figsize= (6,5)
 plt.figure(figsize=figsize)
 import matplotlib.gridspec as gridspec
 conds = ['resp', 's. resp', 'init. net']
-apc = cnn_an['apc'][cnn_an['k']<40]
+apc = cnn_an['apc'][cnn_an['k_stim']<40]
 m = 3
 n = 3
 gs = gridspec.GridSpec(m, n, width_ratios=[1,.7,.5],
@@ -686,7 +687,7 @@ scatter_dat = [[hi_curv_resp, dmod.sel(models=model),
                 hi_curv_resp.coords['w_lab'].values],]
 
 cn = cnn_an.loc['resp'].drop('v4', level='layer_label')
-cn = cn[cn['k']<40]
+cn = cn[cn['k_stim']<40]
 cn_apc = cn[-cn['apc'].isnull()]     
 b_unit = cn_apc[cn_apc['cur_mean']>0.5]['apc'].idxmax()
 model = int(cn_apc['models'].loc[b_unit[0]].loc[b_unit[1]])
@@ -697,7 +698,7 @@ hi_curv_resp = hi_curv_resp.reindex_like(model_resp)
 scatter_dat.append([hi_curv_resp, model_resp, b_unit])
 
 cn = cnn_an.loc['resp'].drop('v4', level='layer_label')
-cn = cn[cn['k']<40]
+cn = cn[cn['k_stim']<40]
 cn_apc = cn[-cn['apc'].isnull()]     
 b_unit = cn_apc[cn_apc['cur_mean']<0.5]['apc'].idxmax()
 model = int(cn_apc['models'].loc[b_unit[0]].loc[b_unit[1]])
@@ -830,8 +831,8 @@ for interval in intervals:
     c_sd_y.append(np.percentile(cond_y[np.isfinite(cond_y)], [5, 95]))
 
 
-c_sd_y_err = np.ma.abs((np.array(c_sd_y) - np.array(c_means_y).reshape(n_intervals,1)).T)
-c_sd_x_err = np.ma.abs((np.array(c_sd_x) - np.array(c_means_x).reshape(n_intervals,1)).T)
+c_sd_y_err = np.ma.abs((np.array(c_sd_y) - np.array(c_means_y).reshape(int(n_intervals),1)).T)
+c_sd_x_err = np.ma.abs((np.array(c_sd_x) - np.array(c_means_x).reshape(int(n_intervals),1)).T)
 
 plt.axis('square')
 fs = 12

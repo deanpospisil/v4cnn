@@ -11,8 +11,6 @@ sys.path.append(top_dir+ 'v4cnn/')
 sys.path.append( top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn/'
 sys.path.append( top_dir + 'common/')
-import matplotlib
-from matplotlib.ticker import FuncFormatter
 
 import xarray as xr
 import apc_model_fit as ac
@@ -213,6 +211,7 @@ def ti_av_cov(da, rf=None):
 
 
 def norm_cov(x, subtract_mean=True):
+    
     #if nxm the get cov nxn
     x = x.astype(np.float64)
     if subtract_mean:
@@ -226,7 +225,7 @@ def norm_cov(x, subtract_mean=True):
     
     return norm_cov
 
-def ti_in_rf(resp, stim_width=32):
+def ti_in_rf(resp, stim_width=None):
     try:
         base_line = resp.sel(shapes=-1)[0]
         resp = resp.drop(-1, dim='shapes')
@@ -234,74 +233,91 @@ def ti_in_rf(resp, stim_width=32):
         base_line = 0
     resp = resp - base_line#subtract off baseline
     dims = resp.coords.dims
+    if stim_width == None:
+        if ('x' in dims) and ('y' in dims):
+            resp = resp.transpose('unit','shapes', 'x', 'y')
+            resp_unrolled = resp.values.reshape(resp.shape[:2] + (np.product(resp.shape[-2:]),))
+            ti= []
+            for a_resp in  resp_unrolled:
+                ti.append(norm_cov(a_resp)) 
+        elif ('x' in dims) or ('y' in dims):
+            if 'x' in dims:
+                resp = resp.transpose('unit', 'shapes', 'x')
+                
+            elif 'y' in dims:
+                resp = resp.transpose('unit', 'shapes', 'y')
+            ti = []
+            for a_resp in resp.values:
+                ti.append(norm_cov(a_resp))
+    else:
+        if ('x' in dims) and ('y' in dims):
     
-    if ('x' in dims) and ('y' in dims):
-        resp = resp.transpose('unit','shapes', 'x', 'y')
-        
-        x = resp.coords['x'].values
-        y = resp.coords['y'].values
-        
-        x_grid = np.tile(x, (len(y), 1)).ravel()
-        y_grid = np.tile(y[:, np.newaxis], (1, len(x))).ravel()
-        
-        x_dist = x_grid[:, np.newaxis] - x_grid[:, np.newaxis].T
-        y_dist = y_grid[:, np.newaxis] - y_grid[:, np.newaxis].T
-        
-        dist_mat = (x_dist**2 + y_dist**2)**0.5
-        stim_in = dist_mat<=(stim_width*1.)
-        rf = (resp**2).sum('shapes')>0
-        rf[..., :, -1] = False
-        rf[..., :, 0] = False
-        rf[..., 0, :] = False
-        rf[..., -1, :] = False
-        rf = rf.values.reshape((rf.shape[0],) + (np.product(rf.shape[1:]),))
-        in_spots = stim_in.sum(0)
-        overlap = np.array([a_rf * stim_in for a_rf in rf]).sum(-1)
-        in_rf = overlap == in_spots[np.newaxis,:]
-        
-        resp_unrolled = resp.values.reshape(resp.shape[:2] + (np.product(resp.shape[-2:]),))
-        ti= []
-        for an_in_rf, a_resp in zip(in_rf, resp_unrolled):
-            if np.sum(an_in_rf)>2:
-                ti.append(norm_cov(a_resp[..., an_in_rf.squeeze()]))
-            else:
-                ti.append(np.nan)
-        
-    elif ('x' in dims) or ('y' in dims):
-        if 'x' in dims:
-            resp = resp.transpose('unit', 'shapes', 'x')
-            pos = resp.coords['x'].values
+            resp = resp.transpose('unit','shapes', 'x', 'y')
             
-        elif 'y' in dims:
-            resp = resp.transpose('unit', 'shapes', 'y')
-            pos = resp.coords['y'].values
-    
-        pos_dist = pos[:, np.newaxis] - pos[:, np.newaxis].T #matrix of differences
-        dist_mat = (pos_dist**2)**0.5 #matrix of distances
-        stim_in = dist_mat<=(stim_width*1.)#all positions you need to check if responded
-        rf = (resp**2).sum('shapes')>0
-        #hackish way to make sure test pos is far enough from edge
-        #for example if you test two positions close to each other, all adjacent stim
-        #are activated but all are on edge, so can't be sure.
-        rf[..., 0] = False
-        rf[..., -1] = False
-        in_rf = rf.copy()
-        in_spots = stim_in.sum(0)
-        #after overlap only the intersection of stim_in
-        #and rf exists so if it is any less then stim_in then not all stim_in points
-        #were activated.
-        ti = []
-        for i, an_rf in enumerate(rf):
-            overlap = np.sum(an_rf.values[:, np.newaxis] * stim_in, 0)
-            in_pos = overlap == in_spots
-            in_rf[i] = in_pos
+            x = resp.coords['x'].values
+            y = resp.coords['y'].values
             
-        for an_in_rf, a_resp in zip(in_rf.values, resp.values):
-            if np.sum(an_in_rf)>2:
-                ti.append(norm_cov(a_resp[..., an_in_rf.squeeze()]))
-            else:
-                ti.append(np.nan)
-    
+            x_grid = np.tile(x, (len(y), 1)).ravel()
+            y_grid = np.tile(y[:, np.newaxis], (1, len(x))).ravel()
+            
+            x_dist = x_grid[:, np.newaxis] - x_grid[:, np.newaxis].T
+            y_dist = y_grid[:, np.newaxis] - y_grid[:, np.newaxis].T
+            
+            dist_mat = (x_dist**2 + y_dist**2)**0.5
+            stim_in = dist_mat<=(stim_width*1.)
+            rf = (resp**2).sum('shapes')>0
+            rf[..., :, -1] = False
+            rf[..., :, 0] = False
+            rf[..., 0, :] = False
+            rf[..., -1, :] = False
+            rf = rf.values.reshape((rf.shape[0],) + (np.product(rf.shape[1:]),))
+            in_spots = stim_in.sum(0)
+            overlap = np.array([a_rf * stim_in for a_rf in rf]).sum(-1)
+            in_rf = overlap == in_spots[np.newaxis,:]
+            
+            resp_unrolled = resp.values.reshape(resp.shape[:2] + (np.product(resp.shape[-2:]),))
+            ti= []
+            for an_in_rf, a_resp in zip(in_rf, resp_unrolled):
+                if np.sum(an_in_rf)>2:
+                    ti.append(norm_cov(a_resp[..., an_in_rf.squeeze()]))
+                else:
+                    ti.append(np.nan)
+            
+        elif ('x' in dims) or ('y' in dims):
+            if 'x' in dims:
+                resp = resp.transpose('unit', 'shapes', 'x')
+                pos = resp.coords['x'].values
+                
+            elif 'y' in dims:
+                resp = resp.transpose('unit', 'shapes', 'y')
+                pos = resp.coords['y'].values
+        
+            pos_dist = pos[:, np.newaxis] - pos[:, np.newaxis].T #matrix of differences
+            dist_mat = (pos_dist**2)**0.5 #matrix of distances
+            stim_in = dist_mat<=(stim_width*1.)#all positions you need to check if responded
+            rf = (resp**2).sum('shapes')>0
+            #hackish way to make sure test pos is far enough from edge
+            #for example if you test two positions close to each other, all adjacent stim
+            #are activated but all are on edge, so can't be sure.
+            rf[..., 0] = False
+            rf[..., -1] = False
+            in_rf = rf.copy()
+            in_spots = stim_in.sum(0)
+            #after overlap only the intersection of stim_in
+            #and rf exists so if it is any less then stim_in then not all stim_in points
+            #were activated.
+            ti = []
+            for i, an_rf in enumerate(rf):
+                overlap = np.sum(an_rf.values[:, np.newaxis] * stim_in, 0)
+                in_pos = overlap == in_spots
+                in_rf[i] = in_pos
+                
+            for an_in_rf, a_resp in zip(in_rf.values, resp.values):
+                if np.sum(an_in_rf)>2:
+                    ti.append(norm_cov(a_resp[..., an_in_rf.squeeze()]))
+                else:
+                    ti.append(np.nan)
+        
     resp_av_cov_da = xr.DataArray(ti, coords=resp.coords['unit'].coords)  
     return resp_av_cov_da
 
@@ -343,23 +359,27 @@ def spatial_weight_normcov(netwtsd):
 def kurtosis_da(resp):
     dims = resp.coords.dims   
     
-    if ('x' in dims) and ('y' in dims):
-        resp = resp.transpose('unit', 'shapes', 'x', 'y')
-        stim_resp = np.array([(unit**2).sum((1, 2)) for unit in resp.values])
-        pos_resp = np.array([(unit**2).sum(0).ravel() for unit in resp.values])
-    elif ('x' in dims):
-        resp = resp.transpose('unit', 'shapes', 'x')
-        stim_resp = np.array([(unit**2).sum((1)) for unit in resp.values])
-        pos_resp = np.array([(unit**2).sum(0).ravel() for unit in resp.values])
-    elif ('y' in dims):
-        resp = resp.transpose('unit', 'shapes', 'y')
-        stim_resp = np.array([(unit**2).sum((1)) for unit in resp.values])
-        pos_resp = np.array([(unit**2).sum(0).ravel() for unit in resp.values])
+    if ('x' in dims) or ('y' in dims):
+        if ('x' in dims) and ('y' in dims):
+            resp = resp.transpose('unit', 'shapes', 'x', 'y')
+            stim_resp = np.array([(unit**2).sum((1, 2)) for unit in resp.values])
+            pos_resp = np.array([(unit**2).sum(0).ravel() for unit in resp.values])
+        elif ('x' in dims):
+            resp = resp.transpose('unit', 'shapes', 'x')
+            stim_resp = np.array([(unit**2).sum((1)) for unit in resp.values])
+            pos_resp = np.array([(unit**2).sum(0).ravel() for unit in resp.values])
+        elif ('y' in dims):
+            resp = resp.transpose('unit', 'shapes', 'y')
+            stim_resp = np.array([(unit**2).sum((1)) for unit in resp.values])
+            pos_resp = np.array([(unit**2).sum(0).ravel() for unit in resp.values])
+        k_stim = kurtosis_sc(stim_resp, axis=1, fisher=False)
+        k_pos = kurtosis_sc(pos_resp, axis=1, fisher=False)
+        return k_pos, k_stim
+    else:
+        resp = resp.transpose('unit', 'shapes')
+        k_stim = kurtosis_sc(resp.values, axis=1, fisher=False)
         
-
-    k_stim = kurtosis_sc(stim_resp, axis=1, fisher=False)
-    k_pos = kurtosis_sc(pos_resp, axis=1, fisher=False)
-    return k_pos, k_stim
+    return k_stim
 
 def tot_var(resp):
     dims = resp.coords.dims   

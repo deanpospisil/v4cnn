@@ -64,7 +64,7 @@ def apc_models(shape_dict_list=[{'curvature': None, 'orientation': None} ],
     #get responses to all points for each axis ap and c then their product, then the max of all those points as the resp
 
     for i, apc_points in enumerate(shape_dict_list):#had to break this up per memory issues
-        print(i)
+        #print(i)
         model_resp_all_apc_points = von_rv.pdf(apc_points['orientation']) * norm_rv.pdf( apc_points['curvature'])
         model_resp.append(np.array([np.max(model_resp_all_apc_points, axis=0)]))
 
@@ -127,12 +127,17 @@ def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
     ats = dmod.attrs
     dmod = dmod - dmod.mean(('shapes'))
     dmod = dmod/dmod.vnorm(('shapes'))
+    #dmod = dmod/(dmod**2).sum('shapes')
 
     resp_n = da.vnorm(('shapes'))
+    #resp_n = (da**2).sum(('shapes'))**0.5
+
     proj_resp_on_model = da.dot(dmod)
 
     if not fit_over_dims == None:
         resp_norm = resp_n.vnorm(fit_over_dims)
+        #resp_norm = (resp_n**2).sum(fit_over_dims)**0.5
+
         proj_resp_on_model_var = proj_resp_on_model.sum(fit_over_dims)
         n_over = 0
         #count up how many unit vectors you'll be applying for each r.
@@ -152,7 +157,6 @@ def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
     model_fit_params = dmod.coords['models'][corarg]
     cor = all_cor.max('models', skipna=True)
     cor[cor==-666] = np.nan
-
 
     for key in model_fit_params.coords.keys():
         cor[key] = ('unit', np.squeeze(model_fit_params[key]))

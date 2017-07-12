@@ -48,7 +48,7 @@ all_iter = [
 #'bvlc_caffenet_reference_increase_wt_cov_0.5',
 #'bvlc_caffenet_reference_increase_wt_cov_0.75',
 #'bvlc_caffenet_reference_increase_wt_cov_0.95'
-#'blvc_caffenet_iter_1',
+'blvc_caffenet_iter_1',
 ]
 #base_name = 'bvlc_caffenet_reference_shuffle_layer_'
 #all_iter += [base_name+str(layer) for layer in range(7)]
@@ -73,10 +73,10 @@ scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 #scale = None
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-y = (center_image-80, center_image+80, 21)
-#x = (center_image, center_image, 1)
-x = (center_image-80, center_image+80, 21)
-#y = (30, 180, 51)
+#y = (center_image-80, center_image+80, 21)
+x = (64, 164, 51)
+#x = (center_image-80, center_image+80, 21)
+y = (center_image, center_image, 1)
 
 #%%
 #y = (center_image, center_image, 11)
