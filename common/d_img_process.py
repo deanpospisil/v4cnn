@@ -176,7 +176,6 @@ def guassianDownSampleSTD( oldSize, newSize,  stdCutOff, fs ):
 
 def fft_resample_img(img, nPix, std_cut_off = None):
     #this is only for square images
-
     if not std_cut_off is None:
         oldSize = np.size(img,0)
         std = guassianDownSampleSTD( oldSize, nPix,  stdCutOff, oldSize )

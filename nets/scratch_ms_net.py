@@ -46,7 +46,7 @@ def output_sizes(kernel_widths, strides, input_size):
         input_size.append(np.ceil((input_size[i] - kernel_widths[i]) 
                          / strides[i] + 1))
 
-n = 227
+n = 228
 img = np.ones((n, n))
 
 row_freq = np.fft.fftfreq(n, 1./n)
@@ -96,44 +96,75 @@ def centeredCrop(img, new_height, new_width):
 
    cImg = img[top:bottom, left:right]
    return cImg
+
+def centered_cut(o_length, n_length):
+
+    if o_length % 2: #if the image has odd number rows
+        if not n_length % 2: #if the  new length is even
+            n_length = n_length + 1 #make it odd
+        center = (o_length - 1)/2 
+        half_width = (n_length - 1)/2
+        r1 = center - half_width
+        r2 = center + half_width + 1
+    else:
+        if n_length % 2: #if the new length is odd
+            n_length = n_length + 1 #make it even
+        center = (o_length)/2 - 1 
+        half_width = n_length/2
+        r1 = center - half_width
+        r2 = center + half_width 
+    return (r1, r2)
+
+def centered_crop(img, r, c):
+    n_r_img = len(img[:, 0])
+    n_c_img = len(img[0, :])
+    (r1, r2) = centered_cut(n_r_img, r)
+    (c1, c2) = centered_cut(n_c_img, c)
+           
+    return img[r1:r2, c1:c2]
+            
+        
+        
+
 #spatial filts
+spatial_sd = 3
 for i in range(len(bin_centers))[:-1]:
-    f_filt = myGuassian(mag, bin_centers[i], bin_half_width[i])
-    t_filt = np.fft.irfft2(f_filt)
+    sigma = bin_half_width[i]
+    mu = bin_centers[i]
+    f_filt = myGuassian(mag, mu, sigma)
+    t_filt = np.fft.irfft2(f_filt, (n,n))
     shift_t_filt = np.fft.fftshift(t_filt)
-    shift_t_filt_pwr = np.sum(shift_t_filt**2, 1)
-    cut_off = np.max(shift_t_filt_pwr)/10.
-    cut_off_pix = [i for i in range(len(shift_t_filt_pwr)) if (shift_t_filt_pwr[i])>cut_off][0]
-    cut_off_pix = int(len(shift_t_filt_pwr)/2. - cut_off_pix)
-    cropped_t_filt = centeredCrop(shift_t_filt, cut_off_pix*5, cut_off_pix*5)
+    one_sd = 1./(sigma*(2*np.pi/n))
+    spatial_extent = int((one_sd*2)*spatial_sd)
+    cropped_t_filt = centered_crop(shift_t_filt, spatial_extent, spatial_extent)
     plt.figure()
     plt.subplot(121)
     plt.imshow(cropped_t_filt)
-#%%
-import caffe
-from caffe import layers as L
-from caffe import params as P
-n = caffe.NetSpec()
-n.data, n.label = L.Data(batch_size=256, transform_param=dict(mirror=True, crop_size=227),
-                                ntop=2)
-
-L.Convolution(n.data, ntop=1, )
-print(n.to_proto())
-#%%
-def example_network(batch_size):
-
-
-    n.loss, n.label = L.Data(shape=[dict(dim=[1]),
-                                         dict(dim=[1])],
-                                  transform_param=dict(scale=1.0/255.0),
-                                  ntop=2)
-
-    n.accuracy = L.Python(n.loss, n.label,
-                          python_param=dict(
-                                          module='python_accuracy',
-                                          layer='PythonAccuracy',
-                                          param_str='{ "param_name": param_value }'),
-                          ntop=1,)
-
-    return n.to_proto()
-a = example_network(20)
+##%%
+#import caffe
+#from caffe import layers as L
+#from caffe import params as P
+#n = caffe.NetSpec()
+#n.data, n.label = L.Data(batch_size=256, transform_param=dict(mirror=True, crop_size=227),
+#                                ntop=2)
+#
+#L.Convolution(n.data, ntop=1, )
+#print(n.to_proto())
+##%%
+#def example_network(batch_size):
+#
+#
+#    n.loss, n.label = L.Data(shape=[dict(dim=[1]),
+#                                         dict(dim=[1])],
+#                                  transform_param=dict(scale=1.0/255.0),
+#                                  ntop=2)
+#
+#    n.accuracy = L.Python(n.loss, n.label,
+#                          python_param=dict(
+#                                          module='python_accuracy',
+#                                          layer='PythonAccuracy',
+#                                          param_str='{ "param_name": param_value }'),
+#                          ntop=1,)
+#
+#    return n.to_proto()
+#a = example_network(20)
