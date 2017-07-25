@@ -140,6 +140,16 @@ for i in range(len(bin_centers))[:-1]:
     plt.figure()
     plt.subplot(121)
     plt.imshow(cropped_t_filt)
+#%%
+n_intra_layers = 5
+n_layers = 5
+rf_sizes = [11, 40, 100, 300, 420]
+
+
+rf_width(kernel_widths, strides)
+
+
+#%%
 ##%%
 #import caffe
 #from caffe import layers as L
