@@ -152,6 +152,8 @@ plt.ylabel('Simulated Drop in Correlation')
 plt.xlim(0,1)
 plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'+str('2_') + 
             'APC_noise_sim_predicts_low_cor_no_perf.pdf', bbox_inches='tight')
+s, l , r, p, se = linregress(apc_fit_v4, (1-np.array(apc_m_cor_list)))
+
 #%%
 plt.figure()
 plt.hist(apc_m_cor_list)
@@ -234,10 +236,12 @@ plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'+str('2_')+
 plt.figure()
 
 plt.scatter(v4_ti, (1-np.array(ti_m_cor_list)))
-plt.title('TI: V4 Correlation to Model')
+plt.title('TI V4 Metric')
 plt.xlabel('TI metric')
 plt.ylabel('Simulated Drop in Correlation')
 plt.ylim(0,.30);plt.xlim(0,1)
+s, l , r, p, se = linregress(v4_ti, (1-np.array(ti_m_cor_list)))
+
 plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'+str('3_')+ 
             'TI_noise_sim_predicts_low_cor.pdf', bbox_inches='tight')
 

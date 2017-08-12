@@ -92,8 +92,13 @@ def myGuassian(x, mu, sig):
 filt = myGuassian(mag, 25, 10)
 
 #plt.imshow(filt)
-
-n_bin_edges = 12
+from scipy import misc
+im = misc.imread('/home/dean/caffe/examples/images/cat.jpg')
+im = im[:n,:n, :]/255.
+im = np.mean(im, -1)
+im= 1-im
+plt.imshow(im, cmap='Greys')
+n_bin_edges =10
 #fewest_freqs = 10.
 #highest_divisor = np.floor(nyq / fewest_freqs)
 #bin_edges = nyq/np.logspace(1, np.log2(highest_divisor), num=n_bin_edges, base=2)
@@ -102,30 +107,58 @@ bin_upper_edges = nyq/np.geomspace(1, n/10., num=n_bin_edges)
 bin_edges = np.append(bin_upper_edges, 0)
 bin_half_width = np.abs(np.diff(bin_edges)/2)
 bin_centers = [(bin_edges[i+1] + bin_edges[i]) / 2. for i in range(len(bin_edges))[:-1]]
+nyq = np.ceil((n/2.)/(bin_centers+bin_half_width*2))
+
 for i in range(len(bin_centers))[:-1]:
     filt = myGuassian(mag, bin_centers[i], bin_half_width[i])
     plt.figure()
-    plt.subplot(121)
+    plt.subplot(141)
     plt.imshow(filt)
-    plt.subplot(122)
-    plt.imshow(np.fft.fftshift(np.fft.irfft2(filt)))
+    plt.xticks([]);plt.yticks([])
+    plt.subplot(142)
+    plt.imshow(np.fft.fftshift(np.fft.irfft2(filt)), cmap='Greys')
+    plt.xticks([]);plt.yticks([])
+    plt.subplot(143)
+    filt_im = np.fft.irfft2(filt * np.fft.rfft2(im))
+    plt.imshow(filt_im, cmap='Greys', interpolation='nearest');plt.xticks([]);plt.yticks([])
+    plt.subplot(143)
+    filt_im = np.fft.irfft2(filt * np.fft.rfft2(im))
+    plt.imshow(filt_im[::int(nyq[i]), ::int(nyq[i])], cmap='Greys', interpolation='nearest');plt.xticks([]);plt.yticks([])
+    
 
 
-            
-        
 spatial_sd = 3
 cropped_t_filt = []
-nyq = np.ceil((n/2.)/(bin_centers+bin_half_width*2))
 for i in range(len(bin_centers))[:-1]:
     sigma = bin_half_width[i]
     mu = bin_centers[i]
     
-    one_sd = 1./(sigma*(2*np.pi/n))
+    one_sd = 1./(sigma * (2*np.pi/n))
     spatial_extent = int((one_sd*2)*spatial_sd)
+
     
     f_filt = myGuassian(mag, mu, sigma) 
     t_filt = np.fft.fftshift(np.fft.irfft2(f_filt, (n, n)))
     cropped_t_filt.append(centered_crop(t_filt, spatial_extent, spatial_extent))     
+
+
+#%% calculating potential RF sizes. 
+r = np.linspace(1,100,1000)
+n = 1
+m = 200  
+sigma_f = ((np.sqrt((-2.*m*r - np.pi*n*r + 2.*np.pi*r)**2. + 16.*np.pi*m*r**2.)
+         + 2.*m*r + np.pi*n*r - 2.*np.pi*r)/(4.*np.pi*r**2.))
+t = 1./((sigma_f + r**-1)*2)
+
+rf = (1./((1./r + sigma_f)*2)) * n + 2.*m/(sigma_f*2.*np.pi)
+plt.figure()
+plt.plot(rf, sigma_f);plt.xlabel('rf');plt.ylabel('sigma bw')
+plt.figure()
+plt.plot(rf, t);plt.xlabel('rf');plt.ylabel('sampling period')
+plt.figure()
+plt.plot(rf, 1./rf);plt.xlabel('rf');plt.ylabel('freq')
+plt.figure()
+plt.plot(rf, t);plt.xlabel('rf');plt.ylabel('sampling period')
 
 ##spatial filts
 #spatial_sd = 3
@@ -142,6 +175,7 @@ for i in range(len(bin_centers))[:-1]:
 #    cropped_t_filt = centered_crop(shift_t_filt, spatial_extent, spatial_extent)
 #    plt.figure()
 #    plt.imshow(cropped_t_filt)
+
 ##%%
 #import caffe
 #from caffe import layers as L
