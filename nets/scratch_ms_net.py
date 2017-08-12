@@ -46,7 +46,33 @@ def output_sizes(kernel_widths, strides, input_size):
         input_size.append(np.ceil((input_size[i] - kernel_widths[i]) 
                          / strides[i] + 1))
 
-n = 228
+def centered_cut(o_length, n_length):
+
+    if o_length % 2: #if the image has odd number rows
+        if not n_length % 2: #if the  new length is even
+            n_length = n_length + 1 #make it odd
+        center = (o_length - 1)/2 
+        half_width = (n_length - 1)/2
+        r1 = center - half_width
+        r2 = center + half_width + 1
+    else:
+        if n_length % 2: #if the new length is odd
+            n_length = n_length + 1 #make it even
+        center = (o_length)/2
+        half_width = n_length/2
+        r1 = center - half_width
+        r2 = center + half_width 
+    return (int(r1), int(r2))
+
+def centered_crop(img, r, c):
+    n_r_img = len(img[:, 0])
+    n_c_img = len(img[0, :])
+    (r1, r2) = centered_cut(n_r_img, r)
+    (c1, c2) = centered_cut(n_c_img, c)
+           
+    return img[r1:r2, c1:c2]
+
+n = 227
 img = np.ones((n, n))
 
 row_freq = np.fft.fftfreq(n, 1./n)
@@ -66,8 +92,13 @@ def myGuassian(x, mu, sig):
 filt = myGuassian(mag, 25, 10)
 
 #plt.imshow(filt)
-
-n_bin_edges = 6
+from scipy import misc
+im = misc.imread('/home/dean/caffe/examples/images/cat.jpg')
+im = im[:n,:n, :]/255.
+im = np.mean(im, -1)
+im= 1-im
+plt.imshow(im, cmap='Greys')
+n_bin_edges =10
 #fewest_freqs = 10.
 #highest_divisor = np.floor(nyq / fewest_freqs)
 #bin_edges = nyq/np.logspace(1, np.log2(highest_divisor), num=n_bin_edges, base=2)
@@ -76,80 +107,75 @@ bin_upper_edges = nyq/np.geomspace(1, n/10., num=n_bin_edges)
 bin_edges = np.append(bin_upper_edges, 0)
 bin_half_width = np.abs(np.diff(bin_edges)/2)
 bin_centers = [(bin_edges[i+1] + bin_edges[i]) / 2. for i in range(len(bin_edges))[:-1]]
-for i in range(len(bin_centers)):
+nyq = np.ceil((n/2.)/(bin_centers+bin_half_width*2))
+
+for i in range(len(bin_centers))[:-1]:
     filt = myGuassian(mag, bin_centers[i], bin_half_width[i])
     plt.figure()
-    plt.subplot(121)
+    plt.subplot(141)
     plt.imshow(filt)
-    plt.subplot(122)
-    plt.imshow(np.fft.fftshift(np.fft.irfft2(filt)))
+    plt.xticks([]);plt.yticks([])
+    plt.subplot(142)
+    plt.imshow(np.fft.fftshift(np.fft.irfft2(filt)), cmap='Greys')
+    plt.xticks([]);plt.yticks([])
+    plt.subplot(143)
+    filt_im = np.fft.irfft2(filt * np.fft.rfft2(im))
+    plt.imshow(filt_im, cmap='Greys', interpolation='nearest');plt.xticks([]);plt.yticks([])
+    plt.subplot(143)
+    filt_im = np.fft.irfft2(filt * np.fft.rfft2(im))
+    plt.imshow(filt_im[::int(nyq[i]), ::int(nyq[i])], cmap='Greys', interpolation='nearest');plt.xticks([]);plt.yticks([])
+    
 
-def centeredCrop(img, new_height, new_width):
-   width =  np.size(img,1)
-   height =  np.size(img,0)
 
-   #if an odd number defaults to putting extra pixel to left and top
-   left = int(np.ceil((width - new_width)/2.))
-   top = int(np.ceil((height - new_height)/2.))
-   right = int(np.floor((width + new_width)/2.))
-   bottom = int(np.floor((height + new_height)/2.))
-
-   cImg = img[top:bottom, left:right]
-   return cImg
-
-def centered_cut(o_length, n_length):
-
-    if o_length % 2: #if the image has odd number rows
-        if not n_length % 2: #if the  new length is even
-            n_length = n_length + 1 #make it odd
-        center = (o_length - 1)/2 
-        half_width = (n_length - 1)/2
-        r1 = center - half_width
-        r2 = center + half_width + 1
-    else:
-        if n_length % 2: #if the new length is odd
-            n_length = n_length + 1 #make it even
-        center = (o_length)/2 - 1 
-        half_width = n_length/2
-        r1 = center - half_width
-        r2 = center + half_width 
-    return (r1, r2)
-
-def centered_crop(img, r, c):
-    n_r_img = len(img[:, 0])
-    n_c_img = len(img[0, :])
-    (r1, r2) = centered_cut(n_r_img, r)
-    (c1, c2) = centered_cut(n_c_img, c)
-           
-    return img[r1:r2, c1:c2]
-            
-        
-        
-
-#spatial filts
 spatial_sd = 3
+cropped_t_filt = []
 for i in range(len(bin_centers))[:-1]:
     sigma = bin_half_width[i]
     mu = bin_centers[i]
-    f_filt = myGuassian(mag, mu, sigma)
-    t_filt = np.fft.irfft2(f_filt, (n,n))
-    shift_t_filt = np.fft.fftshift(t_filt)
-    one_sd = 1./(sigma*(2*np.pi/n))
+    
+    one_sd = 1./(sigma * (2*np.pi/n))
     spatial_extent = int((one_sd*2)*spatial_sd)
-    cropped_t_filt = centered_crop(shift_t_filt, spatial_extent, spatial_extent)
-    plt.figure()
-    plt.subplot(121)
-    plt.imshow(cropped_t_filt)
-#%%
-n_intra_layers = 5
-n_layers = 5
-rf_sizes = [11, 40, 100, 300, 420]
+
+    
+    f_filt = myGuassian(mag, mu, sigma) 
+    t_filt = np.fft.fftshift(np.fft.irfft2(f_filt, (n, n)))
+    cropped_t_filt.append(centered_crop(t_filt, spatial_extent, spatial_extent))     
 
 
-rf_width(kernel_widths, strides)
+#%% calculating potential RF sizes. 
+r = np.linspace(1,100,1000)
+n = 1
+m = 200  
+sigma_f = ((np.sqrt((-2.*m*r - np.pi*n*r + 2.*np.pi*r)**2. + 16.*np.pi*m*r**2.)
+         + 2.*m*r + np.pi*n*r - 2.*np.pi*r)/(4.*np.pi*r**2.))
+t = 1./((sigma_f + r**-1)*2)
 
+rf = (1./((1./r + sigma_f)*2)) * n + 2.*m/(sigma_f*2.*np.pi)
+plt.figure()
+plt.plot(rf, sigma_f);plt.xlabel('rf');plt.ylabel('sigma bw')
+plt.figure()
+plt.plot(rf, t);plt.xlabel('rf');plt.ylabel('sampling period')
+plt.figure()
+plt.plot(rf, 1./rf);plt.xlabel('rf');plt.ylabel('freq')
+plt.figure()
+plt.plot(rf, t);plt.xlabel('rf');plt.ylabel('sampling period')
 
-#%%
+##spatial filts
+#spatial_sd = 3
+#for i in range(len(bin_centers))[:-1]:
+#    sigma = bin_half_width[i]
+#    mu = bin_centers[i]
+#    f_filt = myGuassian(mag, mu, sigma)
+#    one_sd = 1./(sigma*(2*np.pi/n))
+#    spatial_extent = int((one_sd*2)*spatial_sd)
+#    
+#    t_filt = np.fft.irfft2(f_filt, (n, n))
+#    shift_t_filt = np.fft.fftshift(t_filt)
+#
+#    cropped_t_filt = centered_crop(shift_t_filt, spatial_extent, spatial_extent)
+#    plt.figure()
+#    plt.imshow(cropped_t_filt)
+
 ##%%
 #import caffe
 #from caffe import layers as L

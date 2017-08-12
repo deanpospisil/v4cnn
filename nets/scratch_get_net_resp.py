@@ -87,28 +87,30 @@ stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids
                                                                 x=x,
                                                                 y=y,
                                                                 amp=amp)
-for  iter_name, deploy  in zip(all_iter, deploys):
-    print(iter_name)
-    #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])   
-    response_description = (iter_name+ 'pix_width'+ str(max_pix_width)
-                            + '_x_' + str(x) + '_y_' + str(y) 
-                            +'_amp_'+ str(amp) + str(base_image_nm)  +'.nc')
-    response_file = (response_folder + response_description)
 
-    if  os.path.isfile(response_file):
-        print('file already written')
-    else:
-        da = cf.get_net_resp(base_image_nm,
-                             ann_dir,
-                             iter_name,
-                             stim_trans_cart_dict,
-                             stim_trans_dict,
-                             require_provenance=False,
-                             use_boundary=True,
-                             deploy=deploy)
-
-        da.to_dataset(name='resp').to_netcdf(response_file)
-
-
-
+##%%
+#for  iter_name, deploy  in zip(all_iter, deploys):
+#    print(iter_name)
+#    #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])   
+#    response_description = (iter_name+ 'pix_width'+ str(max_pix_width)
+#                            + '_x_' + str(x) + '_y_' + str(y) 
+#                            +'_amp_'+ str(amp) + str(base_image_nm)  +'.nc')
+#    response_file = (response_folder + response_description)
+#
+#    if  os.path.isfile(response_file):
+#        print('file already written')
+#    else:
+#        da = cf.get_net_resp(base_image_nm,
+#                             ann_dir,
+#                             iter_name,
+#                             stim_trans_cart_dict,
+#                             stim_trans_dict,
+#                             require_provenance=False,
+#                             use_boundary=True,
+#                             deploy=deploy)
+#
+#        da.to_dataset(name='resp').to_netcdf(response_file)
+#
+#
+#
 

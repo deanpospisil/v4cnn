@@ -161,8 +161,6 @@ def cnn_measure_to_pandas(da, measures, measure_names):
     coord = [da.coords[key].values for key in keys]
     index = pd.MultiIndex.from_arrays(coord, names=keys)
     pda = pd.DataFrame(np.array(measures).T, index=index, columns=measure_names)
-
-
     return pda
 
  
