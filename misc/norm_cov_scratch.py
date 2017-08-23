@@ -102,14 +102,20 @@ def tot_var(resp):
     pwr = np.array([(unit**2).sum() for unit in resp.values])
     return pwr
 #%%
-x = np.random.randn(10, 5)
+a = np.array([1,2,3,4,5]).reshape(1,5)
+
+
+x = np.random.randn(10, 1)
+x = x*a
+
 x = x - np.mean(x, axis=0, keepdims=True)
 
 ti = np.dot(x.T, x)
+
 vlength = np.linalg.norm(x, axis=0, keepdims=True)
 prod_v = vlength*vlength.T
-np.sum(np.triu(prod_v, k=1))
-np.sum(np.triu(ti, k=1))
+den = np.sum(np.triu(prod_v, k=1))
+num = np.sum(np.triu(ti, k=1))
 
 
 
