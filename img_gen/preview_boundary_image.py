@@ -78,7 +78,7 @@ figure_folder = top_dir + 'analysis/figures/images/'
 plt.figure(figsize=(6,12))
 center = 113
 box_lengths = [11,51,99,131,163]
-trans_img_stack =np.array(imp.boundary_stack_transform(stim_trans_cart_dict, base_stack, npixels=227))
+trans_img_stack = np.array(imp.boundary_stack_transform(stim_trans_cart_dict, base_stack, npixels=227))
 #plot smallest and largest shape
 no_blank_image = trans_img_stack[1:]
 extents = (no_blank_image.sum(1)>0).sum(1)
@@ -86,7 +86,7 @@ plt.subplot(211)
 plt.imshow(no_blank_image[0],cmap=plt.cm.Greys_r)
 plt.xticks([]);plt.yticks([])
 
-plt.savefig(top_dir+'analysis/figures/images/example.jpeg')
+#plt.savefig(top_dir+'analysis/figures/images/example.jpeg')
 '''
 plt.imshow(no_blank_image[np.argmax(extents)],
                           interpolation = 'nearest', cmap=plt.cm.Greys_r)

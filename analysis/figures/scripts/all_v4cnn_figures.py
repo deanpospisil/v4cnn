@@ -386,6 +386,7 @@ if 'cnn_an' not in locals() or goforit:
     da = da.sel(unit=slice(0, None, 1)).squeeze()
     middle = np.round(len(da.coords['x'])/2.).astype(int)
     da_0 = da.sel(x=da.coords['x'][middle])
+    
     indexes = np.unique(da.coords['layer_label'].values, return_index=True)[1]
     layer_label = [da.coords['layer_label'].values[index] for index in sorted(indexes)]
        
@@ -399,6 +400,11 @@ if 'cnn_an' not in locals() or goforit:
     'blvc_caffenet_iter_1pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_analysis.p',
     'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_null_analysis.p'
     ]
+#    fns = [
+#    'bvlc_caffenet_reference_increase_wt_cov_random0.9pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_analysis.p',
+#    'blvc_caffenet_iter_1pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_analysis.p',
+#    'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370_null_analysis.p'
+#    ]
     results_dir = data_dir + '/data/an_results/'
     alt = pd.concat([open_cnn_analysis(results_dir +  fns[0], layer_label)[-1], alt_v4], axis=0)
     init = open_cnn_analysis(results_dir + fns[1], layer_label)[-1]
@@ -406,151 +412,9 @@ if 'cnn_an' not in locals() or goforit:
     cnn_an = pd.concat([alt, null, init], 
               axis=0, keys=['resp', 's. resp', 'init. net',], names=['cond','layer_label','unit'])
 
-
 #%%
-#plt.hist(alt.loc['conv2']['ti_av_cov'], histtype='step',  bins=20)
-#plt.hist(init.loc['conv2']['ti_av_cov'], histtype='step', bins=20)
-#plt.hist(alt.loc['v4']['ti_av_cov'].dropna(), histtype='step', bins=20)
-#plt.legend(['trained', 'untrained', 'V4'], loc=6, frameon=False)
-#plt.xlabel('Translation Invariance', fontsize=15)
-#plt.ylabel('Unit Count', fontsize=15)
-#
-#beautify(plt.gca())
-#plt.savefig(data_dir + '/analysis/figures/images/early_layer/TI_conv2', bbox_inches='tight')
-#
+layer_colors = cm.copper(np.linspace(0.1, 1, 8))
 
-
-#%%
-'''
-plt.figure(figsize=(10, 10))
-ax_dumb = plt.subplot(111)
-ax = plt.subplot(111)
-resp = v4_resp_apc[:,0]
-#m, data = plot_resp_on_shapes(ax, no_blank_image, resp, image_square=20)
-#beautify(ax, ['top','right','left','bottom'])
-#cbar = plt.gcf().colorbar(im, ax=ax, shrink=0.5)
-c_imgs = np.zeros(np.shape(no_blank_image) + (4,))
-respsc = (resp - resp.min())
-respsc = respsc/respsc.max()
-
-scale = cm.cool(respsc)
-
-for i, a_color in enumerate(scale):
-    c_imgs[i, np.nonzero(no_blank_image[i])[0], np.nonzero(no_blank_image[i])[1],:] = a_color
-
-im = ax_dumb.imshow(np.tile(respsc,(2,1)), cmap=cm.cool, interpolation='nearest')
-
-cbar = plt.gcf().colorbar(im, ax=ax, shrink=0.5, ticks=[np.min(respsc), np.mean(respsc), np.max(respsc)])
-cbar.ax.set_yticklabels([str(np.round(np.min(respsc).values,1)) 
-,'$\mu$',
-str(np.round(np.max(respsc).values,1))], fontsize=20) 
-cbar.ax.set_ylabel('Normalized\nResponse', rotation='horizontal', fontsize=15, ha='left')
-
-data, im = vis_square(ax, c_imgs)
-ax.imshow(data, interpolation='nearest')
-beautify(ax, ['top','right','left','bottom'])
-
-plt.savefig(data_dir + '/analysis/figures/images/activity_unsorted.png', bbox_inches='tight')
-'''
-#%%
-'''
-plt.figure(figsize=(10, 10))
-ax = plt.subplot(111)
-resp = v4_resp_apc[:,0]
-#m, data = plot_resp_on_shapes(ax, no_blank_image, resp, image_square=20)
-#beautify(ax, ['top','right','left','bottom'])
-#cbar = plt.gcf().colorbar(im, ax=ax, shrink=0.5)
-c_imgs = np.zeros(np.shape(no_blank_image) + (4,))
-respsc = (resp - resp.min())
-respsc = respsc/respsc.max()
-
-scale = cm.cool(respsc)
-resp_sort_inds = np.argsort(resp)[::-1]
-
-for i, a_color in enumerate(scale):
-    c_imgs[i, np.nonzero(no_blank_image[i])[0], np.nonzero(no_blank_image[i])[1],:] = a_color
-
-plt.imshow(np.tile(respsc,(2,1)), cmap=cm.cool, interpolation='nearest')
-cbar = plt.gcf().colorbar(im, ax=ax, shrink=0.5, ticks=[np.min(respsc), np.mean(respsc), np.max(respsc)])
-cbar.ax.set_yticklabels([str(np.round(np.min(respsc).values,1)) 
-,'$\mu$',
-str(np.round(np.max(respsc).values,1))], fontsize=20) 
-cbar.ax.set_ylabel('Normalized\nResponse', rotation='horizontal', fontsize=15, ha='left')
-
-data, im = vis_square(ax, c_imgs[resp_sort_inds])
-plt.imshow(data, interpolation='nearest')
-beautify(ax, ['top','right','left','bottom'])
-
-plt.savefig(data_dir + '/analysis/figures/images/activity_sorted.png', bbox_inches='tight')
-'''
-#%%
-'''
-def plot_resp_on_sort_shapes(ax, shapes, resp, top=25, fs=20, shrink=.5,):
-    c_imgs = np.zeros(np.shape(shapes) + (4,))
-    respsc = (resp - resp.min())
-    respsc = respsc/respsc.max()
-    
-    scale = cm.cool(respsc)
-    resp_sort_inds = np.argsort(resp)[::-1]
-    
-    for i, a_color in enumerate(scale):
-        c_imgs[i, np.nonzero(shapes[i])[0], np.nonzero(shapes[i])[1],:] = a_color
-    
-    im = ax.imshow(np.tile(respsc,(2,1)), cmap=cm.cool, interpolation='nearest')
-    cbar = ax.get_figure().colorbar(im, ax=ax, shrink=shrink, 
-            ticks=[np.min(respsc), np.mean(respsc), np.max(respsc)])
-    cbar.ax.set_yticklabels([str(np.round(np.min(respsc).values,1)) 
-    ,'$\mu$',
-    str(np.round(np.max(respsc).values,1))], fontsize=fs) 
-    cbar.ax.set_ylabel('Normalized\nResponse', rotation='horizontal', fontsize=fs/1.5, ha='left')
-    
-    data, im = vis_square(ax, c_imgs[resp_sort_inds][:top])
-    ax.imshow(data, interpolation='nearest')
-    beautify(ax, ['top','right','left','bottom'])
-
-    
-plt.figure(figsize=(10, 10))
-ax = plt.subplot(111)
-resp = v4_resp_apc[:,0]
-plot_resp_on_sort_shapes(ax, no_blank_image, resp, top=25)
-ax.set_ylim(500,10)
-#m, data = plot_resp_on_shapes(ax, no_blank_image, resp, image_square=20)
-#beautify(ax, ['top','right','left','bottom'])
-#cbar = plt.gcf().colorbar(im, ax=ax, shrink=0.5)
-
-plt.savefig(data_dir + '/analysis/figures/images/activity_sorted_top.png', bbox_inches='tight')
-'''
-#%%
-'''
-plt.figure(figsize=(10, 10))
-ax = plt.subplot(111)
-resp = v4_resp_apc[:,0]
-#m, data = plot_resp_on_shapes(ax, no_blank_image, resp, image_square=20)
-#cbar = plt.gcf().colorbar(im, ax=ax, shrink=0.5)
-c_imgs = np.zeros(np.shape(no_blank_image) + (4,))
-respsc = (resp - resp.min())
-respsc = respsc/respsc.max()
-
-scale = cm.cool(respsc)
-resp_sort_inds = np.argsort(resp)[::-1]
-
-for i, a_color in enumerate(scale):
-    c_imgs[i, np.nonzero(no_blank_image[i])[0], np.nonzero(no_blank_image[i])[1],:] = [0,0,1,1]
-
-#plt.imshow(np.tile(respsc,(5,1)), cmap=cm.cool, interpolation='nearest')
-#cbar = plt.gcf().colorbar(im, ax=ax, shrink=0.5, ticks=[np.min(respsc), np.mean(respsc), np.max(respsc)])
-#cbar.ax.set_yticklabels([str(np.round(np.min(respsc).values,1)) 
-#,'$\mu$',
-#str(np.round(np.max(respsc).values,1))], fontsize=20) 
-#cbar.ax.set_ylabel('Normalized\nResponse', rotation='horizontal', fontsize=15, ha='left')
-
-data, im = vis_square(ax, c_imgs)
-plt.imshow(data, interpolation='nearest')
-beautify(ax, ['top','right','left','bottom'])
-
-plt.savefig(data_dir + '/analysis/figures/images/uniform.png', bbox_inches='tight')
-'''
-#%%
 def plot_resp_on_sort_shapes(ax, shapes, resp, top=25, fs=20, shrink=.5, colorbar=False):
     c_imgs = np.zeros(np.shape(shapes) + (4,))
     respsc = (resp - resp.min())
@@ -593,20 +457,21 @@ hist_dat_leg = []
 
 hist_dat = [[cnn_an.loc[cond].loc['v4']['apc'] for cond in ['resp', 's. resp']],]
 hist_dat_leg.append({'labels':['Resp.', 'S. Resp.'], 
-                     'fontsize':'xx-small','frameon':True,'loc':4 })
+                     'fontsize':'xx-small', 'frameon':True, 'loc':4 })
 
 hist_dat.append([apc.loc[cond].drop('v4', level='layer_label') for cond in conds])
 hist_dat_leg.append({'labels':['Resp.', 'S. Resp.', 'Untrained'], 'fontsize':'xx-small',
                  'frameon':True,'loc':4})
 
-layers_to_examine = ['conv1','conv2','conv3','conv4','conv5', 'fc6','fc7','fc8']
+layers_to_examine = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 hist_dat.append([apc.loc['resp'].drop('v4', level='layer_label').loc[layer]
-                 for layer in layers_to_examine] + [apc.loc['resp'].loc['v4'],])
+                 for layer in layers_to_examine] + [cnn_an.loc['resp'].loc['v4']['apc'].dropna(),])
 hist_dat.append([apc.loc['resp'].drop('v4', level='layer_label').loc[layer]
                  for layer in layers_to_examine])
 hist_dat_leg.append({'title':'CN resp', 'labels':layers_to_examine, 
                     'fontsize':'xx-small' , 'frameon':True, 'loc':4,'markerscale':100})
 
+    
 for leg in hist_dat_leg:
     leg['fontsize'] = fs
     leg['labelspacing'] = 0
@@ -617,12 +482,8 @@ for i, ax_ind in enumerate(hist_pos):
     elif i==1:
         colors = ['k','g','b','m','c', 'k', '0.5']
     else:
-        colors = cm.copper(np.linspace(0, 1, len(hist_dat[i])))
-        colors[-1] = [1, 0, 0, 0]
-        #colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
-                  #[54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
-        #colors = colors / np.array([[255,255,255,1]])
-        
+        colors = list(layer_colors)
+        colors.append([1, 0, 0, 0])
 
     for apc_vals, color in zip(hist_dat[i], colors):
         x = apc_vals.dropna().values
@@ -630,9 +491,10 @@ for i, ax_ind in enumerate(hist_pos):
             lw=1
         else:
             lw=2
-        y_c, bins_c = d_hist(ax, np.sqrt(x), cumulative=True, color=color, alpha=0.75, lw=lw)   
+        y_c, bins_c = d_hist(ax, np.sqrt(x), cumulative=True, color=color, 
+                             alpha=0.75, lw=lw)   
     bins_c = np.concatenate([apc_vals.dropna().values for apc_vals in hist_dat[i]]).ravel()
-    beautify(ax, spines_to_remove=['top','right'])
+    beautify(ax, spines_to_remove=['top', 'right'])
     ax.set_xticks([0,0.5,1])
     ax.set_xticklabels([0,0.5,1], fontsize=10)
     ax.spines['left'].set_bounds(0,1)
@@ -676,7 +538,7 @@ ax_list[6].set_xlabel('APC fit r', labelpad=0, fontsize=12)
 
 example_cell_inds = [1,4,7]
 v4 = cnn_an.loc['resp'].loc['v4']
-v4_apc = v4[-v4['apc'].isnull()]['apc']
+v4_apc = v4[-v4['apc'].isnull()]
 b_unit = v4_apc[v4_apc['cur_mean']>0.5]['apc'].argmax()
 model = v4_apc['models'].iloc[b_unit]
 hi_curv_resp = v4_resp_apc.sel(unit=b_unit)
@@ -804,14 +666,13 @@ for net_name in [y_nm, x_nm]:
     k.append(na.kurtosis_da(da))
     ti.append(na.ti_in_rf(da, stim_width=32))
 non_k_var = (k[0][1]<42) * (k[1][1]<42) * (k[0][0]<6) * (k[1][0]<6)
-#%%
 ti_x_f = ti[1][non_k_var]
 ti_y_f = ti[0][non_k_var]
 ti_x_f = np.ma.masked_invalid(ti_x_f)
 ti_y_f = np.ma.masked_invalid(ti_y_f)
 
 n_intervals = 10.
-interval_space = 1/n_intervals
+interval_space = 1./n_intervals
 intervals = np.linspace(0, 1-interval_space, n_intervals)
 
 c_means_x = []
@@ -910,7 +771,7 @@ ex_cell_resp = [v4_resp_ti.sel(unit=ind).dropna('shapes',how='all').dropna('x', 
 v4_ex = [cell for cell in zip(ex_cell_ti, ex_cell_resp, ex_cell_inds)]
 props = {'facecolor':'w', 'boxstyle':'round', 'alpha':1, 'clip_on':True}
 
-v4_ex_plt_inds = [1,0]
+v4_ex_plt_inds = [0,1]
 for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
     ax = ax_list[plt_ind]
     ex_cell_resp = ex_cell[1]*(1/.3)
@@ -918,7 +779,9 @@ for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
     corr = np.corrcoef(ex_cell_resp)
     middle = rf.argmax()
     corr_slice=corr[:, middle]
-    ax.locator_params(axis='x', nbins=len(rf.values), tight=True);
+    #ax.locator_params(axis='x', nbins=len(rf.values), tight=True);
+    ax.set_xticklabels(['-1','-1','0','1','2'])
+    
     
     ax.plot(rf.values, color='g')
     ax.scatter(range(0,4), rf.values, color='g')
@@ -940,7 +803,7 @@ for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
     
     ax2.set_ylim(0,1.1);
     ax2.set_yticks([0,0.5,1])
-    ax.set_xlim(-0.1,len(rf.values)-1+0.1)
+    #ax.set_xlim(-0.1,len(rf.values)-1+0.1)
     
     ax.set_yticks([0,12,24])
     ax.set_ylim([0,28])
@@ -968,9 +831,9 @@ for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
 
     beautify(ax);
     fs=12
-    ax.set_xlabel('Pos. ' +str(1)+'\nspk/s',labelpad=10, fontsize=fs,va='top',);
+    ax.set_xlabel('Pos. ' +str(0)+'\nspk/s',labelpad=10, fontsize=fs,va='top',);
     ax.xaxis.set_label_coords(0.5, -0.1)
-    ax.set_ylabel('Pos. ' +str(0)+'\nspk/s', rotation=0,labelpad=10, color='k', 
+    ax.set_ylabel('Pos. ' +str(-1)+'\nspk/s', rotation=0,labelpad=10, color='k', 
                   ha='right',va='center', fontsize=fs);
     ax.yaxis.set_label_coords(-0.35, 0.35)
     ax.xaxis.set_label_coords(.5, -0.35)
@@ -985,6 +848,120 @@ plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'
 
 #%%
 # just example cells
+def norm_cov(x, subtract_mean=True):
+    
+    #if nxm the get cov nxn
+    x = x.astype(np.float64)
+    if subtract_mean:
+        x = x - np.mean(x, 0, keepdims=True)
+    diag_inds = np.triu_indices(x.shape[1], k=1)
+    numerator = np.sum(np.dot(x.T, x)[diag_inds])
+    
+    vnrm = np.linalg.norm(x, axis=0, keepdims=True)
+    denominator = np.sum(np.multiply(vnrm.T, vnrm)[diag_inds]) 
+    norm_cov = numerator/denominator
+    
+    return norm_cov
+
+def ti_in_rf(resp, stim_width=None):
+    try:
+        base_line = resp.sel(shapes=-1)[0]
+        resp = resp.drop(-1, dim='shapes')
+    except:
+        base_line = 0
+    resp = resp - base_line#subtract off baseline
+    dims = resp.coords.dims
+    if stim_width == None:
+        if ('x' in dims) and ('y' in dims):
+            resp = resp.transpose('unit','shapes', 'x', 'y')
+            resp_unrolled = resp.values.reshape(resp.shape[:2] + (np.product(resp.shape[-2:]),))
+            ti= []
+            for a_resp in  resp_unrolled:
+                ti.append(norm_cov(a_resp)) 
+        elif ('x' in dims) or ('y' in dims):
+            if 'x' in dims:
+                resp = resp.transpose('unit', 'shapes', 'x')
+                
+            elif 'y' in dims:
+                resp = resp.transpose('unit', 'shapes', 'y')
+            ti = []
+            for a_resp in resp.values:
+                ti.append(norm_cov(a_resp))
+    else:
+        if ('x' in dims) and ('y' in dims):
+    
+            resp = resp.transpose('unit','shapes', 'x', 'y')
+            
+            x = resp.coords['x'].values
+            y = resp.coords['y'].values
+            
+            x_grid = np.tile(x, (len(y), 1)).ravel()
+            y_grid = np.tile(y[:, np.newaxis], (1, len(x))).ravel()
+            
+            x_dist = x_grid[:, np.newaxis] - x_grid[:, np.newaxis].T
+            y_dist = y_grid[:, np.newaxis] - y_grid[:, np.newaxis].T
+            
+            dist_mat = (x_dist**2 + y_dist**2)**0.5
+            stim_in = dist_mat<=(stim_width*1.)
+            rf = (resp**2).sum('shapes')>0
+            rf[..., :, -1] = False
+            rf[..., :, 0] = False
+            rf[..., 0, :] = False
+            rf[..., -1, :] = False
+            rf = rf.values.reshape((rf.shape[0],) + (np.product(rf.shape[1:]),))
+            in_spots = stim_in.sum(0)
+            overlap = np.array([a_rf * stim_in for a_rf in rf]).sum(-1)
+            in_rf = overlap == in_spots[np.newaxis,:]
+            
+            resp_unrolled = resp.values.reshape(resp.shape[:2] + (np.product(resp.shape[-2:]),))
+            ti= []
+            for an_in_rf, a_resp in zip(in_rf, resp_unrolled):
+                if np.sum(an_in_rf)>2:
+                    ti.append(norm_cov(a_resp[..., an_in_rf.squeeze()]))
+                else:
+                    ti.append(np.nan)
+            
+        elif ('x' in dims) or ('y' in dims):
+            if 'x' in dims:
+                resp = resp.transpose('unit', 'shapes', 'x')
+                pos = resp.coords['x'].values
+                
+            elif 'y' in dims:
+                resp = resp.transpose('unit', 'shapes', 'y')
+                pos = resp.coords['y'].values
+        
+            pos_dist = pos[:, np.newaxis] - pos[:, np.newaxis].T #matrix of differences
+            dist_mat = (pos_dist**2)**0.5 #matrix of distances
+            stim_in = dist_mat<=(stim_width*1.)#all positions you need to check if responded
+            rf = (resp**2).sum('shapes')>0
+            #hackish way to make sure test pos is far enough from edge
+            #for example if you test two positions close to each other, all adjacent stim
+            #are activated but all are on edge, so can't be sure.
+            rf[..., 0] = False
+            rf[..., -1] = False
+            in_rf = rf.copy()
+            in_spots = stim_in.sum(0)
+            #after overlap only the intersection of stim_in
+            #and rf exists so if it is any less then stim_in then not all stim_in points
+            #were activated.
+            ti = []
+            for i, an_rf in enumerate(rf):
+                overlap = np.sum(an_rf.values[:, np.newaxis] * stim_in, 0)
+                in_pos = overlap == in_spots
+                in_rf[i] = in_pos
+                
+            for an_in_rf, a_resp in zip(in_rf.values, resp.values):
+                if np.sum(an_in_rf)>2:
+                    ti.append(norm_cov(a_resp[..., an_in_rf.squeeze()]))
+                else:
+                    ti.append(np.nan)
+        
+    resp_av_cov_da = xr.DataArray(ti, coords=resp.coords['unit'].coords)  
+    return resp_av_cov_da, in_rf
+
+ti, inrf = ti_in_rf(da, 32)
+#%%
+
 m = 3
 n = 2
 plt.figure(figsize=(6,6))
@@ -1019,8 +996,10 @@ for layer, ex_ind in zip(ex_avg_layer, ex_inds):
     ax.plot(av_cor.coords['x'].values, av_cor.values, alpha=1, lw=2, 
             color='r')
 
-    ax.set_ylim(0, 1);
+    ax.set_ylim(-0.2, 1);
     ax.set_yticks([0,0.5,1])
+    ax.set_yticklabels([])
+
 
     ax.set_xlim(64, 164)
     ax.set_xticks([64, 114, 164])
@@ -1028,11 +1007,11 @@ for layer, ex_ind in zip(ex_avg_layer, ex_inds):
     if ex_ind ==1:
         ax.set_title('Layer Average\n', fontsize=17)
 
-    beautify([ax,], spines_to_remove=['top',],); 
+    beautify([ax,], spines_to_remove=['top', 'right'],); 
         
        
 ti_cnn = cnn_an[~cnn_an['ti_in_rf'].isnull()]['ti_in_rf'].loc['resp']
-ex_cell_inds = [('conv2', 450), ('conv5',3190), ('fc7', 12604),]
+ex_cell_inds = [('conv2', 497), ('conv5',3197), ('fc7', 12604),]
 ex_cell_tis = [ti_cnn.loc[ind[0]].loc[ind[1]] for ind in ex_cell_inds]
 ex_cell_cors = [cor.sel(unit=ind[1]) for ind in ex_cell_inds]
 ex_cell_rfs = [rf.sel(unit=ind[1]) for ind in ex_cell_inds]
@@ -1050,10 +1029,13 @@ for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, ['conv2', 
     ex_cell_ti = ex_cell[1]    
     ax.plot(ex_cell_rf.coords['x'].values, ex_cell_rf, color='g', lw=2)
     ax.plot(ex_cell_rf.coords['x'].values, ex_cell_cor, color='r',lw=2, alpha=1)
+    ax.plot(ex_cell_rf.coords['x'].values, inrf[int(ex_cell[1].coords['unit'].values)])
+    
     ax.set_xlim()
-    beautify([ax, ax2], spines_to_remove=['top',]);
+    beautify([ax, ax2], spines_to_remove=['top', 'right']);
     ax.set_ylim(-0.2,1)
-    ax.set_xticks([64,114,164])
+    ax.set_xticks([64, 114, 164])
+    ax.set_xticklabels([-50,0,50])
     ax.set_xlim([64, 164])
 
     ax.set_yticks([0, 0.5, 1])
@@ -1087,14 +1069,51 @@ for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, ['conv2', 
     #ax.set_yticklabels([])
 ax_list[0].text(0.5,1.01, 'Unit 497', ha='center', va='bottom',
                 transform=ax_list[0].transAxes, fontsize=12, fontstyle='italic')
-ax_list[0].annotate('', xy=(101, 0.05), xytext=(101, 0.4), ha='center',
-            arrowprops=dict(facecolor='black', shrink=0.05),zorder=1, fontsize=8)
+#ax_list[0].annotate('', xy=(101, 0.05), xytext=(101, 0.4), ha='center',
+#            arrowprops=dict(facecolor='black', shrink=0.05),zorder=1, fontsize=8)
 ax_list[4].text(.5,1.01, 'Unit 12604', ha='center', va='bottom',
                 transform=ax_list[4].transAxes, fontsize=12, fontstyle='italic')
-ax_list[2].set_title('Unit 3190', fontstyle='italic')
+ax_list[2].set_title('Unit 3197', fontstyle='italic')
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'+str(figure_num[4])+
             '_ti_example_and_avg_v4cnn.pdf', bbox_inches='tight')
+#%%
+cnn_name ='bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370'
+lims = 300       
+da = xr.open_dataset(data_dir + 'data/responses/' + cnn_name + '.nc')['resp'].squeeze()
+pos1 = 114
+pos2 = 120
+pos3 = 108
+plt.figure(figsize=(4,2))
+plt.subplot(121)
+plt.scatter(da[..., 497].sel(x=pos1), da[..., 497].sel(x=pos2), s=3, edgecolors='none')
+plt.xlim(-lims,lims);plt.ylim(-lims,lims);
+plt.xticks([-lims,0,lims]);plt.yticks([-lims,0,lims])
+r = np.corrcoef(da[..., 497].sel(x=pos1).reindex_like(model_resp), 
+            da[..., 497].sel(x=pos2).reindex_like(model_resp))[0,1]
+plt.title('r= ' + str(np.round(r,2)))
+plt.xlabel('Response at\nPosition 0')
+plt.ylabel('Response at\nPosition +6')
+plt.plot([-300,300],[-300,300], color='k', alpha=0.5)
+plt.axis('equal')
+
+
+plt.subplot(122)
+plt.scatter(da[..., 497].sel(x=pos1), da[..., 497].sel(x=pos3), s=3, edgecolors='none')
+plt.xlim(-lims,lims);plt.ylim(-lims,lims);
+plt.xticks([-lims,0,lims]);plt.yticks([-lims,0,lims])
+plt.gca().set_xticklabels([]);plt.gca().set_yticklabels([])
+r = np.corrcoef(da[..., 497].sel(x=pos1).reindex_like(model_resp), 
+            da[..., 497].sel(x=pos3).reindex_like(model_resp))[0,1]
+plt.plot([-300,300],[-300,300], color='k', alpha=0.5)
+plt.title('r= ' + str(np.round(r, 2)))
+plt.ylabel('Response at\nPosition -6')
+plt.axis('equal')
+plt.xlabel('Response at\nPosition 0')
+plt.tight_layout()
+
+plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'+str(figure_num[4])+
+            'a_ti_example_and_avg_v4cnn.pdf', bbox_inches='tight')
 
 
 #%%
@@ -1104,7 +1123,7 @@ da = io.loadmat(data_dir + 'data/responses/cadieu_109.mat')['all']
 resp = np.reshape(da, (65, 109, 368), order='F')
 da = xr.DataArray(resp, dims=['x', 'unit','shapes'], coords=[range(0, 65*4, 4), range(109),  range(368)])
 da = da.transpose('unit', 'x', 'shapes')
-ti = na.ti_in_rf(da, stim_width=64)
+cadieu_ti = na.ti_in_rf(da, stim_width=64).to_pandas()
 
 
 plt.figure(figsize=(4,4))
@@ -1122,7 +1141,7 @@ ti_cnn = ti_cnn[(ti_cnn['k_pos']>2)&(ti_cnn['k_pos']<40)]['ti_in_rf']
 hist_pos = [1,0]
 hist_dat_leg = []
 hist_dat = []
-layers_to_examine = ['conv1','conv2','conv3','conv4', 'conv5', 'fc6', 'fc7', 'fc8']
+layers_to_examine = ['conv2','conv3','conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 
 hist_dat.append([ti_cnn.loc['init. net'].drop('v4', level='layer_label').loc[layer]
                  for layer in layers_to_examine])
@@ -1131,7 +1150,8 @@ hist_dat_leg.append({'labels':['CN', 'CN init.'],
 
 #layers_to_examine = ['relu1','relu2','relu3','relu4', 'relu5', 'relu6', 'relu7', 'fc8']
 hist_dat.append([ti_cnn.loc['resp'].drop('v4', level='layer_label').loc[layer]
-                 for layer in layers_to_examine] + [cnn_an.loc['resp'].loc['v4']['ti_av_cov'],])
+                 for layer in layers_to_examine] + 
+                    [cnn_an.loc['resp'].loc['v4']['ti_av_cov'],] + [cadieu_ti,])
 hist_dat_leg.append({'title':'CN layers', 'labels':layers_to_examine, 
                     'fontsize':'xx-small' , 'frameon':False, 'loc':(-0.3,1)})
 fs= 8
@@ -1145,36 +1165,12 @@ colors = ['g', 'r', '0.5', 'm', 'b', 'c', 'k']
 for i, ax_ind in enumerate(hist_pos):
     ax = ax_list[ax_ind]
     if i ==0:
-        #ax.set_title('Effect of Training on\nTranslation Invariance',fontsize=16)
-        colors = ['c', 'b']
-        colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
-              [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
-        colors = colors / np.array([[255,255,255,1]])
-        lw=1.5
-        ax.text(.2, .70, 'Untrained',
-        ha='center', va='bottom', fontstyle='italic',
-        transform=ax.transAxes, fontsize=14, color='k')
-#        ax.text(.6, .5, 'Trained',
-#        ha='center', va='bottom', fontstyle='italic',
-#        transform=ax.transAxes, fontsize=14, color=colors[0])
+        colors = layer_colors[1:]
+        lw = 1.5
     else:
-        #ax.set_title('Translation Invariance\nby Layer',fontsize=16)
-        colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
-                  [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
-        colors = colors / np.array([[255,255,255,1]])
-        lw=2
-        y_c, bins_c = d_hist(ax, ti, cumulative=True, color='c', alpha=1,lw=lw)
-
-#        ax.text(.30, 0.35, 'conv2',ha='center', va='bottom', fontstyle='italic',
-#        transform=ax.transAxes, fontsize=14, color=colors[1])
-#        ax.text(.85, 0.35, 'fc8', ha='center', va='bottom', fontstyle='italic',
-#        transform=ax.transAxes, fontsize=16, color=colors[-2])
-#        ax.text(.55, 0.25, 'V4',ha='center', va='bottom', fontstyle='normal',
-#        transform=ax.transAxes, fontsize=14, color=colors[-1])
-        #ax.set_title('Translation Invariance',fontsize=16)
-
-        colors = colors     
-        lw=2.5
+        colors = list(layer_colors[1:])
+        colors.append(np.array([1,0,0,1]))
+        colors.append(np.array([0,0,1,1]))
 
     for ti_val, color in zip(hist_dat[i], colors):
         x = ti_val.dropna().values
@@ -1205,15 +1201,16 @@ for i, ax_ind in enumerate(hist_pos):
     #ax.set_xlabel('Translation Invariance', fontsize=14)
 ax_list[0].set_xticklabels([])
 ax_list[0].set_ylabel('Fraction Units', labelpad=0, fontsize=10)
-ax_list[1].set_xlabel('Translation invariance', labelpad=0, fontsize=14)
+ax_list[1].set_xlabel('Translation Invariance', labelpad=0, fontsize=14)
 layer_names = [ 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4', 'Cadieu']
 
 spaces = np.linspace(0.9, 0.15, len(layer_names))
 colors = list(colors)
-colors.append('c')
-for name, color, space in zip(layer_names, colors[1:], spaces):
+for name, color, space in zip(layer_names, colors, spaces):
+    print(name)
+    print(color)
     ax_list[0].text(0.05, space, name, transform=ax.transAxes,
-           color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
+           color=color, fontsize=12, bbox=dict(facecolor='white', ec='none', pad=0))
     
 
 plt.tight_layout()
@@ -1224,6 +1221,10 @@ plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
 colors = np.array([[226,128,9,1],[190,39,45,1], [127,34, 83,1], [ 119, 93, 153,1], 
           [54, 58, 100,1], [157,188,88,1], [75,135,71,1],[ 59, 88,62,1], [0,0,0,1]])
 colors = colors / np.array([[255,255,255,1]])
+colors = list(layer_colors[1:])
+colors.append(np.array([1,0,0,1]))
+
+
 plt.figure(figsize=(5,3))
 gs = gridspec.GridSpec(1,2, width_ratios=[1,2],
                         height_ratios=[1,]*1) 
@@ -1238,10 +1239,10 @@ apc_cor = apc**0.5
 v4 = cnn_an.loc['resp'].loc['v4']
 v4_apc = v4[-v4['apc'].isnull()]['apc']**0.5
 
-for layer, color in zip(['conv2','fc7'],[colors[1],colors[6]]):
+for layer, color in zip(['fc7', 'conv2',],[colors[6],colors[1]]):
     ax.scatter(ti_cnn.loc['resp'].loc[layer][:n_samples], 
                apc_cor.loc['resp'].loc[layer][:n_samples], 
-               color=color, s=1, alpha=0.5)
+               color=color, s=1, alpha=1)
 ax.set_xlim(0,1)
 ax.set_ylim(0,1)
 ax.set_aspect(1)
@@ -1260,12 +1261,12 @@ v4ness = ((1-ti_cnn.loc['resp'])**2 + (1-apc_cor.loc['resp'])**2)**0.5
 (layer,num)= v4ness.argmin()
 y = apc_cor.loc['resp'].loc[layer].loc[num]
 x = ti_cnn.loc['resp'].loc[layer].loc[num]
-ax.scatter(x, y, color=colors[6], marker='*',s=4)
-
+ax.scatter(x, y, color=colors[6], marker='*', s=4)
+da
 
 best_v4_ti = cnn_an.loc['resp'].loc['v4']['ti_av_cov'].max()
 best_v4_apc = v4_apc.max()
-ax.scatter(best_v4_ti, best_v4_apc, color='K', marker='x',s=4)
+ax.scatter(best_v4_ti, best_v4_apc, color='r', marker='x',s=4)
 ax.legend(['Conv2', 'FC7', 'Best AN', 'Best V4'], fontsize=5, loc=3, 
           labelspacing = 0, scatterpoints=1)
 
@@ -1280,14 +1281,14 @@ layers_to_examine = ['conv2','conv3','conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 hist_dat = []
 hist_dat = [v4ness.drop('v4', level='layer_label').loc[layer]
                  for layer in layers_to_examine]
-for v4ness_val, color in zip(hist_dat, colors[1:]):
+for v4ness_val, color in zip(hist_dat, colors):
     x = v4ness_val.dropna().values
     y_c, bins_c = d_hist(ax, x, cumulative=True, color=color, alpha=1, lw=1.4) 
     ax.scatter([np.min(x),], [0,], color=color, marker='|')
 
-ax.set_xlim(1,0)
-ax.set_xticks([1,0.5,0])
-ax.set_xticklabels(['0', '0.5', '1'][::-1])
+ax.set_xlim(1,0.15)
+ax.set_xticks([1,0.5,.15])
+ax.set_xticklabels(['.15', '0.5', '1'][::-1])
 
 ax.set_ylim(1,-0.1)
 ax.set_aspect(0.5)
@@ -1313,18 +1314,18 @@ cum_hist = np.cumsum(joint_hist.ravel()[dist_sort])
 cum_hist = cum_hist/max(cum_hist)
 end = np.sum((1-best_v4_apc)**2 + (1-best_v4_ti)**2)**0.5
 dist_sort_val = dist.ravel()[dist_sort]
-plt.plot(dist_sort_val[dist_sort_val>end], cum_hist[dist_sort_val>end], color='k')
-ax.scatter([end,], [0,], color=color, marker='|')
+plt.plot(dist_sort_val[dist_sort_val>end], cum_hist[dist_sort_val>end], color='r')
+ax.scatter([end,], [0,], color='r', marker='|')
+
 layer_names = [ 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4']
-colors = list(colors)
-colors.append('k')
-for name, color, space in zip(layer_names, colors[1:], spaces):
+spaces = np.linspace(0.9, 0.15, len(layer_names))
+for name, color, space in zip(layer_names, colors, spaces):
     ax.text(0.05, space, name, transform=ax.transAxes,
            color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
     
 
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'+
-             str(figure_num[6]) + '_v4_ness.pdf')
+             str(figure_num[6]) + '_v4_ness.eps')
 #%%
 un_inds = xr.open_dataset(data_dir + '/data/models/apc_models_362_16X16.nc')['resp'].coords['shapes'].values
 layers_to_examine = ['conv1', 'relu1', 'norm1',  'conv2', 'fc6', 'prob']
@@ -1340,7 +1341,8 @@ name = 'bvlc_reference_caffenet_nat_image_resp_371.nc'
 cnn = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'],]   
 cnns = cnns + cnn
 cnns = [cnns[0], cnns[2], cnns[1], cnns[-1]]
-#%%
+
+
 n_plot = len(layers_to_examine)
 plt.figure(figsize=(3/1.5,n_plot*1.5/1.5))
 
@@ -1372,7 +1374,7 @@ for i, a_lay in enumerate(layers_to_examine):
         ax.plot(bins[1:], np.convolve(gaussian(np.linspace(-1,1,20), 0, 0.15), 
                 n, mode='same'), color=colors[j])
     ax.semilogy(nonposy='clip')
-    ax.set_ylim(10/len(var), 1)
+    ax.set_ylim(10./len(var), 1)
     ax.set_xlim(-the_range[i], the_range[i])
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -1382,7 +1384,7 @@ for i, a_lay in enumerate(layers_to_examine):
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
     
-    ax.set_yticks([1, 1/100])
+    ax.set_yticks([1, 1./100])
     ax.set_yticklabels(['',''])
     ax.tick_params('y', length=0, width=0, which='minor')
 
@@ -1401,7 +1403,6 @@ plt.tight_layout(h_pad=0.2)
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
             +str(figure_num[7])+'_dynamic_range.pdf',
             bbox_inches='tight')
-#plt.close()
 #%%
 #kurtosis v4 example
 def beautify(ax=None, spines_to_remove = ['top', 'right']):
@@ -1494,16 +1495,13 @@ var = v4_resp_apc_b[:, np.argmax(k_apc)]
 print(var)
 n_samps = len(var)
 ax.hist(v4_resp_apc_b[:, np.argmax(k_apc)], bins=n_bins, histtype='step', 
-        weights=[1/n_samps,]*n_samps,  range=[0,1], color='r', log=True)
+        weights=[1./n_samps,]*n_samps,  range=[0,1], color='r', log=True)
 ax.hist(v4_resp_apc_b[:, np.argsort(k_apc)[len(k_apc)//2]], histtype='step',
-        bins=n_bins, range=[0,1], weights=[1/n_samps,]*n_samps, color='b')
-ax.hist(v4_resp_apc_b[:, np.argmin(k_apc)], histtype='step', bins=n_bins, range=[0,1],
-        weights=[1/n_samps,]*n_samps, color='g')
+        bins=n_bins, range=[0,1], weights=[1./n_samps,]*n_samps, color='b')
+ax.hist(v4_resp_apc_b[:, np.argmin(k_apc)], histtype='step', bins=n_bins, 
+                      range=[0,1], weights=[1./n_samps,]*n_samps, color='g')
 
-#ax.legend(['Max Kurtosis: ' + str(round(np.max(k_apc),1)), 
-#           'Median Kurtosis: ' + str(round(np.median(k_apc),1)), 
-#           'Min Kurtosis: ' + str(round(np.min(k_apc),1))], loc='upper right', 
-#            fontsize=7.6, frameon=False, columnspacing=0)
+
 ax.legend(['Max.', 'Median', 'Min.'], loc=[0.05,0], markerfirst=True, 
             fontsize=6, frameon=False, columnspacing=0, title='Kurtosis')
 ax.tick_params('y', which = 'both', right=0)
@@ -1515,7 +1513,8 @@ ax.yaxis.set_label_coords(-0.3, 0.5)
 
 ####
 ax = ax_list[1]
-ax.hist(k_apc, bins=30, histtype='step', weights=[1/len(k_apc),]*len(k_apc), color='k')
+ax.hist(k_apc, bins=30, histtype='step', weights=[1./len(k_apc),]*len(k_apc), 
+                                                  color='k')
 ax.set_xlabel('Kurtosis');
 
 ax.set_ylabel('Fraction Units', labelpad=0);
@@ -1528,11 +1527,14 @@ ax.yaxis.set_label_coords(-0.2, 0.5)
 ax.set_ylim(-0.0,0.5)
 ax.set_title('Kurtosis Distribution\nV4')
 ax.annotate(s='',xy=(42,0), xytext=(42,0.05),
-            arrowprops=dict(ec ='red', facecolor='red', headwidth=6),zorder=1, )
+            arrowprops=dict(ec ='red', facecolor='red', headwidth=6),
+            zorder=1, )
 ax.annotate(s='',xy=(3.9,0), xytext=(3.9,0.05),
-            arrowprops=dict(ec ='blue', facecolor='blue', headwidth=6),zorder=1, )
+            arrowprops=dict(ec ='blue', facecolor='blue', headwidth=6),
+            zorder=1, )
 ax.annotate(s='',xy=(2.3,0), xytext=(2.3,0.05),
-            arrowprops=dict(ec ='green', facecolor='green', headwidth=6),zorder=1,)
+            arrowprops=dict(ec ='green', facecolor='green', headwidth=6),
+            zorder=1,)
 
 
 #n =  n/float(len(var));
@@ -1543,7 +1545,7 @@ n_bins = 20
 
 ax = ax_list[2]
 k_apc = alt.drop('v4', level='layer_label')['k_stim'].dropna().values
-ax.hist(k_apc, bins=n_bins, histtype='step', weights=[1/len(k_apc),]*len(k_apc), 
+ax.hist(k_apc, bins=n_bins, histtype='step', weights=[1./len(k_apc),]*len(k_apc), 
         log=True, color='k', range=[0,370])
 ax.set_xlabel('Kurtosis');
 ax.set_xticks([0,  42,370])
@@ -1564,7 +1566,7 @@ layers_to_examine = ['relu1','pool1', 'norm1', 'relu2','pool2', 'norm2', 'pool5'
 var = np.concatenate([alt['k_stim'].iloc[layer==all_lays].dropna().ravel() 
                         for layer in layers_to_examine])
 n_samps = len(var)
-ax.hist(var, bins=n_bins, histtype='step', weights=[1/n_samps,]*n_samps,
+ax.hist(var, bins=n_bins, histtype='step', weights=[1./n_samps,]*n_samps,
          color='m', range=[0,370], log=True,)
 
 layers_to_examine = ['conv1','conv2','conv3','conv4','conv5', 'fc6','fc7','fc8']
@@ -1573,7 +1575,7 @@ all_lays= alt.index.get_level_values(0)
 var = np.concatenate([alt['k_stim'].iloc[layer==all_lays].dropna().ravel() 
                         for layer in layers_to_examine])
 n_samps = len(var)
-ax.hist(var, bins=n_bins, histtype='step', weights=[1/n_samps,]*n_samps,
+ax.hist(var, bins=n_bins, histtype='step', weights=[1./n_samps,]*n_samps,
          color='c',log=True, range=[0,370])
 ax.set_xlim(0, 371)
 ax.set_xticks([0,  42, 370])
@@ -1593,7 +1595,6 @@ ax.set_title('Kurtosis Distribution\nCNN')
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
             +str(figure_num[8])+'_kurtosis.pdf')
-
 #%%
 import pickle
 import itertools
@@ -1676,12 +1677,12 @@ cv_scores = []
 model_ind_lists = []
 models = []
 for cnn_name in cnn_names:
-    da = xr.open_dataset(data_dir + 'data/responses/' + cnn_name + '.nc')['resp']
-    da = da.sel(unit=slice(0, None, 1)).squeeze()
-    middle = np.round(len(da.coords['x'])/2.).astype(int)
-    da_0 = da.sel(x=da.coords['x'][middle])
-    da_0 = da_0.sel(shapes=v4_resp_apc.coords['shapes'].values)
-    models.append(da_0)
+    da_temp = xr.open_dataset(data_dir + 'data/responses/' + cnn_name + '.nc')['resp']
+    da_temp = da_temp.sel(unit=slice(0, None, 1)).squeeze()
+    middle = np.round(len(da_temp.coords['x'])/2.).astype(int)
+    da_0_temp = da_temp.sel(x=da_temp.coords['x'][middle])
+    da_0_temp = da_0_temp.sel(shapes=v4_resp_apc.coords['shapes'].values)
+    models.append(da_0_temp)
 models.append(dmod)
 
 #cross_val fit
@@ -1883,9 +1884,6 @@ orig_val = np.array([shape_dict_list_pasu[shape_id]['curvature'],
 match_loc_orig = match_ori_max_cur(shape_dict_list_pasu, ws)
 schematic_gaussian = True
 
-
-
-plt.close('all')
 
 ashape = s[shape_id]
 norm = mpl.colors.Normalize(vmin=-1.,vmax=1.)
