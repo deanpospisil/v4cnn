@@ -10,7 +10,6 @@ import numpy as np
 
 x = np.random.randn(1000,10)
 y = np.random.randn(1000,1)
-broad = np.ones((1,12))
 x = y + x*0.5
 #if nxm the get cov mXm
 def norm_cov(x):

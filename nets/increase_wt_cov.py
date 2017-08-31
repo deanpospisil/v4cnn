@@ -120,12 +120,12 @@ for layer, name in zip(wts_by_layer, layer_names):
     netwtsd[name].coords['unit'] = _
     
 #%%
-desired_r = 0.8
 def adjust_layer_wtcov(layer, desired_r):
+    #filter is rxcxc v_da is pc rxc
     layer_adj = layer.copy()
     u_da, s_da, v_da = prin_comp_maps(layer_adj)
     pc1 = u_da[..., 0]
-    sign_PC = np.sign(v_da[:, 0, ...].sum(['x', 'y']))
+    sign_PC = np.sign(v_da[:, 0, ...].sum(['x', 'y']))#I want everything to be positively correlated?
     for i, pc, unit, sign in zip(range(len(sign_PC)), pc1, layer_adj, sign_PC):
         unit_val = unit.values.reshape(unit.shape[0], np.product(unit.shape[1:]))
         for j, pos in enumerate(unit_val.T):
@@ -133,7 +133,6 @@ def adjust_layer_wtcov(layer, desired_r):
             unit_val[:, j] = shifted_vector
         layer_adj[i, ...] =  unit_val.reshape(unit.shape)
     return layer_adj
-#opponency_da = spatial_opponency(conv2_adj) 
 #%%
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 ann_fn = 'bvlc_reference_caffenet'
@@ -158,6 +157,10 @@ for r in [  0.5, 0.6, 0.7, 0.8 ]:
             net.params[name][0].data[...] = adjust_layer_wtcov(wts, r).values
             
         net.save(ann_dir + 'bvlc_caffenet_reference_increase_wt_cov_fc6_'+ str(r) + '.caffemodel')
+#%%
+#now change amplitude specturm by taking overall power and distributing it differently across spectrum.
+
+
 #%%
 #from scipy.stats import kurtosis
 #def ti_av_cov(da):
