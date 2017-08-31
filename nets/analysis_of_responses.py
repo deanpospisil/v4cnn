@@ -40,15 +40,23 @@ cnn_resp =[
 'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',
 'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',
 'blvc_caffenet_iter_1pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',
-
 ]
+cnn_resp =[
+'bvlc_reference_caffenetpix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
+'bvlc_reference_caffenetpix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
+'blvc_caffenet_iter_1pix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
+]
+
+cnn_resp =[
+'bvlc_caffenet_reference_increase_wt_cov_random0.9pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',
+]
+
 nulls = [0, 1, 0]
 subsample_units = 1
 
 for cnn_resp_name, null  in zip(cnn_resp, nulls):
     print(cnn_resp_name)
     measure_list = ['apc', 'k', 'ti_in_rf', 'k_pos', 'k_stim', ]
-    measure_list = ['ti_in_rf', 'ti_av_cov' ]    
 
     measure_names = []
     w = int(float( re.findall('\[\d\d.0', cnn_resp_name)[0][1:]))
@@ -59,9 +67,9 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
         for  x in range(len(da.coords['x'])):
             for unit in range(len(da.coords['unit'])):
                 da[1:, x, unit] = np.random.permutation(da[1:,x,unit].values)
-    center_pos = np.round(len(da.coords['x'])/2.).astype(int)
+    center_pos = np.round((len(da.coords['x'])-1)/2.).astype(int)
     da_0 = da.sel(x=da.coords['x'][center_pos])
-    rf = dn.in_rf(da, w=w)
+    #rf = dn.in_rf(da, w=w)
     measures = []
     if 'apc' in measure_list:	
         
@@ -76,6 +84,7 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
     if 'ti' in measure_list:
         measures.append(dn.SVD_TI(da, rf))
         measure_names.append('ti')
+        
     if 'ti_orf' in measure_list:
         measures.append(dn.SVD_TI(da))
         measure_names.append('ti_orf')
@@ -103,6 +112,7 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
     if 'ti_in_rf' in measure_list:
         measures.append(dn.ti_in_rf(da, w))
         measure_names.append('ti_in_rf')
+        
     if 'k_stim' in measure_list and 'k_pos' in measure_list:
         k_pos, k_stim = dn.kurtosis_da(da)
         measures.append(k_pos)

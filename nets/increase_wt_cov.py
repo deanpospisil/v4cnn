@@ -95,10 +95,15 @@ if 'netwts' not in locals() or goforit:
 netwts[5][1] = netwts[5][1].reshape((4096, 256, 6, 6))
 wts_by_layer = [layer[1] for layer in netwts]
 
-net_resp_name = 'bvlc_reference_caffenety_test_APC362_pix_width[32.0]_x_(104.0, 124.0, 11)_x_(104.0, 124.0, 11)_amp_None.nc'
-da = xr.open_dataset(top_dir + '/data/responses/' + net_resp_name)['resp']
+data_dir = '/loc6tb'
+net_resp_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370.nc'
+da = xr.open_dataset(data_dir + '/data/responses/' + net_resp_name)['resp']
 if not type(da.coords['layer_label'].values[0]) == str:
-    da.coords['layer_label'].values = [thing.decode('UTF-8') for thing in da.coords['layer_label'].values]
+    da.coords['layer_label'].values = [thing.decode('UTF-8') 
+    for thing in da.coords['layer_label'].values]
+if not type(da.coords['layer_label'].values[0]) == str:
+    da.coords['layer_label'].values = [str(thing) 
+    for thing in da.coords['layer_label'].values]
 da.coords['unit'] = range(da.shape[-1])
 
 from more_itertools import unique_everseen
@@ -114,10 +119,10 @@ netwtsd = {}
 for layer, name in zip(wts_by_layer, layer_names):
     dim_names = dims[:len(layer.shape)]
     layer_ind = da.coords['layer_label'].values == name 
-    _ =  da[..., layer_ind].coords['unit']
+    unit_coords =  da[..., layer_ind].coords['unit']
     netwtsd[name] = xr.DataArray(layer, dims=dims, 
            coords=[range(n) for n in np.shape(layer)])
-    netwtsd[name].coords['unit'] = _
+    netwtsd[name].coords['unit'] = unit_coords.values
     
 #%%
 desired_r = 0.8
@@ -136,7 +141,7 @@ def adjust_layer_wtcov(layer, desired_r):
 #opponency_da = spatial_opponency(conv2_adj) 
 #%%
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
-ann_fn = 'bvlc_reference_caffenet'
+ann_fn = 'blvc_caffenet_iter_1'
 sys.path.append('/home/dean/caffe/python')
 
 import caffe
@@ -145,19 +150,35 @@ net_wts_name = ann_dir + ann_fn + '.caffemodel'
 net = caffe.Net(net_proto_name, net_wts_name, caffe.TEST)
 layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
 print([net.params[name][0].data.shape for name in layer_names])
+layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6',]
 
-layer_names = ['fc6',]
-for r in [  0.5, 0.6, 0.7, 0.8 ]:
+for r in [0.9,]:
     for i, name in enumerate(layer_names):
         wts = netwtsd[name]
         
         if name == 'fc6':
             adj_vals = adjust_layer_wtcov(wts, r).values
-            net.params[name][0].data[...] = adj_vals.reshape((adj_vals.shape[0], np.product(adj_vals.shape[1:])))
+            net.params[name][0].data[...] = adj_vals.reshape((adj_vals.shape[0], 
+                      np.product(adj_vals.shape[1:])))
         else:
             net.params[name][0].data[...] = adjust_layer_wtcov(wts, r).values
             
-        net.save(ann_dir + 'bvlc_caffenet_reference_increase_wt_cov_fc6_'+ str(r) + '.caffemodel')
+    net.save(ann_dir + 'bvlc_caffenet_reference_increase_wt_cov_random'+ str(r) + '.caffemodel')
+        
+#%% random weights
+r = 0.9
+for i, name in enumerate(layer_names):
+        wts = netwtsd[name]
+        
+        if name == 'fc6':
+            adj_vals = adjust_layer_wtcov(wts, r).values
+            net.params[name][0].data[...] = adj_vals.reshape((adj_vals.shape[0],
+                      np.product(adj_vals.shape[1:])))
+        else:
+            net.params[name][0].data[...] = adjust_layer_wtcov(wts, r).values
+
+
+
 #%%
 #from scipy.stats import kurtosis
 #def ti_av_cov(da):

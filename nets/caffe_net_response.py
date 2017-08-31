@@ -28,11 +28,13 @@ import xarray as xr
 import d_curve as dc
 import scipy.io as  l
 
-def net_imgstack_response(net, stack, only_middle_conv=True, record_up_to_layer=None):
+def net_imgstack_response(net, stack, only_middle_conv=True, 
+                          record_up_to_layer=None):
     #stack is expected to be nImages x RGB x rows x cols
     if not net.blobs['data'].data.shape[1:] == stack.shape[1:]:
         warnings.warn('Images are not the correct shape. Input shape: '
-        + str(stack.shape[1:]) + ' needed shape: ' + str(net.blobs['data'].data.shape[1:])
+        + str(stack.shape[1:]) + ' needed shape: ' + 
+        str(net.blobs['data'].data.shape[1:])
         + '. Assuming you just put in grey scale' )
 
         stack = np.tile(stack, (3, 1, 1, 1))
@@ -41,7 +43,8 @@ def net_imgstack_response(net, stack, only_middle_conv=True, record_up_to_layer=
     layer_names = [k for k in net.blobs.keys()]
 
     #shape the data layer, (first layer) to the input
-    net.blobs[ layer_names[0] ].reshape(*tuple([stack.shape[0],]) + net.blobs['data'].data.shape[1:])
+    net.blobs[ layer_names[0] ].reshape(*tuple([stack.shape[0],]) + 
+                                         net.blobs['data'].data.shape[1:])
     net.blobs[ layer_names[0] ].data[... ]= stack
     net.forward()
 
@@ -50,8 +53,8 @@ def net_imgstack_response(net, stack, only_middle_conv=True, record_up_to_layer=
     for layer_name in  layer_names_sans_data:
 
         layer_resp = net.blobs[layer_name].data
-
-        if len(layer_resp.shape)>2 and only_middle_conv:#ignore convolutional repetitions, just pulling center.
+        #ignore convolutional repetitions, just pulling center.
+        if len(layer_resp.shape)>2 and only_middle_conv:
             mid = [ int(m/2) for m in np.shape(net.blobs[layer_name].data)[2:]]
             layer_resp = layer_resp[:, :, mid[0], mid[1]]
 
@@ -68,11 +71,13 @@ def get_indices_for_net_unit_vec(net, layer_names=None):
     if layer_names is None:
         layer_names = [ k for k in net.blobs.keys()][1:]#not including first layer, (data)
 
-    layer_nunits = np.hstack([ net.blobs[layer_name].data.shape[1] for layer_name in  layer_names])
+    layer_nunits = np.hstack([ net.blobs[layer_name].data.shape[1] 
+                                for layer_name in  layer_names])
 
     layer_unit_ind =  np.hstack([range(i) for i in layer_nunits ])
 
-    layer_ind = np.hstack( [ np.ones( layer_nunits[ i ] )*i for i in range( len( layer_nunits ) ) ] )
+    layer_ind = np.hstack( [ np.ones( layer_nunits[ i ] )*i 
+                            for i in range( len( layer_nunits ) ) ] )
     resp_descriptor_dict = {}
     resp_descriptor_dict['layer_names'] = layer_names
     resp_descriptor_dict['layer_nunits'] = layer_nunits
@@ -81,8 +86,10 @@ def get_indices_for_net_unit_vec(net, layer_names=None):
 
     return resp_descriptor_dict
 
-def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, nimgs_per_pass=1500,
-                                       only_middle_conv=True, record_up_to_layer=None):
+def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, 
+                                       net, nimgs_per_pass=1500, 
+                                       only_middle_conv=True, 
+                                       record_up_to_layer=None):
     #takes stim_trans_cart_dict, pulls from img_stack and transform accordingly,
     #gets nets responses.
     
