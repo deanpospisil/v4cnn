@@ -714,7 +714,7 @@ plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'+str(figure_num[1])+
 #%%
 ti_x = ti[1]
 ti_y = ti[0]
-layer_names = ['Conv2','Relu2', 'Pool2', 'Norm2', 'Conv3', 'Relu3','Conv4', 
+layer_names = ['Conv1', 'Conv2','Relu2', 'Pool2', 'Norm2', 'Conv3', 'Relu3','Conv4', 
                'Relu4','Conv5', 'Relu5', 'Pool5', 'FC6', 'Relu6', 'FC7', 'Relu7', 'FC8',]
 layers = da.coords['layer'].values
 layer_labels = da.coords['layer_label'].values
@@ -1083,7 +1083,7 @@ lims = 300
 da = xr.open_dataset(data_dir + 'data/responses/' + cnn_name + '.nc')['resp'].squeeze()
 pos1 = 114
 pos2 = 120
-pos3 = 108
+pos3 = 102
 plt.figure(figsize=(4,2))
 plt.subplot(121)
 plt.scatter(da[..., 497].sel(x=pos1), da[..., 497].sel(x=pos2), s=3, edgecolors='none')
@@ -1262,7 +1262,7 @@ v4ness = ((1-ti_cnn.loc['resp'])**2 + (1-apc_cor.loc['resp'])**2)**0.5
 y = apc_cor.loc['resp'].loc[layer].loc[num]
 x = ti_cnn.loc['resp'].loc[layer].loc[num]
 ax.scatter(x, y, color=colors[6], marker='*', s=4)
-da
+
 
 best_v4_ti = cnn_an.loc['resp'].loc['v4']['ti_av_cov'].max()
 best_v4_apc = v4_apc.max()
@@ -1746,6 +1746,13 @@ ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o',
 colors= np.array(['k',]*len(x))
 colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
        ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+     
+n_red_above = np.sum(((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+((np.abs(x-y)-np.max(np.abs(xsd),0))>0) & ((y-x)>0))
+
+n_red_below = np.sum(((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+((np.abs(x-y)-np.max(np.abs(xsd),0))>0) & ((y-x)<0))
+
 ax.scatter(x,y, color=colors, s=3)
 #ax.scatter(x, y, alpha=0.5, s=2)
 ax.plot([0,1],[0,1], color='0.5')
@@ -1784,6 +1791,8 @@ ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o',
 colors= np.array(['k',]*len(x))
 colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
        ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
+       
+       
 ax.scatter(x,y, color=colors, s=3)
 ax.plot([0,1],[0,1], color='0.5')
 ax.set_ylim(0,1)
