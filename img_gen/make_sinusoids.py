@@ -11,8 +11,8 @@ import os
 import scipy as sc
 
 top_dir = os.getcwd().split('v4cnn')[0]
-save_dir = top_dir + 'v4cnn/images/baseimgs/sinusoids/'
-#save_dir = '/loc6tb/data/images/sinusoids/'
+save_dir = top_dir + 'v4cnn/images/baseimgs/cos/'
+save_dir = '/loc6tb/data/images/sinusoids/'
 ds = 1
 imshape = (227, 227)
 rft = np.fft.rfft2(np.ones(imshape))
@@ -24,10 +24,9 @@ for r in range(rft_shape[0])[::ds]:
         count = count + 1
         print(r)
         print(c)
-        rft = np.zeros(imshape)
+        rft = np.zeros(imshape).astype(complex)
         rft[r, c] = 1
         im = np.real(np.fft.ifft2(rft, imshape))
-        im = im - im.min()
         im = im / im.max()
         im = im*255.
         ims.append(im)

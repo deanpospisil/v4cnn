@@ -1625,11 +1625,11 @@ for filt in wts:
     filt = filt/filt.max()
     p_num += 1 
     ax = plt.subplot(gs[p_num])
-    ax.imshow(filt.T, interpolation = 'nearest')        
+    ax.imshow(np.swapaxes(np.swapaxes(filt,0,2),0,1), interpolation = 'nearest')        
     ax.set_xticks([]);ax.set_yticks([]);
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'
-            +str(figure_num[9])+ '_1stfilters.pdf')
+            +str(1)+ '_1stfilters.pdf')
 
 #%%
 def boot_strap_se(a, bstraps=1000):
