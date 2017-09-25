@@ -199,39 +199,40 @@ def net_resp_2d_to_xray_nd(net_resp, stim_trans_dict, indices_for_net_unit_vec):
 
     return da
 
-def get_net_resp(base_image_nm, ann_dir, ann_fn, stim_trans_cart_dict,
+def get_net_resp(base_image, ann_dir, ann_fn, stim_trans_cart_dict,
                  stim_trans_dict, require_provenance=True, use_boundary=True,
                  deploy='deploy.prototxt', only_middle_conv=True):
-    img_dir = top_dir+'/images/baseimgs/'+ base_image_nm + '/'
     if not use_boundary:
+        img_dir = top_dir + '/images/baseimgs/' + base_image + '/'
         base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)
     else:
-        s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
-        base_stack = dc.center_boundary(s)
-    has_image_sha = False
-    image_sha = None
-    dir_filenames = os.listdir(img_dir)
-    #get the current sha from the file
-    for name in dir_filenames:
-        if 'sha1.pickle' in name:
-            has_image_sha = True
-            with open(img_dir + name, 'rb') as f:
-                image_sha = pickle.load(f)
+        base_stack = base_image
+#    has_image_sha = False
+#    image_sha = None
+#    dir_filenames = os.listdir(img_dir)
+#    #get the current sha from the file
+#    for name in dir_filenames:
+#        if 'sha1.pickle' in name:
+#            has_image_sha = True
+#            with open(img_dir + name, 'rb') as f:
+#                image_sha = pickle.load(f)
 
     import caffe
     caffe.set_mode_gpu()
     net = caffe.Net(ann_dir + deploy, ann_dir + ann_fn + '.caffemodel', caffe.TEST)
 
-    net_resp = identity_preserving_transform_resp(base_stack, stim_trans_cart_dict, net)
+    net_resp = identity_preserving_transform_resp(base_stack, 
+                                                  stim_trans_cart_dict, net)
     indices_for_net_unit_vec = get_indices_for_net_unit_vec(net)
-    da = net_resp_2d_to_xray_nd(net_resp, stim_trans_dict, indices_for_net_unit_vec)
+    da = net_resp_2d_to_xray_nd(net_resp, stim_trans_dict, 
+                                indices_for_net_unit_vec)
 
-    if require_provenance:
-        #commit the state of the directory and get is sha identification
-        sha = dm.provenance_commit(top_dir)
-        da.attrs['resp_sha'] = sha
-        if has_image_sha:
-            da.attrs['img_sha'] = image_sha
+#    if require_provenance:
+#        #commit the state of the directory and get is sha identification
+#        sha = dm.provenance_commit(top_dir)
+#        da.attrs['resp_sha'] = sha
+#        if has_image_sha:
+#            da.attrs['img_sha'] = image_sha
 
     return da
 

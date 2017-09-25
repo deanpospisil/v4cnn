@@ -16,6 +16,16 @@ from scipy import interpolate
 from scipy import ndimage
 
 
+def cart2polar(x, y):
+    rho = (x**2 + y**2)**0.5
+    theta = np.arctan2(x, y)
+    return rho, theta
+def pol2cart(rho, theta):
+    x = rho * np.cos(theta)
+    y = rho * np.sin(theta)
+    return x, y
+    
+
 def cart_to_polar_2d_angles(imsize, sample_rate_mult):
 
     #get polar resampling coordinates
@@ -232,7 +242,8 @@ def imgStackTransform(imgDict, shape_img):
         trans_img = shape_img[imgDict['shapes'][ind]]
 
         if 'blur' in imgDict:
-            trans_img = fft_gauss_blur_img(trans_img, imgDict['blur'][ind], std_cut_off = 5 )
+            trans_img = fft_gauss_blur_img(trans_img, imgDict['blur'][ind],
+                                           std_cut_off=5)
 
         if 'scale' in imgDict:
             if 1 < imgDict['scale'][ind]:
@@ -243,7 +254,8 @@ def imgStackTransform(imgDict, shape_img):
                 trans_img = centeredPad(trans_img, orig_size, orig_size)
 
         if 'rot' in imgDict:
-            trans_img = scipy.misc.imrotate(trans_img, imgDict['rot'][ind], interp='bilinear')
+            trans_img = scipy.misc.imrotate(trans_img, imgDict['rot'][ind], 
+                                            interp='bilinear')
 
         if 'x' and 'y' in imgDict:
             x = imgDict['x'][ind]
@@ -330,6 +342,11 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
 
             if 'scale' in imgDict:
                 transformed_boundary = transformed_boundary * imgDict['scale'][ind]
+            
+            if 'rotation' in imgDict:
+                rot = imgDict['rotation'][ind]
+                temp = transformed_boundary 
+
 
             if 'x' and 'y' in imgDict:
                 x = imgDict['x'][ind]

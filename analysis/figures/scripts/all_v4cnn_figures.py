@@ -413,6 +413,11 @@ if 'cnn_an' not in locals() or goforit:
               axis=0, keys=['resp', 's. resp', 'init. net',], names=['cond','layer_label','unit'])
 
 #%%
+labels_file = '/home/dean/caffe/' + 'data/ilsvrc12/synset_words.txt'
+labels = np.loadtxt(labels_file, str, delimiter='\t')
+labels[146]
+
+#%%
 layer_colors = cm.copper(np.linspace(0.1, 1, 8))
 
 def plot_resp_on_sort_shapes(ax, shapes, resp, top=25, fs=20, shrink=.5, colorbar=False):

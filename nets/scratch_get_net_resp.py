@@ -37,7 +37,7 @@ base_image_nm = baseImageList[0]
 
 
 all_iter = [
-'bvlc_caffenet_reference_increase_wt_cov_random0.9',
+#'bvlc_caffenet_reference_increase_wt_cov_random0.9',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.2',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.3',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.4',
@@ -48,7 +48,7 @@ all_iter = [
 #'bvlc_caffenet_reference_increase_wt_cov_0.5',
 #'bvlc_caffenet_reference_increase_wt_cov_0.75',
 #'bvlc_caffenet_reference_increase_wt_cov_0.95'
-#'blvc_caffenet_iter_1',
+'blvc_caffenet_iter_1',
 ]
 #base_name = 'bvlc_caffenet_reference_shuffle_layer_'
 #all_iter += [base_name+str(layer) for layer in range(7)]
@@ -68,27 +68,30 @@ max_pix_width = [ 32.,]
 
 mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
 s = np.array(mat['shapes'][0])
-boundaries = imp.center_boundary(s)
-scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
+
+s = np.load(top_dir + 'img_gen/dp_ang_pos_verts.npy')
+base_stack = imp.center_boundary(s)
+scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
 #scale = None
-shape_ids = range(-1, 370)
+shape_ids = range(-1, 9)
 center_image = round(img_n_pix/2.)
 #y = (center_image-80, center_image+80, 21)
 x = (32, 196, 83)
-x = (64, 164, 51)
+x = (64, 164, 52)
 
 #x = (center_image-80, center_image+80, 21)
 y = (center_image, center_image, 1)
 
 #%%
 #y = (center_image, center_image, 11)
-amp = (125, 125, 1)
+amp = (255, 255, 1)
 amp = None
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
                                                                 scale=scale,
                                                                 x=x,
                                                                 y=y,
-                                                                amp=amp)
+                                                                amp=amp,
+                                                                rotation=(0, 360,10))
 
 #%%
 for  iter_name, deploy  in zip(all_iter, deploys):
@@ -102,7 +105,7 @@ for  iter_name, deploy  in zip(all_iter, deploys):
     if  os.path.isfile(response_file):
         print('file already written')
     else:
-        da = cf.get_net_resp(base_image_nm,
+        da = cf.get_net_resp(base_stack,
                              ann_dir,
                              iter_name,
                              stim_trans_cart_dict,
@@ -111,7 +114,7 @@ for  iter_name, deploy  in zip(all_iter, deploys):
                              use_boundary=True,
                              deploy=deploy)
 
-        da.to_dataset(name='resp').to_netcdf(response_file)
+        #da.to_dataset(name='resp').to_netcdf(response_file)
 
 
 
