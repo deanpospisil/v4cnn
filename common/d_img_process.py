@@ -232,7 +232,7 @@ def imgStackTransform(imgDict, shape_img):
         trans_img = shape_img[imgDict['shapes'][ind]]
 
         if 'blur' in imgDict:
-            trans_img = fft_gauss_blur_img( trans_img, imgDict['blur'][ind], std_cut_off = 5 )
+            trans_img = fft_gauss_blur_img(trans_img, imgDict['blur'][ind], std_cut_off = 5 )
 
         if 'scale' in imgDict:
             if 1 < imgDict['scale'][ind]:
@@ -343,12 +343,15 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
             elif 'y'  in imgDict:
                 y = imgDict['y'][ind]
                 transformed_boundary = transformed_boundary + [0, y]
+            
             if 'amp' in imgDict:
-                base_stack.append(imgDict['amp'][ind] * boundary_to_mat_by_round(transformed_boundary,
+                base_stack.append(imgDict['amp'][ind] * boundary_to_mat_by_round(
+                                                              transformed_boundary,
                                                               img_n_pix=npixels,
                                                               fill=True))
             else:
-                base_stack.append(255. * boundary_to_mat_by_round(transformed_boundary,
+                base_stack.append(255. * boundary_to_mat_by_round(
+                                                              transformed_boundary,
                                                               img_n_pix=npixels,
                                                               fill=True))
         

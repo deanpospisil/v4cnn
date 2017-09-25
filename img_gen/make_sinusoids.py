@@ -41,3 +41,6 @@ freq_index = cart_c[:rft_shape[0], :rft_shape[1]].ravel()
 
 plt.imshow(np.abs(cart_c))
 #plt.imshow(np.angle(cart_c))
+#np.rad2deg(np.angle()) 0 for to the right, 
+#- for pointing to the upper right, 
+#+ for pointing lower right
