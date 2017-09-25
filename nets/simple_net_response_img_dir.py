@@ -16,9 +16,9 @@ sys.path.append( top_dir + 'common')
 top_dir = top_dir + 'v4cnn/'
 resp_dir = '/loc6tb/'
 
-response_file = resp_dir  + 'data/responses/bvlc_reference_caffenet_cos.nc'
+response_file = resp_dir  + 'data/responses/bvlc_reference_caffenet_sinusoids.nc'
 
-base_image_nm = 'cos'
+base_image_nm = 'sinusoids'
 net = '/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet'
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(25878))

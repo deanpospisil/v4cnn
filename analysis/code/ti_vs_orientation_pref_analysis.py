@@ -87,23 +87,24 @@ cond_ranks = [x_better_ex, y_better_ex, both_good_ex, both_bad_ex]
 n_ranks = 3
 
 for a_cond_name, a_cond_ranks in zip(cond_name, cond_ranks):
+    plt.figure(figsize=(12,12))
+    subplot_inds = list(np.arange(15).reshape(5,3).ravel('F')+1)[::-1]
     for rank, unit in enumerate(a_cond_ranks[:n_ranks]):
-        plt.figure(figsize=(5, 20))
-        plt.subplot(511)
+        plt.subplot(5,3, subplot_inds.pop())
         plt.scatter(ti_x, ti_y, s=20, edgecolors='none')
         plt.scatter(ti_x[unit], ti_y[unit], s=40, edgecolors='none')
         plt.xlabel('x');plt.ylabel('y')
         plt.axis('square')
         plt.title('ti_x vs ti_y')
         
-        plt.subplot(513)
+        plt.subplot(5,3, subplot_inds.pop())
         l_wt = np.sum(wts[unit]*np.ones(3).reshape(3,1,1), 0)
         plt.imshow(l_wt, cmap=plt.cm.Greys_r)
         plt.xticks([]);plt.yticks([])
         plt.colorbar()
         plt.title('luminance of filter')
         
-        plt.subplot(512)
+        plt.subplot(5,3, subplot_inds.pop())
         l_wt = np.sum(wts[unit]*np.ones(3).reshape(3,1,1), 0)
         vis_wts = wts[unit]
         vis_wts = vis_wts-vis_wts.min()
@@ -111,12 +112,9 @@ for a_cond_name, a_cond_ranks in zip(cond_name, cond_ranks):
         plt.imshow(np.swapaxes(np.swapaxes(vis_wts,0,2),0,1))
         plt.xticks([]);plt.yticks([])
         plt.title('visualized filter')
-        #plt.subplot(713)
-        #f_resp= da[:, layer_ind]
-        #f_resp= f_resp[:, unit].values
-        #plt.imshow(rfftshift(f_resp.reshape(227,114)))
+
         
-        plt.subplot(514)
+        plt.subplot(5,3,subplot_inds.pop())
         l_wt_amp = np.abs(np.fft.rfft2(l_wt, s=(227,227)))
         plt.imshow(rfftshift(l_wt_amp))
         plt.title('upsampled fft of filter')
@@ -124,22 +122,9 @@ for a_cond_name, a_cond_ranks in zip(cond_name, cond_ranks):
         plt.xlabel('ori rotate around middle left')
         plt.xticks([]);plt.yticks([])
         
-#        plt.subplot(615)
-#        plt.imshow(np.fft.fftshift(np.rad2deg(np.angle(cart_c[:rft_shape[0], 
-#                                                              :rft_shape[1]]))+90., axes=0))
-#        plt.colorbar()
-        
 
-        #or_powers = []
-        #for bin1, bin2 in zip(bins, bins[2:]):
-        #    or_inds = (oris>bin1)*(oris<bin2)
-        #    or_powers.append(np.sum(f_resp[or_inds]**2))
-        #plt.subplot(716)
-        #plt.plot(bins[2:], or_powers)
-        #plt.title('sinusoids')
         
-        
-        plt.subplot(515)
+        plt.subplot(5,3, subplot_inds.pop())
         oris = np.rad2deg(np.angle(freq_index)) + 90
         bins = np.linspace(0, 180, 100)
         or_powers = []
@@ -149,11 +134,12 @@ for a_cond_name, a_cond_ranks in zip(cond_name, cond_ranks):
         plt.plot(bins[2:], or_powers)
         plt.title('fft')
         plt.xlabel('power at ori')
-        plt.tight_layout()
-        plt.savefig('/home/dean/Desktop/v4cnn/analysis/figures/images/ori_ti/'
-                    + a_cond_name + str(rank))
+    plt.tight_layout()
+    plt.savefig('/home/dean/Desktop/v4cnn/analysis/figures/images/ori_ti/'
+                    + a_cond_name+'_conv1')
 
 #%%
+plt.figure()
 mtov=[]
 ti_both = []
 for unit in range(96):
@@ -166,48 +152,70 @@ plt.xlabel('mean/var')
 plt.ylabel('ti_x + ti_y')
     
 plt.savefig('/home/dean/Desktop/v4cnn/analysis/figures/images/ori_ti/'
-                    + 'DC drives good overall TI')
+                    + 'DC_drives_good_conv1_xy_TI')
 
 #%%
-da = xr.open_dataset('/loc6tb/' + 'data/responses/' + cnn_name + '.nc')['resp']
-   
-layer = 4
-unit = 3   
+layer = 0
 ti_x = ti[1]
 ti_y = ti[0]
-
 layers = da.coords['layer'].values
 layer_labels = da.coords['layer_label'].values
 layer_ind = layer == layers
-ti_x = np.array(ti_x[layer_ind])
-ti_y = np.array(ti_y[layer_ind])
+ti_x = np.array(ti_x[:896][layer_ind])
+ti_y = np.array(ti_y[:896][layer_ind])
 layer_label = layer_labels[layer_ind][0]
-plt.subplot(511)
-plt.scatter(ti_x, ti_y, s=4, edgecolors='none')
-plt.scatter(ti_x[unit], ti_y[unit], s=4, edgecolors='none')
-plt.xlabel('x')
-plt.ylabel('y')
 
+x_better = ti_x - ti_y
+x_better_ex = np.argsort(x_better)[::-1]
+y_better_ex = np.argsort(-x_better)[::-1]
+both_good = ti_x + ti_y
+both_good_ex = np.argsort(both_good)[::-1]
+both_bad_ex = np.argsort(both_good)
+
+cond_name = ['x_better', 'y_better', 'both_good', 'both_bad']
+cond_ranks = [x_better_ex, y_better_ex, both_good_ex, both_bad_ex]
+n_ranks = 3
 f_resp= da[:, layer_ind]
-f_resp= f_resp[:, 100].values
+for a_cond_name, a_cond_ranks in zip(cond_name, cond_ranks):
+    plt.figure(figsize=(12,12))
+    subplot_inds = list(np.arange(9).reshape(3,3).ravel('F')+1)[::-1]
 
-plt.figure(figsize=(10,10))
-plt.subplot(211)
-plt.imshow(f_resp.reshape(227,114))
-plt.colorbar()
-plt.subplot(212)
-plt.imshow(np.abs(cart_c[:rft_shape[0], :rft_shape[1]]))
+    for rank, unit in enumerate(a_cond_ranks[:n_ranks]):
+        plt.subplot(3,3,subplot_inds.pop())
+        plt.scatter(ti_x, ti_y, s=20, edgecolors='none')
+        plt.scatter(ti_x[unit], ti_y[unit], s=40, edgecolors='none')
+        plt.xlabel('x');plt.ylabel('y')
+        plt.axis('square')
+        plt.title('ti_x vs ti_y')
+#        
+#        plt.subplot(513)
+#        l_wt = np.sum(wts[unit]*np.ones(3).reshape(3,1,1), 0)
+#        plt.imshow(l_wt, cmap=plt.cm.Greys_r)
+#        plt.xticks([]);plt.yticks([])
+#        plt.colorbar()
+#        plt.title('luminance of filter')
+        plt.subplot(3,3,subplot_inds.pop())
+        f_resp_unit = f_resp[:, unit].values
+        plt.imshow(rfftshift(f_resp_unit.reshape(227,114)))
+        plt.xticks([]);plt.yticks([])
+        plt.title('squared sum resp cos sin')
+        plt.xlabel('higher freq outward from middle left')
+        plt.xlabel('ori rotate around middle left')
+        plt.colorbar()
 
-bins = np.linspace(0, 180, 100)
-or_powers = []
-oris = np.rad2deg(np.angle(freq_index)) + 90
 
-for bin1, bin2 in zip(bins, bins[2:]):
-    or_inds = (oris>bin1)*(oris<bin2)
-    or_powers.append(np.sum(f_resp[or_inds]**2))
-plt.figure() 
-plt.plot(bins[2:],or_powers)
-
-plt.figure()
-plt.imshow(np.rad2deg(np.angle(cart_c[:rft_shape[0], :rft_shape[1]]))+90)
-plt.colorbar()
+        
+        plt.subplot(3,3,subplot_inds.pop())
+        oris = np.rad2deg(np.angle(freq_index)) + 90
+        bins = np.linspace(0, 180, 100)
+        or_powers = []
+        for bin1, bin2 in zip(bins, bins[2:]):
+            or_inds = (oris>bin1)*(oris<bin2)
+            or_powers.append(np.sum(f_resp_unit[or_inds]**2))
+        plt.plot(bins[2:], or_powers)
+        plt.title('sinusoids')
+        plt.xlabel('power at ori')
+       
+        plt.tight_layout()
+    plt.savefig('/home/dean/Desktop/v4cnn/analysis/figures/images/ori_ti/'
+                    + a_cond_name + 'conv1_cos_sin_resp')

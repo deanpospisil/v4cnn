@@ -498,10 +498,11 @@ for i, ax_ind in enumerate(hist_pos):
     ax.set_xticks([0,0.5,1])
     ax.set_xticklabels([0,0.5,1], fontsize=10)
     ax.spines['left'].set_bounds(0,1)
-    ax.set_xlim(0,1)
+    ax.set_xlim(0.1,0.81)
+    
     ax.set_yticks([0, 0.5, 1])
     ax.set_yticklabels([0,  ' ', 1], fontsize=10)
-    ax.set_ylim(0,1.1)
+    ax.set_ylim(0, 1.1)
     if not (ax_ind==hist_pos[-1]):
         print(ax_ind, hist_pos[-1])
         #leg = ax.legend(**hist_dat_leg[i])
@@ -517,23 +518,24 @@ for i, ax_ind in enumerate(hist_pos):
 ax_list[0].set_title('Cumulative Distribution', fontsize=12) 
 ax_list[0].set_ylabel('Fraction < r', labelpad=0, fontsize=12) 
 ax_list[0].text(0.6, 0.1, 'V4', transform=ax_list[0].transAxes, fontsize=12)
-ax_list[0].text(0.05,0.6, 'Shuffled', transform=ax_list[0].transAxes, color='g', rotation=80)
-ax_list[0].text(0.4,0.6, 'Unshuffled', transform=ax_list[0].transAxes, color='r',rotation=45)
+#ax_list[0].text(0.05,0.6, 'Shuffled', transform=ax_list[0].transAxes, color='g', rotation=80)
+#ax_list[0].text(0.4,0.6, 'Unshuffled', transform=ax_list[0].transAxes, color='r',rotation=45)
 
 
-ax_list[3].text(0.5, 0.1, 'CNN all layers', transform=ax_list[3].transAxes)
-ax_list[3].text(0.24,0.75, 'Untrained', transform=ax_list[3].transAxes, color='b', rotation=60)
+#ax_list[3].text(0.5, 0.1, 'CNN all layers', transform=ax_list[3].transAxes)
+#ax_list[3].text(0.24,0.75, 'Untrained', transform=ax_list[3].transAxes, color='b', rotation=60)
 
-ax_list[6].text(0.5, 0.1, 'CNN by layer', transform=ax_list[6].transAxes)
+#ax_list[6].text(0.5, 0.1, 'CNN by layer', transform=ax_list[6].transAxes)
 colors = list(cm.copper(np.linspace(0, 1, 8)))
 colors.append('r')
 layers_to_examine.append('V4')
 layer_names = ['Conv1', 'Conv2', 'Conv3', 'Conv4', 'Conv5', 'FC6', 'FC7', 'FC8', 'V4']
 spaces = np.linspace(0.85, 0.02, len(layer_names))
 
-for name, color, space in zip(layer_names, colors, spaces):
-    ax_list[6].text(0.05, space, name, transform=ax_list[6].transAxes,
-           color=color, fontsize=7, bbox=dict(facecolor='white', ec='none', pad=0))
+#for name, color, space in zip(layer_names, colors, spaces):
+#    ax_list[6].text(0.05, space, name, transform=ax_list[6].transAxes,
+#           color=color, fontsize=7, bbox=dict(facecolor='white', ec='none',
+#                                              pad=0))
 ax_list[6].set_xlabel('APC fit r', labelpad=0, fontsize=12)
 
 example_cell_inds = [1,4,7]
@@ -549,6 +551,7 @@ cn = cnn_an.loc['resp'].drop('v4', level='layer_label')
 cn = cn[cn['k']<42]
 cn_apc = cn[-cn['apc'].isnull()] 
 b_unit = cn_apc[cn_apc['cur_mean']>0.5].loc['conv2']['apc'].idxmax()
+b_unit = 497
 model = cn_apc['models'].loc['conv2'].loc[b_unit]
 
 hi_curv_resp = da_0.sel(unit= b_unit)
@@ -586,22 +589,22 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
         #                    va='center', ha='right', rotation='vertical')
         ax.set_ylabel('Model',labelpad=0)
         ax.set_xlabel('Unit', labelpad=0)
-    params = 'Curv. $(\mu=$' +  str(np.round(dat[1].coords['cur_mean'].values,2))\
-    +', $\sigma=$'+ str(np.round(dat[1].coords['cur_sd'].values,2)) + ')'\
-    +'\n \nOri. $(\mu=$'+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values)))\
-    +', $\sigma=$' + str(np.round(np.rad2deg(dat[1].coords['or_sd'].values),0)) + ')' 
-    if ax_ind==1:
-        ax.set_title('Example units')
-        ax.text(0.5, 0.3, '$r=$' +str(np.round(frac_var, 3)), 
-                transform=ax.transAxes, fontsize=10)
-        ax.text(0.35, 0.07, params, 
-                transform=ax.transAxes, fontsize=7, linespacing=0.5)
-    else:
-        ax.text(0.6, 0.2, '$r=$' +str(np.round(frac_var, 3)), 
-                transform=ax.transAxes, fontsize=10)
-        ax.text(0.35, -0.1, params, linespacing=.5,
-                transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='white',
-                                                              ec='none', alpha=0.8))        
+#    params = 'Curv. $(\mu=$' +  str(np.round(dat[1].coords['cur_mean'].values,2))\
+#    +', $\sigma=$'+ str(np.round(dat[1].coords['cur_sd'].values,2)) + ')'\
+#    +'\n \nOri. $(\mu=$'+ str(np.round(np.rad2deg(dat[1].coords['or_mean'].values)))\
+#    +', $\sigma=$' + str(np.round(np.rad2deg(dat[1].coords['or_sd'].values),0)) + ')' 
+    #if ax_ind==1:
+#        ax.set_title('Example units')
+#        ax.text(0.5, 0.3, '$r=$' +str(np.round(frac_var, 3)), 
+#                transform=ax.transAxes, fontsize=10)
+#        ax.text(0.35, 0.07, params, 
+#                transform=ax.transAxes, fontsize=7, linespacing=0.5)
+    #else:
+#        ax.text(0.6, 0.2, '$r=$' +str(np.round(frac_var, 3)), 
+#                transform=ax.transAxes, fontsize=10)
+#        ax.text(0.35, -0.1, params, linespacing=.5,
+#                transform=ax.transAxes, fontsize=7, bbox=dict(facecolor='white',
+#                                                              ec='none', alpha=0.8))        
 #    ax.text(.5, 0, 'Unit: ' +str(dat[2]),transform=ax.transAxes, 
 #            fontsize=fs, va='top', ha='center')
     
@@ -714,7 +717,7 @@ plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'+str(figure_num[1])+
 #%%
 ti_x = ti[1]
 ti_y = ti[0]
-layer_names = ['Conv1', 'Conv2','Relu2', 'Pool2', 'Norm2', 'Conv3', 'Relu3','Conv4', 
+layer_names = ['Conv2','Relu2', 'Pool2', 'Norm2', 'Conv3', 'Relu3','Conv4', 
                'Relu4','Conv5', 'Relu5', 'Pool5', 'FC6', 'Relu6', 'FC7', 'Relu7', 'FC8',]
 layers = da.coords['layer'].values
 layer_labels = da.coords['layer_label'].values
@@ -737,12 +740,14 @@ for i, layer in enumerate(np.sort(np.unique(layers))[4:-1]):
         plt.title(layer_names[i])
         plt.xticks([0,0.5,1])
         plt.yticks([0,0.5,1])
+        plt.xlim(0,1);plt.ylim(0,1)
 
     else:
         plt.title(layer_names[i])
         plt.xticks([]);plt.yticks([])
         plt.xticks([0,0.5,1])
         plt.yticks([0,0.5,1])
+        plt.xlim(0,1);plt.ylim(0,1)
         plt.gca().set_yticklabels(['','',''])
         plt.gca().set_xticklabels(['','',''])
 
@@ -1008,10 +1013,10 @@ for layer, ex_ind in zip(ex_avg_layer, ex_inds):
         ax.set_title('Layer Average\n', fontsize=17)
 
     beautify([ax,], spines_to_remove=['top', 'right'],); 
-        
-       
+    
+
 ti_cnn = cnn_an[~cnn_an['ti_in_rf'].isnull()]['ti_in_rf'].loc['resp']
-ex_cell_inds = [('conv2', 497), ('conv5',3197), ('fc7', 12604),]
+ex_cell_inds = [('conv2', 387), ('conv5',3197), ('fc7', 12604),]
 ex_cell_tis = [ti_cnn.loc[ind[0]].loc[ind[1]] for ind in ex_cell_inds]
 ex_cell_cors = [cor.sel(unit=ind[1]) for ind in ex_cell_inds]
 ex_cell_rfs = [rf.sel(unit=ind[1]) for ind in ex_cell_inds]
@@ -1067,7 +1072,7 @@ for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, ['conv2', 
 #        ax.legend(['RF',], loc='center left', frameon=False,handletextpad=0, markerfirst=False)
 
     #ax.set_yticklabels([])
-ax_list[0].text(0.5,1.01, 'Unit 497', ha='center', va='bottom',
+ax_list[0].text(0.5,1.01, 'Unit 387', ha='center', va='bottom',
                 transform=ax_list[0].transAxes, fontsize=12, fontstyle='italic')
 #ax_list[0].annotate('', xy=(101, 0.05), xytext=(101, 0.4), ha='center',
 #            arrowprops=dict(facecolor='black', shrink=0.05),zorder=1, fontsize=8)
@@ -1746,12 +1751,18 @@ ax.errorbar(x, y, yerr=np.abs(ysd), xerr=np.abs(xsd), fmt='o',
 colors= np.array(['k',]*len(x))
 colors[((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
        ((np.abs(x-y)-np.max(np.abs(xsd),0))>0)] = 'r'
-     
-n_red_above = np.sum(((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
-((np.abs(x-y)-np.max(np.abs(xsd),0))>0) & ((y-x)>0))
 
-n_red_below = np.sum(((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+red_above = (((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
+((np.abs(x-y)-np.max(np.abs(xsd),0))>0) & ((y-x)>0))       
+
+red_above_ind = [i for i, val in enumerate(red_above) if val]
+n_red_above = np.sum(red_above)
+
+red_below = (((np.abs(x-y)-np.max(np.abs(ysd),0))>0) & 
 ((np.abs(x-y)-np.max(np.abs(xsd),0))>0) & ((y-x)<0))
+red_below_ind = [i for i, val in enumerate(red_below) if val]
+
+n_red_below = np.sum(red_below)
 
 ax.scatter(x,y, color=colors, s=3)
 #ax.scatter(x, y, alpha=0.5, s=2)

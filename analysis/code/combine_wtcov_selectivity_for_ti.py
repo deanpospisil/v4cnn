@@ -66,6 +66,7 @@ def ti_av_cov(da):
             ti[i] = num/den 
     return ti, kurt_shapes, kurt_x, dens, nums, tot_vars 
 
+data_dir = '/loc6tb/'
 #%%   
 goforit=False       
 if 'netwts' not in locals() or goforit:
@@ -81,7 +82,7 @@ wts_by_layer = [layer[1] for layer in netwts]
 subsamp = 10 
 
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
-da = xr.open_dataset(top_dir + '/data/responses/'+net_name)['resp']
+da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp']
 
 #%%
 subsamp = 10

@@ -22,6 +22,8 @@ import scipy.io as l
 
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 response_folder = '/home/dean/Desktop/v4cnn/data/responses/'
+response_folder = '/loc6tb/data/responses/'
+
 #response_folder = '/dean_temp/data/responses/'
 baseImageList = ['PC370', 'formlet']
 base_image_nm = 'imgnet_masked'
@@ -55,9 +57,9 @@ scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 #scale = None
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
-y = (center_image-80, center_image+80, 21)
-##y = (center_image, center_image, 1)
-x = (center_image-80, center_image+80, 21)
+y = (center_image-50, center_image+50, 21)
+x = (center_image-50, center_image+50, 21)
+
 #%%
 #y = (center_image, center_image, 11)
 amp = (255, 255, 1)

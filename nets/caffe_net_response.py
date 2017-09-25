@@ -87,7 +87,7 @@ def get_indices_for_net_unit_vec(net, layer_names=None):
     return resp_descriptor_dict
 
 def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, 
-                                       net, nimgs_per_pass=1500, 
+                                       net, nimgs_per_pass=1000, 
                                        only_middle_conv=True, 
                                        record_up_to_layer=None):
     #takes stim_trans_cart_dict, pulls from img_stack and transform accordingly,

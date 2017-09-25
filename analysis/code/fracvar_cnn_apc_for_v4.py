@@ -86,6 +86,7 @@ for model in cnn_models:
     cnn_fit_apc_model_inds.append(cnn_fit_apc_model_ind)
 
 #%%
+fig_dir = '/home/dean/Desktop/v4cnn/analysis/figures/images/frac_var_cnn_apc/'
 
 apc_bf = dmod[:, apc_fit_v4.models.values]
 cnn_train_bf = cnn_models[0][:, cnn_fit_apc_model_inds[0]]
@@ -120,34 +121,23 @@ for unit in range(109):
     
     error = abproj - v4
     error_len = np.sum(error**2)
-    a_len = a**2
-    b_len = b**2
+    a_len = a
+    b_len = b
     cnn_r2.append(a_len)
     apc_orth_cnn_r2.append(b_len)
-    apc_r2.append(np.dot(apc, v4)**2)
+    apc_r2.append(np.dot(apc, v4))
 
-plt.figure(figsize=(10,2))
-plt.plot(range(109), cnn_r2)
-plt.plot(range(109), np.array(apc_orth_cnn_r2))
-plt.plot(range(109), apc_r2)
-fig_dir = '/home/dean/Desktop/v4cnn/analysis/figures/images/frac_var_cnn_apc/'
-plt.savefig(fig_dir + 'line_plot_comp.pdf')
-plt.legend(['cnn fit', 'apc orth cnn', 'apc fit']) 
-plt.xlabel('Fraction variance')
 
-plt.figure()
-plt.scatter(np.array(cnn_r2) - apc_orth_cnn_r2, apc_r2)
-plt.xlabel('CNN - APC ORTH CNN (R2)')
-plt.ylabel('APC (R2)' )
-plt.savefig(fig_dir + 'CNN-APC ORTH CNN and APC.pdf')
 
 plt.figure()
 plt.scatter(apc_orth_cnn_r2, apc_r2)
-plt.xlabel('APC ORTH CNN (R2)')
+plt.xlabel('APC ORTH CNN (R)')
 plt.ylabel('APC (R2)')
-plt.xlim(0,1);plt.ylim(0,1)
+plt.ylim(0,1);plt.xlim(0,1)
+plt.plot([0,1], [0,1])
 plt.axis('square')
 plt.savefig(fig_dir + 'APC ORTH CNN and APC.pdf')
+
 
 #%%
 cnn_r2 = []
@@ -178,15 +168,6 @@ for unit in range(109):
     cnn_orth_apc_r2.append(np.abs(np.dot(cnn_perp_apc, v4)))
     apc_r2.append(np.dot(apc, v4))
 
-plt.figure(figsize=(10,2))
-plt.plot(range(109), cnn_r2)
-plt.plot(range(109), np.array(cnn_orth_apc_r2))
-plt.plot(range(109), apc_r2)
-fig_dir = '/home/dean/Desktop/v4cnn/analysis/figures/images/frac_var_cnn_apc/'
-plt.savefig(fig_dir + 'line_plot_comp_cnn_orth_apc.pdf')
-plt.legend(['cnn fit', 'CNN ORTH APC', 'apc fit']) 
-plt.xlabel('Fraction variance')
-
 plt.figure()
 plt.scatter(np.array(cnn_r2), np.array(apc_r2))
 plt.xlabel('CNN(R)')
@@ -205,3 +186,73 @@ plt.ylim(0,1);plt.xlim(0,1)
 plt.plot([0,1], [0,1])
 plt.axis('square')
 plt.savefig(fig_dir + 'CNN ORTH APC and APC.pdf')
+
+#%%
+red_below = [16,51,52,55,63,64,65,67,77,101]
+apc_bf = dmod[:, apc_fit_v4.models.values]
+cnn_train_bf = cnn_models[0][:, cnn_fit_v4_model_inds[0]]
+cnn_untrain_bf = cnn_models[0][:, cnn_fit_v4_model_inds[1]]
+
+
+apc_bf = apc_bf - apc_bf.mean('shapes')
+apc_bf = apc_bf/((apc_bf**2).sum('shapes')**0.5)
+
+
+cnn_train_bf = cnn_train_bf - cnn_train_bf.mean('shapes')
+cnn_train_bf = cnn_train_bf/((cnn_train_bf**2).sum('shapes')**0.5)
+cnn_r2 = []
+cnn_orth_apc_r2 = []
+apc_r2 = []
+for unit in range(109):
+    
+    apc = apc_bf[:,unit].values
+    cnn = cnn_train_bf[:,unit].values
+    v4 = v4_resp_apc[:, unit].values
+
+    
+    x = np.dot(apc, cnn)
+    cnn_perp_apc = cnn - apc*x
+    cnn_perp_apc = cnn_perp_apc/(np.sum(cnn_perp_apc**2)**0.5)
+    cnn_pred = np.array([cnn, cnn_perp_apc]).T
+    x, res, rank, s = np.linalg.lstsq(cnn_pred, 
+                                     np.expand_dims(apc, 1))
+    a = x[0]
+    b = x[1]
+    abproj = a*cnn + b*cnn_perp_apc
+    
+    error = abproj - v4
+    error_len = np.sum(error**2)
+    a_len = a**2
+    b_len = b**2
+    cnn_r2.append(np.dot(cnn, v4))
+    cnn_orth_apc_r2.append(np.abs(np.dot(cnn_perp_apc, v4)))
+    apc_r2.append(np.dot(apc, v4))
+
+
+
+
+plt.figure()
+plt.scatter(cnn_orth_apc_r2, apc_r2)
+plt.scatter(np.array(cnn_orth_apc_r2)[np.array(red_below)], np.array(apc_r2)[np.array(red_below)], color='red')
+
+plt.xlabel('CNN ORTH APC (R)')
+plt.ylabel('APC (R)')
+plt.ylim(0,1);plt.xlim(0,1)
+plt.plot([0,1], [0,1])
+plt.axis('square')
+plt.savefig(fig_dir + 'CNN ORTH APC and APC_for_cnn_not_dirfit_apc.pdf')
+
+print(np.median(cnn_orth_apc_r2))
+print(np.median(apc_r2))
+print(np.median(np.array(apc_r2)-cnn_orth_apc_r2))
+print(sum((np.array(apc_r2)-cnn_orth_apc_r2)>0))
+
+
+
+#%%
+plt.scatter(apc_orth_cnn_r2, apc_r2);
+plt.xlabel('APC ORTH CNN (R)')
+plt.ylabel('APC (R)')
+plt.ylim(0,1);plt.xlim(0,1)
+plt.plot([0,1], [0,1])
+plt.axis('square')
