@@ -39,5 +39,4 @@ c = np.fft.fftfreq(imshape[1]).reshape((1, imshape[1]))
 cart_c = c + r*1j
 freq_index = cart_c[:rft_shape[0], :rft_shape[1]].ravel()
 
-#plt.imshow(np.abs(cart_c))
-#plt.imshow(np.angle(cart_c))
+plt.imshow(np.abs(cart_c))
