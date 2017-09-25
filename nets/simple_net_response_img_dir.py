@@ -14,21 +14,22 @@ sys.path.append(top_dir+ 'v4cnn/')
 sys.path.append( top_dir + 'xarray')
 sys.path.append( top_dir + 'common')
 top_dir = top_dir + 'v4cnn/'
-resp_dir = '/dean_temp/'
+resp_dir = '/loc6tb/'
 
-response_file = resp_dir  + 'data/responses/bvlc_reference_caffenet_nat_image_resp_371.nc'
+response_file = resp_dir  + 'data/responses/bvlc_reference_caffenet_cos.nc'
 
-base_image_nm = 'natural'
+base_image_nm = 'cos'
 net = '/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet'
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
-stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(371))
+stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(25878))
 da = cf.get_net_resp(base_image_nm, ann_dir,
                      net.split('net/')[1].split('.')[0],
                      stim_trans_cart_dict,
                      stim_trans_dict, 
                      require_provenance=False,
                      use_boundary=False,
-                     deploy='deploy_fixing_relu_saved.prototxt')
+                     #deploy='deploy_fixing_relu_saved.prototxt'
+                     deploy='deploy_relu_saved_up_to_conv2.prototxt')
 ds = da.to_dataset(name='resp')
 ds.to_netcdf(response_file)
 print('done')
