@@ -21,11 +21,10 @@ def cart2polar(x, y):
     theta = np.arctan2(x, y)
     return rho, theta
 def pol2cart(rho, theta):
-    x = rho * np.cos(theta)
-    y = rho * np.sin(theta)
+    y = rho * np.cos(theta)
+    x = rho * np.sin(theta)
     return x, y
     
-
 def cart_to_polar_2d_angles(imsize, sample_rate_mult):
 
     #get polar resampling coordinates
@@ -344,9 +343,9 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
                 transformed_boundary = transformed_boundary * imgDict['scale'][ind]
             
             if 'rotation' in imgDict:
-                rot = imgDict['rotation'][ind]
-                temp = transformed_boundary 
-
+                rho, theta = cart2polar(transformed_boundary[0], transformed_boundary[1])
+                xnew, ynew = pol2cart(rho, theta + imgDict['rotation'][ind])
+                transformed_boundary = [xnew, ynew]
 
             if 'x' and 'y' in imgDict:
                 x = imgDict['x'][ind]
