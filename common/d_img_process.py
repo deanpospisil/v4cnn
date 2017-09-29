@@ -20,6 +20,7 @@ def cart2polar(x, y):
     rho = (x**2 + y**2)**0.5
     theta = np.arctan2(x, y)
     return rho, theta
+
 def pol2cart(rho, theta):
     y = rho * np.cos(theta)
     x = rho * np.sin(theta)
@@ -101,7 +102,7 @@ def fft2Interpolate(coef, points, w):
     return intrpvals
 
 
-def translateByPixels(img,x,y):
+def translateByPixels(img, x, y):
     x = int(np.round(x))
     y = int(np.round(y))
     newImg= np.zeros(np.shape(img))
@@ -123,7 +124,7 @@ def translateByPixels(img,x,y):
     return newImg
 
 #def FT
-def FTcutToNPixels(dR,dC,mat):
+def FTcutToNPixels(dR, dC, mat):
     nRows = np.size( mat, 0)
     nCols = np.size( mat, 1 )
 
@@ -337,15 +338,17 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
     for ind in range(n_imgs):
         if imgDict['shapes'][ind] != -1:#-1 means a blank image
 
-            transformed_boundary = shape_boundary[imgDict['shapes'][ind]]
+            transformed_boundary = shape_boundary[int(imgDict['shapes'][ind])]
 
             if 'scale' in imgDict:
                 transformed_boundary = transformed_boundary * imgDict['scale'][ind]
             
             if 'rotation' in imgDict:
-                rho, theta = cart2polar(transformed_boundary[0], transformed_boundary[1])
+                x = transformed_boundary[:, 0]
+                y = transformed_boundary[:, 1]
+                rho, theta = cart2polar(x, y)
                 xnew, ynew = pol2cart(rho, theta + imgDict['rotation'][ind])
-                transformed_boundary = [xnew, ynew]
+                transformed_boundary = np.array([xnew, ynew]).T
 
             if 'x' and 'y' in imgDict:
                 x = imgDict['x'][ind]
@@ -370,7 +373,6 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
                                                               transformed_boundary,
                                                               img_n_pix=npixels,
                                                               fill=True))
-        
         else:
             base_stack.append(np.zeros((npixels, npixels)))
 

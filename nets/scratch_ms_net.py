@@ -176,31 +176,49 @@ plt.plot(rf, t);plt.xlabel('rf');plt.ylabel('sampling period')
 #    plt.figure()
 #    plt.imshow(cropped_t_filt)
 
-##%%
-#import caffe
-#from caffe import layers as L
-#from caffe import params as P
-#n = caffe.NetSpec()
-#n.data, n.label = L.Data(batch_size=256, transform_param=dict(mirror=True, crop_size=227),
-#                                ntop=2)
-#
-#L.Convolution(n.data, ntop=1, )
-#print(n.to_proto())
-##%%
-#def example_network(batch_size):
-#
-#
-#    n.loss, n.label = L.Data(shape=[dict(dim=[1]),
-#                                         dict(dim=[1])],
-#                                  transform_param=dict(scale=1.0/255.0),
-#                                  ntop=2)
-#
-#    n.accuracy = L.Python(n.loss, n.label,
-#                          python_param=dict(
-#                                          module='python_accuracy',
-#                                          layer='PythonAccuracy',
-#                                          param_str='{ "param_name": param_value }'),
-#                          ntop=1,)
-#
-#    return n.to_proto()
-#a = example_network(20)
+#%%
+import os
+import sys
+import re
+import numpy as np
+top_dir = os.getcwd().split('v4cnn')[0] 
+sys.path.append(top_dir+ 'v4cnn')
+sys.path.append( top_dir + 'xarray/')
+top_dir = top_dir + 'v4cnn/'
+sys.path.append( top_dir + 'common/')
+sys.path.append( top_dir + 'nets/')
+
+import caffe_net_response as cf
+import d_misc as dm
+import xarray as xr
+import apc_model_fit as ac
+import d_curve as dc
+import d_img_process as imp
+import scipy.io as l
+import caffe
+from caffe import layers as L
+from caffe import params as P
+n = caffe.NetSpec()
+n.data, n.label = L.Data(batch_size=256, transform_param=dict(mirror=True, crop_size=227),
+                                ntop=2)
+
+L.Convolution(n.data, ntop=1, )
+print(n.to_proto())
+#%%
+def example_network(batch_size):
+
+
+    n.loss, n.label = L.Data(shape=[dict(dim=[1]),
+                                         dict(dim=[1])],
+                                  transform_param=dict(scale=1.0/255.0),
+                                  ntop=2)
+
+    n.accuracy = L.Python(n.loss, n.label,
+                          python_param=dict(
+                                          module='python_accuracy',
+                                          layer='PythonAccuracy',
+                                          param_str='{ "param_name": param_value }'),
+                          ntop=1,)
+
+    return n.to_proto()
+a = example_network(20)

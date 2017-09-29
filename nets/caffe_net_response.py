@@ -132,7 +132,9 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
 #produces a cartesian dictionary of those.
     stim_trans_dict = ordDict()
     if not shapes is None:
-        stim_trans_dict['shapes'] = np.array(shapes, dtype=int)
+        #stim_trans_dict['shapes'] = np.array(shapes, dtype=int)
+        stim_trans_dict['shapes'] = np.array(shapes)
+
     if not blur is None :
         if isinstance(blur,tuple):
             stim_trans_dict['blur'] = np.linspace(*blur)
@@ -154,11 +156,17 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
         else:
             stim_trans_dict['y'] = np.array(y)
     if not rotation is None :
-        stim_trans_dict['rotation'] = np.linspace(*rotation)
+        if type(rotation) is tuple:
+            stim_trans_dict['rotation'] = np.linspace(*y)
+        else:
+            stim_trans_dict['rotation'] = np.array(rotation)
+            
     if not amp is None:
         stim_trans_dict['amp'] = np.linspace(*amp)
 # get all dimensions, into a dict
-    stim_trans_cart_dict = dm.cartesian_prod_dicts_lists( stim_trans_dict )
+    stim_trans_cart_dict = dm.cartesian_prod_dicts_lists(stim_trans_dict)
+    #this is a hackish fix to cart from sklearn switching dtypes according to 1st element.
+    stim_trans_cart_dict['shapes'] = stim_trans_cart_dict['shapes'].astype(int)
     return stim_trans_cart_dict, stim_trans_dict
 
 def load_npy_img_dirs_into_stack(img_dir):
