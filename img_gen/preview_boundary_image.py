@@ -38,34 +38,33 @@ s = np.load(top_dir + 'img_gen/dp_ang_pos_verts_shift.npy')
 base_stack = imp.center_boundary(s)
 
 #%%
-n_rot = 10
+n_rot = 5
 rotation = np.linspace(*(0, np.deg2rad(360-360./n_rot), n_rot))
+rotation=None
 scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
-shape_ids = np.arange(0., 9.)
+shape_ids = np.arange(0., 18.)
 center_image = round(img_n_pix/2)
 x = (center_image, center_image + 48, 1)
 y = (center_image, center_image, 1)
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
                                         scale=scale,
                                         x=x,
-                                        y=y,
-                                        rotation=rotation)
+                                        y=y,)
+                                        #rotation=rotation)
 
 figure_folder = top_dir + 'analysis/figures/images/'
 trans_img_stack = np.array(imp.boundary_stack_transform(stim_trans_cart_dict,
                                                         base_stack, npixels=227))
 #plot smallest and largest shape
-no_blank_image = trans_img_stack[:9]
+no_blank_image = trans_img_stack[:]
 
 for ind in range(len(no_blank_image)):
     plt.figure(figsize=(6,12))
     plt.imshow(no_blank_image[ind], cmap=plt.cm.Greys_r)
+    #plt.title(str(stim_trans_cart_dict['shapes'][ind]) + ' '+
+    #          str(np.round(np.rad2deg(stim_trans_cart_dict['rotation'][ind]))))
     plt.xticks([]);plt.yticks([])
 
-#%%
-transformed_boundary = base_stack[0]
-rho, theta = imp.cart2polar(transformed_boundary[:, 0], transformed_boundary[:, 1])
-xnew, ynew = imp.pol2cart(rho, theta + np.pi)
-transformed_boundary = np.array([xnew, ynew]).T
+
 
 
