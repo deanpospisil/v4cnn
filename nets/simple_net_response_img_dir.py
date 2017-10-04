@@ -17,11 +17,15 @@ top_dir = top_dir + 'v4cnn/'
 resp_dir = '/loc6tb/'
 
 response_file = resp_dir  + 'data/responses/bvlc_reference_caffenet_sinusoids.nc'
+img_dir = '/loc6tb/data/images/' + base_image_nm + '/'
+base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)
 
-base_image_nm = 'sinusoids'
+
+
+base_image_nm = 'ILSVRC2012_img_val'
 net = '/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet'
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
-stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(25878))
+stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(50000))
 da = cf.get_net_resp(base_image_nm, ann_dir,
                      net.split('net/')[1].split('.')[0],
                      stim_trans_cart_dict,

@@ -211,8 +211,12 @@ def get_net_resp(base_image, ann_dir, ann_fn, stim_trans_cart_dict,
                  stim_trans_dict, require_provenance=True, use_boundary=True,
                  deploy='deploy.prototxt', only_middle_conv=True):
     if not use_boundary:
-        img_dir = top_dir + '/images/baseimgs/' + base_image + '/'
-        base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)
+        try:
+            img_dir = top_dir + '/images/baseimgs/' + base_image + '/'
+            base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)
+        except:
+            img_dir = '/loc6tb/data/images/' + base_image + '/'
+            base_stack, stack_desc = imp.load_npy_img_dirs_into_stack(img_dir)
     else:
         base_stack = base_image
 #    has_image_sha = False
