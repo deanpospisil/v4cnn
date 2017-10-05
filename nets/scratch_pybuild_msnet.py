@@ -29,17 +29,40 @@ import caffe
 from caffe import layers as L
 from caffe import params as P
 
+
 def layer_txt(net_params):
-    #hand a list of net params the first column is the type of param and the second the value
-    # a list within a list in the values section is a subparam whose
+    # hand a list of net params
+    # the first entry is the type of param and the second the value
+    # if the value is a list these are subparams,
+    # with the first entry the name of those subparams
     nettxt = []
     nettxt.append('layer {')
     for key, val in net_params:
-    
+        if type(val) == list:
+            nettxt.append(key + ' {')
+            for sub_key, sub_val in val:
+                nettxt.append('      ' + sub_key + ': ' + sub_val)
+            nettxt.append('    }')
+        else:
+            nettxt.append('    ' + key + ': ' + val)
     nettxt.append('}')
-    
-    return l
+    return nettxt
 
+
+# %%
+
+net_params = [['name', '"conv2"'],['type', '"Convolution"'], 
+              ['convolution_param', [['num_output', '256'], ['kernel_size', '5']]]]
+print(type(net_params[0][1])==list)
+print(type(net_params[2][1])==list)
+#%%
+l = layer_txt(net_params)
+print(l)
+txt = ''
+for line in l:
+    txt = txt + line +'\n'
+print(txt)
+#%%
 n = caffe.NetSpec()
 
 n.data, n.label = L.Data(batch_size=256, transform_param=dict(mirror=True, crop_size=227),
