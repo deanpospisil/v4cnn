@@ -30,6 +30,30 @@ from caffe import layers as L
 from caffe import params as P
 
 
+def rf_width(kernel_widths, strides):
+    rf_width = [1, ]
+    strides = np.array(strides)
+    kernel_widths = np.array(kernel_widths)
+
+    kernel_widths = np.insert(kernel_widths, 0, 1)
+    strides = np.insert(strides, 0, 1)
+
+    stride_prod = np.cumprod(strides)
+
+    for i in range(len(kernel_widths))[1:]:
+        rf_width.append(rf_width[i-1] + (kernel_widths[i] - 1) *
+                        stride_prod[i-1])
+
+    return rf_width[1:]
+
+def output_sizes(kernel_widths, strides, input_size):
+    if not (type(input_size) is type(list())):
+        input_size = [input_size,] 
+        
+    for i in range(len(strides)):
+        input_size.append(int(np.ceil((input_size[i] - kernel_widths[i]) 
+                         / strides[i] + 1)))
+    return input_size[1:]
 def layer_txt(net_params):
     # hand a list of net params
     # the first entry is the type of param and the second the value
@@ -48,20 +72,30 @@ def layer_txt(net_params):
     nettxt.append('}')
     return nettxt
 
+#%%
+k = [2, 4, 4, 3, 2]
+s = [1, 2, 2, 2, 1]
+group = 4
+d = 16
 
-# %%
+rw = rf_width(k, s)
+fm = output_sizes(k, s, 32)
 
+print(rw)
+print(fm)
+#%%
 net_params = [['name', '"conv2"'],['type', '"Convolution"'], 
               ['convolution_param', [['num_output', '256'], ['kernel_size', '5']]]]
-print(type(net_params[0][1])==list)
-print(type(net_params[2][1])==list)
-#%%
+
 l = layer_txt(net_params)
 print(l)
 txt = ''
 for line in l:
     txt = txt + line +'\n'
 print(txt)
+
+
+
 #%%
 n = caffe.NetSpec()
 
