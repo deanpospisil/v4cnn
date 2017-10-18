@@ -56,7 +56,7 @@ def layer_txt(net_params):
     # hand a list of net params
     # the first entry is the type of param and the second the value
     # if the value is a list these are subparams,
-    # with the first entry the name of those subparams
+    # with the first entry the name of those subparams, nested one more time
     nettxt = []
     nettxt.append('layer {')
     for key, val in net_params:
@@ -186,7 +186,7 @@ def res_mods(name_prefix, bottom, groups, channels, depth):
 kernel_widths = [2, 4, 4, 3, 2]
 strides = [1, 2, 2, 2, 1]
 group = 4
-d = 16
+d = 64
 
 rw = rf_width(kernel_widths, strides)
 fm = output_sizes(kernel_widths, strides, 32)
@@ -199,25 +199,46 @@ bottom = 'data'
 input_dim = (1, 3, 32, 32)
 kernel_width = 2
 stride = 1
-channels = 16
-groups = 2
-depth = 3
+channels = 64
+groups = 32
+depth = 10
 n_categories = 10
 
 layers = []
 layer_names = []
 
 #creating the data layer
-params = [['name', '"data"'],['type', '"Input"'], 
-          ['top', '"data"'],
+params = [['name', '"cifar"'],['type', '"HDF5Data"'], 
+          ['top', '"data"'], ['top', '"label"'],
           ['input_param', [['shape', '{dim: ' + str(input_dim[0]) 
                                       + ' dim: ' + str(input_dim[1])
                                       + ' dim: ' + str(input_dim[2])
                                       + ' dim: ' + str(input_dim[3]) + '}'],
                             ]]] 
+
+train_source = '/loc6tb/data/images/cifar-10/cifar-10-batches-py/cifar10_dir_data_batch_1.txt'               
+batch_size = 500
+params = [['name', '"cifar"'], ['type', '"HDF5Data"'],
+          ['top', '"data"'], ['top', '"label"'],
+          ['include', [['phase', 'TRAIN'], ]],
+          ['hdf5_data_param', [['source', '"'+train_source+'"'],
+                               ['batch_size', str(batch_size)]]
+                            ]] 
 layers.append(layer_txt(params))
 top_name = 'data'
-layer_names.append('data')
+layer_names.append('data_train')
+
+test_source = '/loc6tb/data/images/cifar-10/cifar-10-batches-py/cifar10_dir_test_batch.txt'               
+batch_size = 100
+params = [['name', '"data"'], ['type', '"HDF5Data"'],
+          ['top', '"data"'], ['top', '"label"'],
+          ['include', [['phase', 'TEST'], ]],
+          ['hdf5_data_param', [['source', '"'+test_source+'"'],
+                               ['batch_size', str(batch_size)]]
+                            ]] 
+layers.append(layer_txt(params))
+top_name = 'data'
+layer_names.append('data_test')
 
 #conv_resmod(bottom, region, kernel_width, stride, channels, groups, depth):
 
@@ -252,6 +273,8 @@ n_categories = 10
 params = [['name', '"fc"'],['type', '"InnerProduct"'], 
           ['top', '"fc"'],
           ['bottom', '"'+ top_name +'"'],
+          ['param', [['lr_mult', '1'], ['decay_mult', '1']]],
+          ['param', [['lr_mult', '2'], ['decay_mult', '0']]],
           ['inner_product_param', [['num_output', str(n_categories)], 
                                    ['weight_filler', [['type', '"xavier"'],]],
                                    ['bias_filler', [['type', '"constant"'], ['value', '0'],]]
@@ -262,12 +285,28 @@ layers.append(layer_txt(params))
 layer_names = layer_names + ['fc', ]
 
 #creating the category layer
-params = [['name', '"prob"'],['type', '"Softmax"'], 
-          ['bottom', '"fc"'], ['top', '"prob"']]
+params = [['name', '"prob"'], ['type', '"SoftmaxWithLoss"'], 
+          ['bottom', '"fc"'], ['bottom', '"label"'], ['top', '"loss"'],
+          ['include', [['phase', 'TRAIN'],]]
+          ]
 layers.append(layer_txt(params))
-layer_names = layer_names + ['prob', ]
+layer_names = layer_names + ['prob_train', ]
 
+#creating the category layer
+params = [['name', '"prob"'], ['type', '"Softmax"'], 
+          ['bottom', '"fc"'], ['top', '"fc"'],
+          ['include', [['phase', 'TEST'],]]
+          ]
+layers.append(layer_txt(params))
+layer_names = layer_names + ['prob_test', ]
 
+#creating the acc layer
+params = [['name', '"accuracy"'], ['type', '"Accuracy"'], 
+          ['top', '"accuracy"'], ['bottom', '"fc"'], ['bottom', '"label"'],
+          ['include', [['phase', 'TEST'],]]
+          ]
+layers.append(layer_txt(params))
+layer_names = layer_names + ['test_acc', ]
 
 '''    
 layer {
@@ -301,6 +340,26 @@ layer {
   bottom: "fc1"
   top: "prob"
 }  
+
+
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "fc8"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "fc8"
+  bottom: "label"
+  top: "loss"
+}
+
 '''
 #%%
 txt = ''
@@ -308,9 +367,56 @@ for layer in layers:
     for line in layer:
         txt = txt + line +'\n'
 print(txt)
-
-f = open('ms_net.txt','w')
+model_dir = '/home/dean/caffe/models/msnet/'
+f = open(model_dir + 'ms_net.prototxt','w')
 f.write(txt)
 f.close()
 
+
+#%%
+net = '"/home/dean/caffe/models/msnet/ms_net.prototxt"'
+test_iter = 1000
+test_interval = 1000
+base_lr = 0.01
+lr_policy= '"step"'
+gamma= 0.1
+stepsize= 100000
+display= 20
+max_iter= 450000
+momentum= 0.9
+weight_decay= 0.0005
+snapshot= 10000
+snapshot_prefix= '"/home/dean/caffe/models/msnet/msnet_train"'
+solver_mode= 'GPU'
+
+solver = [['net', net],
+          ['test_iter', str(test_iter)],
+          ['test_interval', str(test_interval)],
+          ['base_lr', str(base_lr)],
+          ['lr_policy', lr_policy],
+          ['gamma', str(gamma)],
+          ['stepsize', str(stepsize)],
+          ['display', str(display)],
+          ['max_iter', str(max_iter)],
+          ['momentum', str(momentum)],
+          ['weight_decay', str(weight_decay)],
+          ['snapshot', str(snapshot)],
+          ['snapshot_prefix', snapshot_prefix],
+          ['solver_mode', solver_mode]]
+
+txt= ''
+for line in solver:
+    txt = txt + line[0] + ': ' + line[1] +'\n'
+    
+f = open(model_dir + 'solver.prototxt','w')
+f.write(txt)
+f.close()
+solver_prototxt_filename = model_dir + 'solver.prototxt'
+#%%
+sys.path.append('/home/dean/caffe/python')
+
+import caffe
+caffe.set_mode_gpu()
+solver = caffe.get_solver(solver_prototxt_filename)
+solver.solve()
 
