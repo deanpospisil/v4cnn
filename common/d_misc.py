@@ -218,7 +218,7 @@ def cartesian_prod_dicts_lists(the_dict):
     from sklearn.utils.extmath import cartesian
 
     stim_list = []
-    stim_list = tuple([ list(the_dict[ key_name ]) for key_name in the_dict ])
+    stim_list = tuple([list(the_dict[key_name]) for key_name in the_dict])
 
     #cartesian has the last column change the fastest, thus is like c-indexing
     stim_cart_array = cartesian(stim_list)

@@ -336,45 +336,53 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
     base_stack = []
     n_imgs = np.size(imgDict['shapes'], 0)
     for ind in range(n_imgs):
-        if imgDict['shapes'][ind] != -1:#-1 means a blank image
-
-            transformed_boundary = shape_boundary[int(imgDict['shapes'][ind])]
-
-            if 'scale' in imgDict:
-                transformed_boundary = transformed_boundary * imgDict['scale'][ind]
-            
-            if 'rotation' in imgDict:
-                x = transformed_boundary[:, 0]
-                y = transformed_boundary[:, 1]
-                rho, theta = cart2polar(x, y)
-                xnew, ynew = pol2cart(rho, theta + imgDict['rotation'][ind])
-                transformed_boundary = np.array([xnew, ynew]).T
-
-            if 'x' and 'y' in imgDict:
-                x = imgDict['x'][ind]
-                y = imgDict['y'][ind]
-                transformed_boundary = transformed_boundary + [x, y]
-
-            elif 'x'  in imgDict:
-                x = imgDict['x'][ind]
-                transformed_boundary = transformed_boundary + [x, 0]
-
-            elif 'y'  in imgDict:
-                y = imgDict['y'][ind]
-                transformed_boundary = transformed_boundary + [0, y]
-            
-            if 'amp' in imgDict:
-                base_stack.append(imgDict['amp'][ind] * boundary_to_mat_by_round(
-                                                              transformed_boundary,
-                                                              img_n_pix=npixels,
-                                                              fill=True))
-            else:
-                base_stack.append(255. * boundary_to_mat_by_round(
-                                                              transformed_boundary,
-                                                              img_n_pix=npixels,
-                                                              fill=True))
+        if 'shapes2' in imgDict:
+            shapes_inds = [imgDict['shapes'][ind], imgDict['shapes2'][ind]]
+            offsetsx = [imgDict['offsetsx'], -imgDict['offsetsx']]
         else:
-            base_stack.append(np.zeros((npixels, npixels)))
+            shapes_inds = [imgDict['shapes'][ind], ]
+            offsetsx = [0, ]
+        img = np.zeros((npixels, npixels))
+
+        for shapes_ind, offsetx in zip(shapes_inds, offsetsx):
+            if shapes_ind != -1:  #-1 means a blank image
+    
+                transformed_boundary = shape_boundary[int(shapes_ind)]
+    
+                if 'scale' in imgDict:
+                    transformed_boundary = transformed_boundary * imgDict['scale'][ind]
+                
+                if 'rotation' in imgDict:
+                    x = transformed_boundary[:, 0]
+                    y = transformed_boundary[:, 1]
+                    rho, theta = cart2polar(x, y)
+                    xnew, ynew = pol2cart(rho, theta + imgDict['rotation'][ind])
+                    transformed_boundary = np.array([xnew, ynew]).T
+                    
+                if 'x' and 'y' in imgDict:
+                    x = imgDict['x'][ind] + offsetx
+                    y = imgDict['y'][ind]
+                    transformed_boundary = transformed_boundary + [x, y]
+    
+                elif 'x'  in imgDict:
+                    x = imgDict['x'][ind] + offsetx 
+                    transformed_boundary = transformed_boundary + [x, 0]
+    
+                elif 'y'  in imgDict:
+                    y = imgDict['y'][ind]
+                    transformed_boundary = transformed_boundary + [0, y]
+                
+                if 'amp' in imgDict:
+                    img = img + imgDict['amp'][ind] * boundary_to_mat_by_round(
+                                                      transformed_boundary,
+                                                      img_n_pix=npixels,
+                                                      fill=True)
+                else:
+                    img = img + 255.*boundary_to_mat_by_round(
+                                                        transformed_boundary,
+                                                        img_n_pix=npixels,
+                                                        fill=True)
+        base_stack.append(img)
 
     return base_stack
 ##%%

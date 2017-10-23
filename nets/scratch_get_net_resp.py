@@ -85,36 +85,48 @@ x = (64, 164, 52)
 y = (center_image, center_image, 1)
 
 #%%
-def stim_trans_generator(shapes=None, blur=None, scale=None,
+def stim_trans_generator(shapes=None, shapes2=None, offsetsx=None, blur=None, scale=None,
                          x=None, y=None, amp=None, rotation=None):
 #takes descrptions of ranges for different transformations (start, stop, npoints)
 #produces a cartesian dictionary of those.
     stim_trans_dict = ordDict()
-    if not shapes is None:
+    if shapes is not None:
         #stim_trans_dict['shapes'] = np.array(shapes, dtype=int)
         stim_trans_dict['shapes'] = np.array(shapes)
+    
+    if shapes2 is not None:
+        #stim_trans_dict['shapes'] = np.array(shapes, dtype=int)
+        stim_trans_dict['shapes2'] = np.array(shapes2)
 
-    if not blur is None :
+    if blur is not None :
         if isinstance(blur,tuple):
             stim_trans_dict['blur'] = np.linspace(*blur)
         else:
             stim_trans_dict['blur'] = blur
-    if not scale is None:
+    if scale is not None:
         if isinstance(scale, tuple):
             stim_trans_dict[ 'scale' ] = np.linspace(*scale)
         else:
             stim_trans_dict[ 'scale' ] = scale
-    if not x is None :
+    if  x is not None :
         if type(x) is tuple:
             stim_trans_dict['x'] = np.linspace(*x)
         else:
             stim_trans_dict['x'] = np.array(x)
-    if not y is None :
+            
+    if y is not None :
         if type(y) is tuple:
             stim_trans_dict['y'] = np.linspace(*y)
         else:
             stim_trans_dict['y'] = np.array(y)
-    if not rotation is None :
+    
+    if offsetsx is not None:
+        if type(y) is tuple:
+            stim_trans_dict['offsetsx'] = np.linspace(*offsetsx)
+        else:
+            stim_trans_dict['offsetsx'] = np.array(offsetsx)
+            
+    if  rotation is not None :
         if type(rotation) is tuple:
             stim_trans_dict['rotation'] = np.linspace(*y)
         else:
@@ -122,7 +134,7 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
             
     if not amp is None:
         stim_trans_dict['amp'] = np.linspace(*amp)
-# get all dimensions, into a dict
+        # get all dimensions, into a dict
     stim_trans_cart_dict = dm.cartesian_prod_dicts_lists(stim_trans_dict)
     #this is a hackish fix to cart from sklearn switching dtypes according to 1st element.
     stim_trans_cart_dict['shapes'] = stim_trans_cart_dict['shapes'].astype(int)
@@ -130,21 +142,22 @@ def stim_trans_generator(shapes=None, blur=None, scale=None,
 
 from itertools import product
 
-off_sets = list(max_pix_width*np.array([0.5, 1, 2]))
-
+offsetsx = np.array(list(max_pix_width*np.array([0.5, 1, 2])))
 shapes = [1, 2, ]
 sign = [1, -1]
 scale = [16,]
 y = [114,]
 x = [114,]
 
+
+
 a = [shapes, x, y, scale, off_sets, sign]
 stim_cart = np.array(list(product(*a)))
 
-stim_cart2 = stim_cart
+stim_cart2 = stim_cart.copy()
 stim_cart2[:, -1] = -stim_cart2[:, -1]
 
-stim_cart[:, 1] = stim_cart[:,-1]*stim_cart[:,-2] + stim_cart[:, 1]
+stim_cart[:, 1] = stim_cart[:,-1]*stim_cart[:,-2] + stim_cart[:, 2]
 stim_cart2[:, 1] = stim_cart2[:,-1]*stim_cart2[:,-2] + stim_cart2[:, 1]
 print(stim_cart)
 #convert offsets and signs into 
@@ -152,12 +165,18 @@ print(stim_cart)
 
 
 from collections import OrderedDict as ordDict
-stim_trans_dict = ordDict()
+stim_trans_cart_dict = ordDict()
 
 
 #stim_trans_dict['shapes'] = [np.array(e1, e2) for e1, e2 in zip(stim_cart, stim_cart2)]
 
-
+stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
+                     shapes2=shape_ids,
+                     scale=scale,
+                     x=x,
+                     offsetsx=offsetsx,
+                     y=y,
+                     amp=amp)
 
 #%%
 #y = (center_image, center_image, 11)
