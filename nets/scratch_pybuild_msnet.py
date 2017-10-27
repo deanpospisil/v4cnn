@@ -9,7 +9,6 @@ Created on Mon Oct  2 15:15:18 2017
 #%%
 import os
 import sys
-import re
 import numpy as np
 top_dir = os.getcwd().split('v4cnn')[0] 
 sys.path.append(top_dir+ 'v4cnn')
@@ -182,11 +181,18 @@ def res_mods(name_prefix, bottom, groups, channels, depth):
         
     return layers, layer_names
         
+
 #%%
 kernel_widths = [2, 4, 4, 3, 2]
 strides = [1, 2, 2, 2, 1]
-group = 4
-d = 64
+bottom = 'data'
+input_dim = (1, 3, 32, 32)
+channels = 16
+groups = 1
+depth = 1
+n_categories = 10
+batch_size_train = 25
+batch_size_test = 25
 
 rw = rf_width(kernel_widths, strides)
 fm = output_sizes(kernel_widths, strides, 32)
@@ -194,47 +200,73 @@ fm = output_sizes(kernel_widths, strides, 32)
 print(rw)
 print(fm)
 
-#%%
-bottom = 'data'
-input_dim = (1, 3, 32, 32)
-kernel_width = 2
-stride = 1
-channels = 64
-groups = 32
-depth = 10
-n_categories = 10
 
 layers = []
 layer_names = []
 
-#creating the data layer
-params = [['name', '"cifar"'],['type', '"HDF5Data"'], 
-          ['top', '"data"'], ['top', '"label"'],
-          ['input_param', [['shape', '{dim: ' + str(input_dim[0]) 
-                                      + ' dim: ' + str(input_dim[1])
-                                      + ' dim: ' + str(input_dim[2])
-                                      + ' dim: ' + str(input_dim[3]) + '}'],
-                            ]]] 
-
+#name: "MSNET"
+#layer {
+#  name: "cifar"
+#  type: "Data"
+#  top: "data"
+#  top: "label"
+#  include {
+#    phase: TRAIN
+#  }
+#  transform_param {
+#    mean_file: "/home/dean/caffe/examples/cifar10/mean.binaryproto"
+#  }
+#  data_param {
+#    source: "/home/dean/caffe/examples/cifar10/cifar10_train_lmdb"
+#    batch_size: 100
+#    backend: LMDB
+#  }
+#}
+#layer {
+#  name: "cifar"
+#  type: "Data"
+#  top: "data"
+#  top: "label"
+#  include {
+#    phase: TEST
+#  }
+#  transform_param {
+#    mean_file: "/home/dean/caffe/examples/cifar10/mean.binaryproto"
+#  }
+#  data_param {
+#    source: "/home/dean/caffe/examples/cifar10/cifar10_test_lmdb"
+#    batch_size: 100
+#    backend: LMDB
+#  }
+#}
 train_source = '/loc6tb/data/images/cifar-10/cifar-10-batches-py/cifar10_dir_data_batch_1.txt'               
-batch_size = 500
-params = [['name', '"cifar"'], ['type', '"HDF5Data"'],
+train_source = "/home/dean/caffe/examples/cifar10/cifar10_train_lmdb"
+
+test_source = '/loc6tb/data/images/cifar-10/cifar-10-batches-py/cifar10_dir_test_batch.txt'               
+test_source =  '/home/dean/caffe/examples/cifar10/cifar10_test_lmdb'
+
+mean_source = "/home/dean/caffe/examples/cifar10/mean.binaryproto"
+
+params = [['name', '"cifar"'], ['type', '"Data"'],
           ['top', '"data"'], ['top', '"label"'],
+          ['transform_param', [['mean_file', '"' + mean_source + '"'],]],
           ['include', [['phase', 'TRAIN'], ]],
-          ['hdf5_data_param', [['source', '"'+train_source+'"'],
-                               ['batch_size', str(batch_size)]]
-                            ]] 
+          ['data_param', [['source', '"'+train_source+'"'],
+                          ['batch_size', str(batch_size_train)],
+                          ['backend', 'LMDB'],
+                          ]]]
+
 layers.append(layer_txt(params))
 top_name = 'data'
 layer_names.append('data_train')
 
-test_source = '/loc6tb/data/images/cifar-10/cifar-10-batches-py/cifar10_dir_test_batch.txt'               
-batch_size = 100
-params = [['name', '"data"'], ['type', '"HDF5Data"'],
+params = [['name', '"cifar"'], ['type', '"Data"'],
           ['top', '"data"'], ['top', '"label"'],
           ['include', [['phase', 'TEST'], ]],
-          ['hdf5_data_param', [['source', '"'+test_source+'"'],
-                               ['batch_size', str(batch_size)]]
+          ['transform_param', [['mean_file', '"' + mean_source + '"'],]],
+          ['data_param', [['source', '"'+test_source+'"'],
+                          ['backend', 'LMDB'],
+                          ['batch_size', str(batch_size_test)]]
                             ]] 
 layers.append(layer_txt(params))
 top_name = 'data'
@@ -252,8 +284,9 @@ for kernel_width, stride, region in zip(kernel_widths, strides, range(len(stride
               ['convolution_param', [['num_output', str(channels)], 
                                      ['kernel_size', str(kernel_width)],
                                      ['stride', str(stride)],
-                                     ['bias_term', 'false']
-                                     ]]] 
+                                     ['bias_term', 'false'],
+                                     ['weight_filler', [['type', '"'+ 'xavier'+ '"'],],
+                                     ]]]] 
     layers.append(layer_txt(params))
     layer_names.append(top_name)
     
@@ -267,7 +300,7 @@ for kernel_width, stride, region in zip(kernel_widths, strides, range(len(stride
     layer_names = layer_names + a_layer_names
     layers = layers + a_layers
     top_name = layer_names[-2]    
-#%%
+# %% creating the category layer
 n_categories = 10
 #creating the category layer
 params = [['name', '"fc"'],['type', '"InnerProduct"'], 
@@ -284,21 +317,15 @@ params = [['name', '"fc"'],['type', '"InnerProduct"'],
 layers.append(layer_txt(params))
 layer_names = layer_names + ['fc', ]
 
-#creating the category layer
-params = [['name', '"prob"'], ['type', '"SoftmaxWithLoss"'], 
-          ['bottom', '"fc"'], ['bottom', '"label"'], ['top', '"loss"'],
-          ['include', [['phase', 'TRAIN'],]]
-          ]
-layers.append(layer_txt(params))
-layer_names = layer_names + ['prob_train', ]
 
-#creating the category layer
-params = [['name', '"prob"'], ['type', '"Softmax"'], 
-          ['bottom', '"fc"'], ['top', '"fc"'],
-          ['include', [['phase', 'TEST'],]]
-          ]
-layers.append(layer_txt(params))
-layer_names = layer_names + ['prob_test', ]
+#
+##creating the category layer
+#params = [['name', '"prob"'], ['type', '"Softmax"'], 
+#          ['bottom', '"fc"'], ['top', '"fc"'],
+#          ['include', [['phase', 'TEST'],]]
+#          ]
+#layers.append(layer_txt(params))
+#layer_names = layer_names + ['prob_test', ]
 
 #creating the acc layer
 params = [['name', '"accuracy"'], ['type', '"Accuracy"'], 
@@ -308,59 +335,55 @@ params = [['name', '"accuracy"'], ['type', '"Accuracy"'],
 layers.append(layer_txt(params))
 layer_names = layer_names + ['test_acc', ]
 
-'''    
-layer {
-  name: "fc1"
-  type: "InnerProduct"
-  bottom: "pool1"
-  top: "fc1"
-  param {
-    lr_mult: 1
-    decay_mult: 1
-  }
-  param {
-    lr_mult: 2
-    decay_mult: 0
-  }
-  inner_product_param {
-    num_output: 1000
-    weight_filler {
-      type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
-}
+#creating the category layer
+params = [['name', '"loss"'], ['type', '"SoftmaxWithLoss"'], 
+          ['bottom', '"fc"'], ['bottom', '"label"'], ['top', '"loss"'],
+          #['include', [['phase', 'TRAIN'],]]
+          ]
+layers.append(layer_txt(params))
+layer_names = layer_names + ['prob_train', ]
 
-layer {
-  name: "prob"
-  type: "Softmax"
-  bottom: "fc1"
-  top: "prob"
-}  
+#
+#name: "CIFAR10_full"
+#state {
+#  phase: TEST
+#}
+#layer {
+#  name: "cifar"
+#  type: "Data"
+#  top: "data"
+#  top: "label"
+#  include {
+#    phase: TEST
+#  }
+#  transform_param {
+#    mean_file: "examples/cifar10/mean.binaryproto"
+#  }
+#  data_param {
+#    source: "/home/dean/caffe/examples/cifar10/cifar10_test_lmdb"
+#    batch_size: 100
+#    backend: LMDB
+#  }
+#}
+#
+#layer {
+#  name: "accuracy"
+#  type: "Accuracy"
+#  bottom: "ip1"
+#  bottom: "label"
+#  top: "accuracy"
+#  include {
+#    phase: TEST
+#  }
+#}
+#layer {
+#  name: "loss"
+#  type: "SoftmaxWithLoss"
+#  bottom: "ip1"
+#  bottom: "label"
+#  top: "loss"
+#}
 
-
-layer {
-  name: "accuracy"
-  type: "Accuracy"
-  bottom: "fc8"
-  bottom: "label"
-  top: "accuracy"
-  include {
-    phase: TEST
-  }
-}
-layer {
-  name: "loss"
-  type: "SoftmaxWithLoss"
-  bottom: "fc8"
-  bottom: "label"
-  top: "loss"
-}
-
-'''
 #%%
 txt = ''
 for layer in layers:
@@ -377,19 +400,20 @@ f.close()
 net = '"/home/dean/caffe/models/msnet/ms_net.prototxt"'
 test_iter = 1000
 test_interval = 1000
-base_lr = 0.01
+base_lr = 100
 lr_policy= '"step"'
 gamma= 0.1
 stepsize= 100000
-display= 20
+display= 200
 max_iter= 450000
 momentum= 0.9
-weight_decay= 0.0005
-snapshot= 10000
+weight_decay= 0.004
+snapshot= 50000
 snapshot_prefix= '"/home/dean/caffe/models/msnet/msnet_train"'
 solver_mode= 'GPU'
 
 solver = [['net', net],
+          ['type', '"SGD"'],
           ['test_iter', str(test_iter)],
           ['test_interval', str(test_interval)],
           ['base_lr', str(base_lr)],
@@ -399,6 +423,7 @@ solver = [['net', net],
           ['display', str(display)],
           ['max_iter', str(max_iter)],
           ['momentum', str(momentum)],
+          #['debug_info', 'true'],
           ['weight_decay', str(weight_decay)],
           ['snapshot', str(snapshot)],
           ['snapshot_prefix', snapshot_prefix],
@@ -412,11 +437,15 @@ f = open(model_dir + 'solver.prototxt','w')
 f.write(txt)
 f.close()
 solver_prototxt_filename = model_dir + 'solver.prototxt'
-#%%
-sys.path.append('/home/dean/caffe/python')
 
-import caffe
-caffe.set_mode_gpu()
-solver = caffe.get_solver(solver_prototxt_filename)
-solver.solve()
+#os.system("some_command < input_file | another_command > output_file") 
+##%%
+#sys.path.append('/home/dean/caffe/python')
+#
+#import caffe
+#caffe.set_mode_gpu()
+#solver = caffe.get_solver(solver_prototxt_filename)
+#solver.solve()
 
+#/home/dean/caffe/build/tools/caffe train --solver=/home/dean/caffe/models/msnet/solver.prototxt 2>&1 | tee /home/dean/caffe/models/msnet/log_lmdb.txt
+#/home/dean/caffe/build/tools/caffe train --solver=/home/dean/caffe/examples/cifar10/cifar10_full_solver.prototxt 2>&1 | tee /home/dean/caffe/models/msnet/log_lmdb.txt

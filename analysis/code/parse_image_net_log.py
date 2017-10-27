@@ -23,19 +23,20 @@ plt.close('all')
 
 #all reps
 filenames = [
-#'imagenet_log_training_july13th_rep_scrib_aws.txt',
-#'imagenet_log_training_july13th_rep_scrib_aws2.txt',
-#'imagenet_log_training_july13th_rep_scrib.txt',
-#'imagenet_log_training_july13th_rep_scrib2.txt',
-#'imagenet_log_training_july13th_rep_scrib_aws2_long.txt',
-'imagenet_log_May_21.txt',
-'imagenet_log_training_july14th_rep_scrib_batch100.txt',
-#'imagenet_log_training_June14.txt',
-'imagenet_log_training_June19.txt',
-#'imagenet_log_training_June21_fromsnapshot.txt',
-'imagenet_log_training_June27.txt',
+##'imagenet_log_training_july13th_rep_scrib_aws.txt',
+##'imagenet_log_training_july13th_rep_scrib_aws2.txt',
+##'imagenet_log_training_july13th_rep_scrib.txt',
+##'imagenet_log_training_july13th_rep_scrib2.txt',
+##'imagenet_log_training_july13th_rep_scrib_aws2_long.txt',
+#'imagenet_log_May_21.txt',
+#'imagenet_log_training_july14th_rep_scrib_batch100.txt',
+##'imagenet_log_training_June14.txt',
+#'imagenet_log_training_June19.txt',
+##'imagenet_log_training_June21_fromsnapshot.txt',
+#'imagenet_log_training_June27.txt',
 
-'imagenet_log_training_July11th_faithful.txt']
+'log.txt'
+]
 legstr = ['reduced batch b=60 (GTX770)','reduced batch b=100 (GTX770)',
 'june19th b=227 (aws)', 'correct_mean orig_proto b=256 (aws)', 'incorrect_mean orig proto b=256 (aws)', 'donahue reference b=256']
 

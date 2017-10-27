@@ -2027,17 +2027,25 @@ if  not schematic_gaussian:
 
     plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/apc_encoding.svg', bbox_inches='tight')
     
+#%%
 
+small_orsd = cn['or_sd']<.8
+good_apc = (cn['apc']**0.5)>0.65
+good_ti = cn['ti_in_rf']>0.8
+point = cn['cur_mean']>0.5
 
+all_crit = small_orsd & good_apc & good_ti & point
+ 
+print(np.sum(all_crit))
 
+c_b = cn[['apc', 'ti_in_rf', 'cur_mean', 'cur_sd', 'or_mean', 'or_sd']].loc[all_crit]
 
+c_b['apc'] = c_b['apc']**0.5
 
-
-
-
-
-
-
+c_b['or_sd'] = np.rad2deg(c_b['or_sd'])
+c_b['or_mean'] = np.rad2deg(c_b['or_mean'])
+c_b = np.round(c_b, 3)
+c_b.to_csv(top_dir+'data/an_results/best_red.csv')
 
 
 

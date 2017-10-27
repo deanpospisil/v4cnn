@@ -77,7 +77,7 @@ def stim_trans_generator(shapes=None, shapes2=None, offsetsx=None, blur=None, sc
             stim_trans_dict['y'] = np.array(y)
     
     if offsetsx is not None:
-        if type(y) is tuple:
+        if type(offsetsx) is tuple:
             stim_trans_dict['offsetsx'] = np.linspace(*offsetsx)
         else:
             stim_trans_dict['offsetsx'] = np.array(offsetsx)
@@ -98,13 +98,12 @@ def stim_trans_generator(shapes=None, shapes2=None, offsetsx=None, blur=None, sc
 
 from itertools import product
 
-offsetsx = np.array(list(max_pix_width*np.array([0.5, 1, 2])))
-shape_ids = np.array([-1, 0 , 1, 2])
 
 sign = [1, -1]
 scale = [16,]
-y = [114,]
-x = [114,]
+img_n_pix = 227
+
+
 
 
 
@@ -113,7 +112,13 @@ stim_trans_cart_dict = ordDict()
 
 
 #stim_trans_dict['shapes'] = [np.array(e1, e2) for e1, e2 in zip(stim_cart, stim_cart2)]
+center_image = round(img_n_pix/2)
+x = (center_image, center_image, 1)
+y = (center_image, center_image, 1)
+offsetsx = np.array(list(max_pix_width*np.array([0.5, 1, 2])))
+shape_ids = np.arange(-1, 362, 6)
 
+scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
 stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
                      shapes2=shape_ids,
                      scale=scale,
@@ -122,7 +127,7 @@ stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
                      y=y)
 
 #%%
-##y = (center_image, center_image, 11)
+#y = (center_image, center_image, 11)
 #amp = (255, 255, 1)
 #amp = None
 #stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
@@ -131,20 +136,27 @@ stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
 #                                                                y=y,
 #                                                                amp=amp,
 #                                                                rotation=(0, 360,10))
-#
-#n_rot = 5
-#rotation = np.linspace(*(0, np.deg2rad(360-360./n_rot), n_rot))
-#rotation=None
-#scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
-#shape_ids = np.arange(0., 18.)
-#center_image = round(img_n_pix/2)
-#x = (center_image, center_image + 48, 1)
-#y = (center_image, center_image, 1)
-#stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
-#                                        scale=scale,
-#                                        x=x,
-#                                        y=y,)
-#                                        #rotation=rotation)
+
+n_rot = 5
+rotation = np.linspace(*(0, np.deg2rad(360-360./n_rot), n_rot))
+rotation=None
+scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
+shape_ids = np.arange(0., 18.)
+center_image = round(img_n_pix/2)
+x = (center_image, center_image + 48, 1)
+y = (center_image, center_image, 1)
+stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
+                                                         
+                                        scale=scale,
+                                        x=x,
+                                        y=y,)
+                                        #rotation=rotation)
+stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
+                     shapes2=shape_ids,
+                     scale=scale,
+                     x=x,
+                     offsetsx=offsetsx,
+                     y=y)
 #%%
 figure_folder = top_dir + 'analysis/figures/images/'
 trans_img_stack = np.array(imp.boundary_stack_transform(stim_trans_cart_dict,

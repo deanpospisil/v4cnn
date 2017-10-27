@@ -108,7 +108,7 @@ def identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict,
             stim_trans_cart_dict_sect[key] = stim_trans_cart_dict[key][stack_ind[0]:stack_ind[1]]
 
         #produce those images
-        if not 2 in shape_stack[0].shape:#check if it is just 2-d ie a boundary
+        if 2 not in shape_stack[0].shape:#check if it is just 2-d ie a boundary
             trans_img_stack = imp.imgStackTransform(stim_trans_cart_dict_sect, shape_stack)
         else:
             trans_img_stack = np.array(imp.boundary_stack_transform(stim_trans_cart_dict_sect,

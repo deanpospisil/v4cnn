@@ -338,7 +338,7 @@ def boundary_stack_transform(imgDict, shape_boundary, npixels):
     for ind in range(n_imgs):
         if 'shapes2' in imgDict:
             shapes_inds = [imgDict['shapes'][ind], imgDict['shapes2'][ind]]
-            offsetsx = [imgDict['offsetsx'], -imgDict['offsetsx']]
+            offsetsx = [imgDict['offsetsx'][ind], -imgDict['offsetsx'][ind ]]
         else:
             shapes_inds = [imgDict['shapes'][ind], ]
             offsetsx = [0, ]

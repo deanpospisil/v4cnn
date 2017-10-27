@@ -39,6 +39,7 @@ base_image_nm = baseImageList[0]
 
 
 all_iter = [
+'bvlc_reference_caffenet',
 #'bvlc_caffenet_reference_increase_wt_cov_random0.9',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.2',
 #'bvlc_caffenet_reference_increase_wt_cov_fc6_0.3',
@@ -71,7 +72,7 @@ max_pix_width = [ 32.,]
 mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
 s = np.array(mat['shapes'][0])
 
-s = np.load(top_dir + 'img_gen/dp_ang_pos_verts.npy')
+#s = np.load(top_dir + 'img_gen/dp_ang_pos_verts.npy')
 base_stack = imp.center_boundary(s)
 scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
 #scale = None
@@ -83,6 +84,7 @@ x = (64, 164, 52)
 
 #x = (center_image-80, center_image+80, 21)
 y = (center_image, center_image, 1)
+from collections import OrderedDict as ordDict
 
 #%%
 def stim_trans_generator(shapes=None, shapes2=None, offsetsx=None, blur=None, scale=None,
@@ -121,7 +123,7 @@ def stim_trans_generator(shapes=None, shapes2=None, offsetsx=None, blur=None, sc
             stim_trans_dict['y'] = np.array(y)
     
     if offsetsx is not None:
-        if type(y) is tuple:
+        if type(offsetsx) is tuple:
             stim_trans_dict['offsetsx'] = np.linspace(*offsetsx)
         else:
             stim_trans_dict['offsetsx'] = np.array(offsetsx)
@@ -140,62 +142,31 @@ def stim_trans_generator(shapes=None, shapes2=None, offsetsx=None, blur=None, sc
     stim_trans_cart_dict['shapes'] = stim_trans_cart_dict['shapes'].astype(int)
     return stim_trans_cart_dict, stim_trans_dict
 
-from itertools import product
-
-offsetsx = np.array(list(max_pix_width*np.array([0.5, 1, 2])))
-shapes = [1, 2, ]
-sign = [1, -1]
-scale = [16,]
-y = [114,]
-x = [114,]
-
-
-
-a = [shapes, x, y, scale, off_sets, sign]
-stim_cart = np.array(list(product(*a)))
-
-stim_cart2 = stim_cart.copy()
-stim_cart2[:, -1] = -stim_cart2[:, -1]
-
-stim_cart[:, 1] = stim_cart[:,-1]*stim_cart[:,-2] + stim_cart[:, 2]
-stim_cart2[:, 1] = stim_cart2[:,-1]*stim_cart2[:,-2] + stim_cart2[:, 1]
-print(stim_cart)
-#convert offsets and signs into 
-
-
-
-from collections import OrderedDict as ordDict
-stim_trans_cart_dict = ordDict()
-
 
 #stim_trans_dict['shapes'] = [np.array(e1, e2) for e1, e2 in zip(stim_cart, stim_cart2)]
+center_image = round(img_n_pix/2)
+x = (center_image, center_image, 1)
+y = (center_image, center_image, 1)
+offsetsx = np.array(list(max_pix_width*np.array([0.5, 1, 2])))
+shape_ids = np.arange(-1, 362, 6)
 
+scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
 stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
                      shapes2=shape_ids,
                      scale=scale,
                      x=x,
                      offsetsx=offsetsx,
-                     y=y,
-                     amp=amp)
+                     y=y)
 
-#%%
-#y = (center_image, center_image, 11)
-amp = (255, 255, 1)
-amp = None
-stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
-                                                                scale=scale,
-                                                                x=x,
-                                                                y=y,
-                                                                amp=amp,
-                                                                rotation=(0, 360,10))
+
 
 #%%
 for  iter_name, deploy  in zip(all_iter, deploys):
     print(iter_name)
     #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])   
     response_description = (iter_name+ 'pix_width'+ str(max_pix_width)
-                            + '_x_' + str(x) + '_y_' + str(y) 
-                            +'_amp_'+ str(amp) + str(base_image_nm)  +'.nc')
+                            + '_x_' + str(x) + '_y_' + str(y) + '_offsets_'
+                            + str(base_image_nm)  +'.nc')
     response_file = (response_folder + response_description)
 
     if  os.path.isfile(response_file):
@@ -210,7 +181,7 @@ for  iter_name, deploy  in zip(all_iter, deploys):
                              use_boundary=True,
                              deploy=deploy)
 
-        #da.to_dataset(name='resp').to_netcdf(response_file)
+        da.to_dataset(name='resp').to_netcdf(response_file)
 
 
 
