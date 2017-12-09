@@ -339,7 +339,7 @@ if sys.platform == 'linux2':
 else:
     data_dir = top_dir
 
-goforit = True
+goforit = False
 #loading up all needed data
 if 'cnn_an' not in locals() or goforit:
     
@@ -419,7 +419,17 @@ labels[146]
 
 #%%
 layer_colors = cm.copper(np.linspace(0.1, 1, 8))
+def vis_square(ax, data, padsize=0, padval=0):
+    # force the number of filters to be square
+    n = int(np.ceil(np.sqrt(data.shape[0])))
+    padding = ((0, n ** 2 - data.shape[0]), (0, padsize), (0, padsize)) + ((0, 0),) * (data.ndim - 3)
+    data = np.pad(data, padding, mode='constant', constant_values=(padval, padval))
 
+    # tile the filters into an image
+    data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
+    data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
+    ax.set_xticks([]);ax.set_yticks([])
+    return data
 def plot_resp_on_sort_shapes(ax, shapes, resp, top=25, fs=20, shrink=.5, colorbar=False):
     c_imgs = np.zeros(np.shape(shapes) + (4,))
     respsc = (resp - resp.min())
@@ -556,11 +566,16 @@ cn = cnn_an.loc['resp'].drop('v4', level='layer_label')
 cn = cn[cn['k']<42]
 cn_apc = cn[-cn['apc'].isnull()] 
 b_unit = cn_apc[cn_apc['cur_mean']>0.5].loc['conv2']['apc'].idxmax()
-b_unit = 497
-model = cn_apc['models'].loc['conv2'].loc[b_unit]
 
-hi_curv_resp = da_0.sel(unit= b_unit)
-model_resp = dmod.sel(models=model)
+b_layer_unit = 113
+b_layer_name = 'conv2'
+b_unit = da_0[:,(da_0.layer_unit == b_layer_unit) 
+    * (da_0.layer_label == b_layer_name)].unit.values
+model = cn_apc['models'].loc[b_layer_name].loc[b_unit]
+
+
+hi_curv_resp = da_0.sel(unit=b_unit).squeeze()
+model_resp = dmod.sel(models=model).squeeze()
 hi_curv_resp = hi_curv_resp.reindex_like(model_resp)
 scatter_dat.append([hi_curv_resp, model_resp, ('conv2', b_unit)])
 
@@ -568,10 +583,16 @@ cn = cnn_an.loc['resp'].drop('v4', level='layer_label')
 cn = cn[cn['k']<42]
 cn_apc = cn[-cn['apc'].isnull()]     
 b_unit = cn_apc[cn_apc['cur_mean']<0.5]['apc'].idxmax()
-model = int(cn_apc['models'].loc[b_unit[0]].loc[b_unit[1]])
 
-hi_curv_resp = da_0.sel(unit=b_unit[1])
-model_resp = dmod.sel(models=model)
+b_layer_unit = 3591
+b_layer_name = 'fc7'
+b_unit = da_0[:,(da_0.layer_unit == b_layer_unit) 
+ * (da_0.layer_label == b_layer_name)].unit.values
+
+model = int(cn_apc['models'].loc[b_layer_name].loc[b_unit])
+
+hi_curv_resp = da_0.sel(unit = b_unit).squeeze()
+model_resp = dmod.sel(models = model).squeeze()
 hi_curv_resp = hi_curv_resp.reindex_like(model_resp)
 scatter_dat.append([hi_curv_resp, model_resp, b_unit])
                 
@@ -583,11 +604,20 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
     x,y = scatter_lsq(ax, dat[0].values, dat[1].values, lsq=True,
                      mean_subtract=True, **kw)
     frac_var = np.corrcoef(x.T, y.T)[0,1]
+    print(frac_var)
+    print(dat[1].coords)
     cartesian_axes(ax, x_line=True, y_line=True, unity=True)
     beautify(ax, spines_to_remove=['top','right', 'left','bottom'])
     ax.set_xticks([]);ax.set_yticks([]);
     ax.set_xlim(min(x), max(x))
     ax.set_ylim(min(y)+min(y)*0.05, max(y)+max(y)*0.05)
+    if ax_ind>1:
+        print(dat[0].layer_label.values)
+        ax.set_title(str(dat[0].layer_label.values) + ' ' + str(int(dat[0].layer_unit.values)))
+    else:
+        ax.set_title(dat[0].w_lab.values)
+        print(dat[0].w_lab.values)
+        
     if example_cell_inds[0]==ax_ind:
         #ax.text(0, 0.5, 'Model',
         #                    transform=ax.transAxes, fontsize=fs,
@@ -614,7 +644,7 @@ for ax_ind, dat in zip(example_cell_inds, scatter_dat):
 #            fontsize=fs, va='top', ha='center')
     
     ax = ax_list[ax_ind+1]
-
+    
     data = plot_resp_on_sort_shapes(ax, no_blank_image, dat[0], top=16, fs=fs, 
                                     shrink=0.75, colorbar=colorbar)
     if colorbar:
@@ -831,14 +861,14 @@ for plt_ind, ex_cell in zip(v4_ex_plt_inds, v4_ex):
     ax.spines['right'].set_bounds(0,ax.get_ylim()[1]*.9)
     
     ax = ax_list[plt_ind-1]
-    a = ex_cell_resp.sel(x=1).values
-    b = ex_cell_resp.sel(x=0).values
+    a = ex_cell_resp.sel(x=2).values
+    b = ex_cell_resp.sel(x=3).values
     scatter_lsq(ax, a, b, lsq=0, mean_subtract=0, **{'s':1})
     ax.locator_params(nbins=10, tight=True);
     ax.axis('equal');
     ax.set_xticks(np.round([0, max(a)]), minor=False)
     ax.set_yticks(np.round([0,max(b)]), minor=False)
-
+    #for cell 33 needed to correct this to x=2 x=1 which corresponds to .16 fraction rf, and 0 fraction rf
     beautify(ax);
     fs=12
     ax.set_xlabel('Pos. ' +str(0)+'\nspk/s',labelpad=10, fontsize=fs,va='top',);
@@ -1021,14 +1051,25 @@ for layer, ex_ind in zip(ex_avg_layer, ex_inds):
     
 
 ti_cnn = cnn_an[~cnn_an['ti_in_rf'].isnull()]['ti_in_rf'].loc['resp']
-ex_cell_inds = [('conv2', 387), ('conv5',3197), ('fc7', 12604),]
-ex_cell_tis = [ti_cnn.loc[ind[0]].loc[ind[1]] for ind in ex_cell_inds]
-ex_cell_cors = [cor.sel(unit=ind[1]) for ind in ex_cell_inds]
-ex_cell_rfs = [rf.sel(unit=ind[1]) for ind in ex_cell_inds]
-cn_ex = [cell for cell in zip(ex_cell_tis, ex_cell_cors, ex_cell_rfs, ex_cell_inds)]
+ex_cell_inds = [('conv2', 387), ('conv5', 3197), ('fc7', 12604),]
+
+ex_cell_inds_layer_unit = [('conv2', 113), ('conv4', 369), ('fc7', 3591),]
+ex_cell_inds_unit = []
+for ex_cel_ind in ex_cell_inds_layer_unit:
+    b_unit = da_0[:,(da_0.layer_unit == ex_cel_ind[1]) 
+     * (da_0.layer_label == ex_cel_ind[0])].unit.values
+    ex_cell_inds_unit.append((ex_cel_ind[0], int(b_unit))) 
+    
+
+ex_cell_tis = [ti_cnn.loc[ind[0]].loc[ind[1]] for ind in ex_cell_inds_unit]
+ex_cell_cors = [cor.sel(unit=ind[1]) for ind in ex_cell_inds_unit]
+ex_cell_rfs = [rf.sel(unit=ind[1]) for ind in ex_cell_inds_unit]
+cn_ex = [cell for cell in zip(ex_cell_tis, ex_cell_cors, ex_cell_rfs, ex_cell_inds_unit)]
 ex_cell_inds = [0,2,4]
 ti_leg_pos = [[0.97,0.8],[0.97,0.8],[0.97,0.25]]
-for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, ['conv2', 'conv5', 'fc7'],ti_leg_pos):
+for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, 
+                                                ['conv2', 'conv4', 'fc7'], 
+                                                ti_leg_pos):
     ax = ax_list[ex_cell_ind]
     cell_label = ex_cell[-1]
     cell_ti = ex_cell[0]
@@ -1052,7 +1093,7 @@ for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, ['conv2', 
     ax.set_yticklabels(['0', ' ', '1'], fontsize=12)
 
     #ax.text(str(cell_label) + '. TI='+ str(np.round(cell_ti,2)))
-    ax.text(-0.38,0.5, layer, color='k', rotation='vertical',
+    ax.text(-0.38, 0.5, layer, color='k', rotation='vertical',
                 transform=ax.transAxes, ha='center', va='center', fontsize=16)
     props = {'facecolor':'w', 'boxstyle':'round', 'alpha':1, 'clip_on':True}
     ax.text(ti_leg[0],ti_leg[1], 'TI=' + str(np.round(cell_ti,2)), color='k', 
@@ -1077,13 +1118,13 @@ for ex_cell,  ex_cell_ind, layer, ti_leg in zip(cn_ex,  ex_cell_inds, ['conv2', 
 #        ax.legend(['RF',], loc='center left', frameon=False,handletextpad=0, markerfirst=False)
 
     #ax.set_yticklabels([])
-ax_list[0].text(0.5,1.01, 'Unit 387', ha='center', va='bottom',
+ax_list[0].text(0.5,1.01, 'Unit ' + str(ex_cell_inds_layer_unit[0][1]), ha='center', va='bottom',
                 transform=ax_list[0].transAxes, fontsize=12, fontstyle='italic')
 #ax_list[0].annotate('', xy=(101, 0.05), xytext=(101, 0.4), ha='center',
 #            arrowprops=dict(facecolor='black', shrink=0.05),zorder=1, fontsize=8)
-ax_list[4].text(.5,1.01, 'Unit 12604', ha='center', va='bottom',
+ax_list[4].text(.5,1.01, 'Unit ' + str(ex_cell_inds_layer_unit[2][1]), ha='center', va='bottom',
                 transform=ax_list[4].transAxes, fontsize=12, fontstyle='italic')
-ax_list[2].set_title('Unit 3197', fontstyle='italic')
+ax_list[2].set_title('Unit ' + str(ex_cell_inds_layer_unit[1][1]), fontstyle='italic')
 plt.tight_layout()
 plt.savefig(top_dir + '/analysis/figures/images/v4cnn_cur/'+str(figure_num[4])+
             '_ti_example_and_avg_v4cnn.pdf', bbox_inches='tight')
@@ -1346,13 +1387,24 @@ cnn = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'].sel(x=114), 
 
 name = 'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(114.0, 114.0, 1)_amp_(100, 255, 2).nc'
 cnns = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'].sel(amp=amp) for amp in [255, 100]] + cnn
+art = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'],]   
+art = art[0].isel(amp=1)
 
 name = 'bvlc_reference_caffenet_nat_image_resp_371.nc'
 cnn = [xr.open_dataset(data_dir + 'data/responses/' + name)['resp'],]   
+nat = cnn[0]
 cnns = cnns + cnn
 cnns = [cnns[0], cnns[2], cnns[1], cnns[-1]]
 
 
+rat = (nat.max('shapes')/art.max('shapes')).squeeze()
+rat[rat==np.inf] = 0
+rat[rat==-np.inf] = 0
+
+a = rat.groupby('layer').mean()[3:]
+a.plot()
+a.coords['layer_label']
+#%%
 n_plot = len(layers_to_examine)
 plt.figure(figsize=(3/1.5,n_plot*1.5/1.5))
 
@@ -2029,23 +2081,6 @@ if  not schematic_gaussian:
     
 #%%
 
-small_orsd = cn['or_sd']<.8
-good_apc = (cn['apc']**0.5)>0.65
-good_ti = cn['ti_in_rf']>0.8
-point = cn['cur_mean']>0.5
-
-all_crit = small_orsd & good_apc & good_ti & point
- 
-print(np.sum(all_crit))
-
-c_b = cn[['apc', 'ti_in_rf', 'cur_mean', 'cur_sd', 'or_mean', 'or_sd']].loc[all_crit]
-
-c_b['apc'] = c_b['apc']**0.5
-
-c_b['or_sd'] = np.rad2deg(c_b['or_sd'])
-c_b['or_mean'] = np.rad2deg(c_b['or_mean'])
-c_b = np.round(c_b, 3)
-c_b.to_csv(top_dir+'data/an_results/best_red.csv')
 
 
 

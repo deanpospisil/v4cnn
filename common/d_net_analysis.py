@@ -210,7 +210,7 @@ def ti_av_cov(da, rf=None):
 
 def norm_cov(x, subtract_mean=True):
     
-    #if nxm the get cov nxn
+    #if nxm the get cov mxm
     x = x.astype(np.float64)
     if subtract_mean:
         x = x - np.mean(x, 0, keepdims=True)

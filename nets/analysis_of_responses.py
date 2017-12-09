@@ -48,18 +48,23 @@ cnn_resp =[
 ]
 
 cnn_resp =[
-'bvlc_caffenet_reference_increase_wt_cov_random0.9pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',
+#'blvc_caffenet_iter_1pix_width[65.0]_x_(64, 164, 52)_y_(114.0, 114.0, 1)PC370',
+'bvlc_reference_caffenetpix_width[100.0]_x_(64, 164, 52)_y_(114.0, 114.0, 1)PC370',
 ]
 
 nulls = [0, 1, 0]
+nulls = [0,]
 subsample_units = 1
+
+
 
 for cnn_resp_name, null  in zip(cnn_resp, nulls):
     print(cnn_resp_name)
     measure_list = ['apc', 'k', 'ti_in_rf', 'k_pos', 'k_stim', ]
 
     measure_names = []
-    w = int(float( re.findall('\[\d\d.0', cnn_resp_name)[0][1:]))
+    #w = int(float( re.findall('\[\d\d.0', cnn_resp_name)[0][1:]))
+    w = 32
     da = xr.open_dataset(load_dir + 'data/responses/' + cnn_resp_name  + '.nc' )['resp']
     da = da.sel(unit=slice(0, None, subsample_units)).load().squeeze()
     if null:
