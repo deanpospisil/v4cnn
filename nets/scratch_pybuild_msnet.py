@@ -6,7 +6,7 @@ Created on Mon Oct  2 15:15:18 2017
 @author: dean
 """
 
-#%%
+
 import os
 import sys
 import numpy as np
@@ -40,7 +40,6 @@ def rf_width(kernel_widths, strides):
     for i in range(len(kernel_widths))[1:]:
         rf_width.append(rf_width[i-1] + (kernel_widths[i] - 1) *
                         stride_prod[i-1])
-
     return rf_width[1:]
 
 def output_sizes(kernel_widths, strides, input_size):
@@ -51,6 +50,7 @@ def output_sizes(kernel_widths, strides, input_size):
         input_size.append(int(np.ceil((input_size[i] - kernel_widths[i]) 
                          / strides[i] + 1)))
     return input_size[1:]
+
 def layer_txt(net_params):
     # hand a list of net params
     # the first entry is the type of param and the second the value

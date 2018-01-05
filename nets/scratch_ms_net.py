@@ -93,12 +93,12 @@ filt = myGuassian(mag, 25, 10)
 
 #plt.imshow(filt)
 from scipy import misc
-im = misc.imread('/home/dean/caffe/examples/images/cat.jpg')
+im = face = misc.face()
 im = im[:n,:n, :]/255.
 im = np.mean(im, -1)
 im= 1-im
 plt.imshow(im, cmap='Greys')
-n_bin_edges =10
+n_bin_edges = 10
 #fewest_freqs = 10.
 #highest_divisor = np.floor(nyq / fewest_freqs)
 #bin_edges = nyq/np.logspace(1, np.log2(highest_divisor), num=n_bin_edges, base=2)
@@ -109,7 +109,7 @@ bin_half_width = np.abs(np.diff(bin_edges)/2)
 bin_centers = [(bin_edges[i+1] + bin_edges[i]) / 2. for i in range(len(bin_edges))[:-1]]
 nyq = np.ceil((n/2.)/(bin_centers+bin_half_width*2))
 
-for i in range(len(bin_centers))[:-1]:
+for i in range(len(bin_centers))[:]:
     filt = myGuassian(mag, bin_centers[i], bin_half_width[i])
     plt.figure()
     plt.subplot(141)
@@ -129,7 +129,7 @@ for i in range(len(bin_centers))[:-1]:
 
 spatial_sd = 3
 cropped_t_filt = []
-for i in range(len(bin_centers))[:-1]:
+for i in range(len(bin_centers))[:]:
     sigma = bin_half_width[i]
     mu = bin_centers[i]
     

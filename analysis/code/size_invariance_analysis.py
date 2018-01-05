@@ -17,7 +17,7 @@ sys.path.append(top_dir +'/nets')
 import xarray as xr
 da = xr.open_dataset('/loc6tb/data/responses/bvlc_reference_caffenetpix_width(8, 16, 10)_x_(114.0, 114.0, 1)_y_(114.0, 114.0, 1)PC370.nc')['resp']
 
-
+da.coords['scale'] = da.coords['scale']*4
 def norm_cov(x, subtract_mean=True):
     
     #if nxm the get cov mxm
@@ -48,6 +48,8 @@ def av_cov(da, dims=('unit', 'shapes', 'scale')):
     ti_est_all = [norm_cov(unit_resp) for unit_resp in resp]
     
     return ti_est_all
+
+
 
 scale_inv = av_cov(da.squeeze())
 da_an = xr.DataArray(scale_inv, coords=[da.coords['unit'],])

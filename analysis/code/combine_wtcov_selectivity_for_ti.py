@@ -82,10 +82,10 @@ wts_by_layer = [layer[1] for layer in netwts]
 subsamp = 10 
 
 net_name = 'bvlc_reference_caffenetpix_width[32.0]_x_(34.0, 194.0, 21)_y_(34.0, 194.0, 21)_amp_NonePC370.nc'
-da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp']
+#da = xr.open_dataset(data_dir + '/data/responses/'+net_name)['resp']
 
 #%%
-subsamp = 10
+subsamp = 1
 da = da.squeeze()
 da = da.transpose('unit','shapes', 'x', 'y')
 da = da[::subsamp, ...].squeeze() #subsample
@@ -95,7 +95,7 @@ da = da[:, 1:, ...] #get rid of baseline shape
 from scipy.stats import kurtosis
 
 #%%
-ti_yx, kurt_shapes_yx, kurt_yx, dens, nums, tot_vars_yx = ti_av_cov(da[:, :, :, :])
+#ti_yx, kurt_shapes_yx, kurt_yx, dens, nums, tot_vars_yx = ti_av_cov(da[:, :, :, :])
 #%%
 dims = ['unit','chan', 'y', 'x']
 
@@ -104,7 +104,7 @@ layer_labels = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6']
 for layer, name in zip(wts_by_layer, layer_labels):
     dim_names = dims[:len(layer.shape)]
     layer_ind = da.coords['layer_label'].values == name 
-    _ =  da[..., layer_ind].coords['unit']
+    _ =  da[layer_ind].coords['unit']
     netwtsd[name] = xr.DataArray(layer, dims=dims, 
            coords=[range(n) for n in np.shape(layer)])
     netwtsd[name].coords['unit'] = _
@@ -128,10 +128,11 @@ def spatial_opponency(da):
     return opponency_da
 import pandas as pd
 wt_cov_by_layer = []
-for layer, layer_name in zip(netwtsd, layer_labels):
-    print(layer[1].shape)
-    if len(layer[1].shape)>2:
-        _ = xr.DataArray(layer[1], dims=['unit', 'chan', 'x', 'y'])
+for layer_name in zip(layer_labels[1:]):
+    layer = netwtsd[layer_name[0]]
+    print(layer.shape)
+    if len(layer.shape)>2:
+        _ = xr.DataArray(layer, dims=['unit', 'chan', 'x', 'y'])
         wt_cov = spatial_opponency(_)
         print(len(wt_cov))
         wt_cov_by_layer.append(wt_cov)
