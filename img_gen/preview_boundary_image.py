@@ -34,8 +34,8 @@ img_n_pix = 227
 max_pix_width = [32.,]
 
 s = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')['shapes'][0]
-s = np.load(top_dir + 'img_gen/dp_ang_pos_verts.npy')
-s = np.load(top_dir + 'img_gen/dp_ang_pos_verts_shift.npy')
+#s = np.load(top_dir + 'img_gen/dp_ang_pos_verts.npy')
+#s = np.load(top_dir + 'img_gen/dp_ang_pos_verts_shift.npy')
 
 base_stack = imp.center_boundary(s)
 
@@ -145,18 +145,18 @@ shape_ids = np.arange(0., 18.)
 center_image = round(img_n_pix/2)
 x = (center_image, center_image + 48, 1)
 y = (center_image, center_image, 1)
-stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
-                                                         
+scale = (3,3,1)
+stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,                  
                                         scale=scale,
                                         x=x,
                                         y=y,)
                                         #rotation=rotation)
-stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
-                     shapes2=shape_ids,
-                     scale=scale,
-                     x=x,
-                     offsetsx=offsetsx,
-                     y=y)
+#stim_trans_cart_dict, stim_trans_dict = stim_trans_generator(shapes=shape_ids,
+#                     shapes2=shape_ids,
+#                     scale=scale,
+#                     x=x,
+#                     offsetsx=offsetsx,
+#                     y=y)
 #%%
 figure_folder = top_dir + 'analysis/figures/images/'
 trans_img_stack = np.array(imp.boundary_stack_transform(stim_trans_cart_dict,

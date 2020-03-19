@@ -52,75 +52,75 @@ v4_resp_trials = v4_resp_trials['resp'].load().transpose('shapes','unit','trials
 v4_resp_trials = v4_resp_trials.loc[v4_resp_mean.coords['shapes'].values, :, :]
 #divide by the duration in seconds to get spikes per second.
 v4_resp_mean = v4_resp_trials.mean('trials')/(v4_resp_trials.attrs['dur']/1000.)
-##%%
-#n_noise_resample = 100 #how many times to repeat the simulation
-#n_trials = 5
-#apc_m_cor_list = []
-#apc_sd_cor_list = []
-#for cell in range(v4_resp_mean.shape[1]):
-#    x = v4_resp_mean[:,cell]
-#    nstim = x.shape[0]
-#    r_list = []
-#
-#    sim_resp = np.random.poisson(x, size=(n_noise_resample, n_trials, nstim))
-#    r = [np.abs(np.corrcoef(resp, x)[0, 1]) for resp in sim_resp.mean(1)]
-#    apc_m_cor_list.append(np.mean(r))
-#    apc_sd_cor_list.append(np.std(r))
-#    
-#    
-##%%
+#%%
+n_noise_resample = 100 #how many times to repeat the simulation
+n_trials = 5
+apc_m_cor_list = []
+apc_sd_cor_list = []
+for cell in range(v4_resp_mean.shape[1]):
+    x = v4_resp_mean[:,cell]
+    nstim = x.shape[0]
+    r_list = []
+
+    sim_resp = np.random.poisson(x, size=(n_noise_resample, n_trials, nstim))
+    r = [np.abs(np.corrcoef(resp, x)[0, 1]) for resp in sim_resp.mean(1)]
+    apc_m_cor_list.append(np.mean(r))
+    apc_sd_cor_list.append(np.std(r))
+    
+    
+#%%
 #import apc_model_fit as ac
 #
 nm = 'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370.nc'
 da = xr.open_dataset(top_dir + '/data/responses/'+ nm)['resp'].squeeze().load()
 center_pos = np.round(len(da.coords['x'])/2.).astype(int)
 da_0 = da.sel(x=da.coords['x'][center_pos])
-#
-#fn = top_dir + 'data/models/' + 'apc_models_362.nc'
-#dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
-#
-#apc_fit_v4 = ac.cor_resp_to_model(v4_resp_mean.chunk({'shapes': 370}), 
-#                                  dmod.chunk({}), 
-#                                  fit_over_dims=None, 
-#                                  prov_commit=False)
-#apc_fit_alex = ac.cor_resp_to_model(da_0.chunk({'shapes': 370}), 
-#                                  dmod.chunk({}), 
-#                                  fit_over_dims=None, 
-#                                  prov_commit=False)
-##%%
+
+fn = top_dir + 'data/models/' + 'apc_models_362.nc'
+dmod = xr.open_dataset(fn, chunks={'models':50, 'shapes':370})['resp'].load()
+
+apc_fit_v4 = ac.cor_resp_to_model(v4_resp_mean.chunk({'shapes': 370}), 
+                                  dmod.chunk({}), 
+                                  fit_over_dims=None, 
+                                  prov_commit=False)
+apc_fit_alex = ac.cor_resp_to_model(da_0.chunk({'shapes': 370}), 
+                                  dmod.chunk({}), 
+                                  fit_over_dims=None, 
+                                  prov_commit=False)
+#%%
 import d_net_analysis as na
-#k = na.kurtosis_da(da_0)
-#non_k_var = (k>1) * (k<42) 
-#apc_fit_alex_k_filt = apc_fit_alex[non_k_var]
-#
-##%%
-#from scipy.stats import linregress
-#r_thresh = 0.70
-#fit_mod = []
-#mod_r = []
-#for i, fit in enumerate(apc_fit_v4):
-#    mod = dmod[:, int(fit.models.values)]
-#    dat = v4_resp_mean[:, i].values
-#    slope, inter, r, p, sterr = linregress(mod.values, dat)
-#    mod_r.append(r)
-#    fit_mod.append(slope*mod + inter)
-#
-#n_noise_resample = 100
-#n_trials = 5  
-#perf_apc_m_cor_list = []
-#corresponding_v4_ind = []
-#for i, a_fit_mod, an_r in zip(range(len(fit_mod)), fit_mod, mod_r):
-#    if an_r>r_thresh:
-#        x = a_fit_mod
-#        if sum(x<0)>0:
-#            x = x - x.min()
-#        nstim = x.shape[0]
-#    
-#        sim_resp = np.random.poisson(x, size=(n_noise_resample, n_trials, nstim))
-#        r = [np.abs(np.corrcoef(resp, x)[0, 1]) 
-#            for resp in sim_resp.mean(1)]
-#        perf_apc_m_cor_list.append(np.mean(r))
-#        corresponding_v4_ind.append(i)
+k = na.kurtosis_da(da_0)
+non_k_var = (k>1) * (k<42) 
+apc_fit_alex_k_filt = apc_fit_alex[non_k_var]
+
+#%%
+from scipy.stats import linregress
+r_thresh = 0.70
+fit_mod = []
+mod_r = []
+for i, fit in enumerate(apc_fit_v4):
+    mod = dmod[:, int(fit.models.values)]
+    dat = v4_resp_mean[:, i].values
+    slope, inter, r, p, sterr = linregress(mod.values, dat)
+    mod_r.append(r)
+    fit_mod.append(slope*mod + inter)
+
+n_noise_resample = 100
+n_trials = 5  
+perf_apc_m_cor_list = []
+corresponding_v4_ind = []
+for i, a_fit_mod, an_r in zip(range(len(fit_mod)), fit_mod, mod_r):
+    if an_r>r_thresh:
+        x = a_fit_mod
+        if sum(x<0)>0:
+            x = x - x.min()
+        nstim = x.shape[0]
+    
+        sim_resp = np.random.poisson(x, size=(n_noise_resample, n_trials, nstim))
+        r = [np.abs(np.corrcoef(resp, x)[0, 1]) 
+            for resp in sim_resp.mean(1)]
+        perf_apc_m_cor_list.append(np.mean(r))
+        corresponding_v4_ind.append(i)
 #%%    
 
 
@@ -225,6 +225,13 @@ for i in range(v4_resp_ti.shape[0]):
 
 #%%
 plt.figure()
+
+import scipy.stats as st
+# Note the difference in argument order
+X = v4_ti
+y = 1- np.array(perf_ti_m_cor_list)
+print(st.linregress(X,y))
+
 plt.title('Comparing Perfect TI noise to Original Resp noise')
 plt.scatter(v4_ti, 1- np.array(perf_ti_m_cor_list), color='k', s=12, edgecolors='none')
 plt.xlabel('TI V4')
@@ -272,7 +279,7 @@ plt.savefig(top_dir + 'analysis/figures/images/v4cnn_cur/'+str('4_')+
 
 
 #%%
-'''
+
 m_cor_list = []
 for cell in range(v4_resp_mean.shape[1]):
     x = v4_resp_mean[:,cell]
@@ -387,7 +394,7 @@ plt.tight_layout()
 
 #%%
 os.listdir(top_dir+'/analysis/figures/images/v4cnn_cur/')
-'''
+
 
 
 

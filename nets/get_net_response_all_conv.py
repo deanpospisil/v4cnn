@@ -20,7 +20,8 @@ import scipy.io as l
 import caffe
 ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 response_folder = '/home/dean/Desktop/v4cnn/data/responses/'
-response_folder = '/dean_temp/data/responses/'
+response_folder = '/loc6tb/data/responses/'
+
 baseImageList = ['PC370', 'formlet']
 base_image_nm = baseImageList[0]
 
@@ -46,8 +47,8 @@ scale = max_pix_width/dc.biggest_x_y_diff(boundaries)
 shape_ids = range(-1, 370)
 center_image = round(img_n_pix/2.)
 x = (center_image-25, center_image+25, 51)
-#x =  (center_image, center_image, 1)
-y = (center_image, center_image, 1)
+x =  (center_image, center_image, 1)
+y = (center_image, center_image +10, 1)
 amp = (255, 255, 1)
 amp = None
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
@@ -64,8 +65,10 @@ response_description = iter_name+ '_all_conv_APC362_pix_width'+ str(max_pix_widt
 response_file = (response_folder + response_description)
 
 response = cf.identity_preserving_transform_resp(shape_stack, stim_trans_cart_dict, net, only_middle_conv=False,
-                                                 record_up_to_layer=5)
-np.save(response_file[:-3], np.array(response))
+                                                 record_up_to_layer=12)
+
+print([resp.shape for resp in response[0]])
+#np.save(response_file[:-3], np.array(response))
 #da.to_dataset(name='resp').to_netcdf(response_file)
 
 

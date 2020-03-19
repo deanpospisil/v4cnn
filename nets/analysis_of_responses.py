@@ -7,8 +7,8 @@ Created on Tue Aug  9 15:06:55 2016
 import os, sys
 import numpy as np
 top_dir = os.getcwd().split('v4cnn')[0]
-sys.path.append(top_dir+ 'v4cnn/')
-sys.path.append( top_dir + 'xarray')
+#sys.path.append(top_dir+ 'v4cnn/')
+#sys.path.append( top_dir + 'xarray')
 top_dir = top_dir + 'v4cnn/'
 sys.path.append( top_dir + 'common/')
 
@@ -26,7 +26,7 @@ save_dir =  '/loc6tb/'
 load_dir = '/loc6tb/'
 
 model_file = load_dir + 'data/models/' + 'apc_models_362.nc'
-dmod = xr.open_dataset(model_file, chunks={'models':50, 'shapes':370})['resp']
+dmod = xr.open_dataset(model_file, chunks={'models':1000, 'shapes':370})['resp']
 #cnn_resp =[
 #'bvlc_reference_caffenetAPC362_pix_width[32.0]_pos_(64.0, 164.0, 51)',
 #'bvlc_reference_caffenetAPC362_pix_width[64.0]_pos_(64.0, 164.0, 51)',
@@ -41,19 +41,25 @@ cnn_resp =[
 'bvlc_reference_caffenetpix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',
 'blvc_caffenet_iter_1pix_width[32.0]_x_(64, 164, 51)_y_(114.0, 114.0, 1)_amp_NonePC370',
 ]
-cnn_resp =[
-'bvlc_reference_caffenetpix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
-'bvlc_reference_caffenetpix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
-'blvc_caffenet_iter_1pix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
-]
 
-cnn_resp =[
-#'blvc_caffenet_iter_1pix_width[65.0]_x_(64, 164, 52)_y_(114.0, 114.0, 1)PC370',
-'bvlc_reference_caffenetpix_width[100.0]_x_(64, 164, 52)_y_(114.0, 114.0, 1)PC370',
-]
+cnn_resp =['bvlc_reference_caffenetpix_width[ 8.4096606]_x_(64, 164, 51)_y_(114.0, 114.0, 1)PC370',
+           'bvlc_reference_caffenetpix_width[ 8.4096606]_x_(64, 164, 51)_y_(114.0, 114.0, 1)PC370',
+           'blvc_caffenet_iter_1pix_width[ 8.4096606]_x_(64, 164, 51)_y_(114.0, 114.0, 1)PC370']
+
+#cnn_resp = ['bvlc_reference_caffenetpix_width[ 8.4096606]_x_(34, 194, 21)_y_(34, 194, 21)PC370',]
+#cnn_resp =[
+#'bvlc_reference_caffenetpix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
+#'bvlc_reference_caffenetpix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
+#'blvc_caffenet_iter_1pix_width[32.0]_x_(32, 196, 83)_y_(114.0, 114.0, 1)_amp_NonePC370',
+#]
+#
+#cnn_resp =[
+##'blvc_caffenet_iter_1pix_width[65.0]_x_(64, 164, 52)_y_(114.0, 114.0, 1)PC370',
+##'bvlc_reference_caffenetpix_width[100.0]_x_(64, 164, 52)_y_(114.0, 114.0, 1)PC370',
+#'bvlc_reference_caffenetpix_width[ 2.89082083]_x_(64, 164, 52)_y_(114.0, 114.0, 1)PC370'
+#]
 
 nulls = [0, 1, 0]
-nulls = [0,]
 subsample_units = 1
 
 
@@ -65,27 +71,42 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
     measure_names = []
     #w = int(float( re.findall('\[\d\d.0', cnn_resp_name)[0][1:]))
     w = 32
-    da = xr.open_dataset(load_dir + 'data/responses/' + cnn_resp_name  + '.nc' )['resp']
+    #w = 11
+    da = xr.open_dataset(load_dir + 'data/responses/v4cnn/' + cnn_resp_name  + '.nc' )['resp']
     da = da.sel(unit=slice(0, None, subsample_units)).load().squeeze()
     if null:
         np.random.seed(1)
         for  x in range(len(da.coords['x'])):
             for unit in range(len(da.coords['unit'])):
                 da[1:, x, unit] = np.random.permutation(da[1:,x,unit].values)
-    center_pos = np.round((len(da.coords['x'])-1)/2.).astype(int)
+    center_pos = np.round(len(da.coords['x'])/2.).astype(int)
     da_0 = da.sel(x=da.coords['x'][center_pos])
     #rf = dn.in_rf(da, w=w)
     measures = []
     if 'apc' in measure_list:	
         
-        fit = ac.cor_resp_to_model(da_0.chunk({'shapes': 370}),
-                                                dmod, fit_over_dims=None,
-                                                prov_commit=False)**2
-        cds = fit.coords
+#        fit = ac.cor_resp_to_model(da_0.chunk({'shapes': 370}),
+#                                                dmod, fit_over_dims=None,
+#                                                prov_commit=False)**2
+        fn = '/loc6tb/data/models/apc_models_362.nc'
+        apc = xr.open_dataset(fn)['resp']
+        apc['models'] = range(apc.shape[1])  
+        
+        da_0 = da_0.loc[apc.coords['shapes'].values]          
+        da_0 = da_0 - da_0.mean('shapes')
+        da_0n = da_0/(da_0.dot(da_0, 'shapes')**0.5)
+        r = da_0n.chunk({'unit':1000}).dot(apc.chunk({'models':1000}), 'shapes').values
+        rbest = r.max(1)
+        ind = r.argmax(1)
+        
+        #cds = fit.coords
         #measure_list = ['k_pos', 'k_stim', 'ti_in_rf', 'apc', 'cur_mean', 'cur_sd', 'or_mean', 'or_sd', 'models'] 
         measure_names = (['apc', 'cur_mean', 'cur_sd', 'or_mean', 'or_sd', 'models' ])
-        measures = [ fit.values, cds['cur_mean'].values, cds['cur_sd'].values,
-                    cds['or_mean'].values, cds['or_sd'].values, cds['models'].values]
+#        measures = [ fit.values, cds['cur_mean'].values, cds['cur_sd'].values,
+#                    cds['or_mean'].values, cds['or_sd'].values, cds['models'].values]
+        measures = [ rbest, apc.coords['cur_mean'][ind].values, apc.coords['cur_sd'][ind].values,
+                    apc.coords['or_mean'][ind].values, apc.coords['or_sd'][ind].values,
+                    apc.coords['models'][ind].values]
     if 'ti' in measure_list:
         measures.append(dn.SVD_TI(da, rf))
         measure_names.append('ti')
@@ -115,7 +136,7 @@ for cnn_resp_name, null  in zip(cnn_resp, nulls):
         measure_names.append('ti_av_cov')
         
     if 'ti_in_rf' in measure_list:
-        measures.append(dn.ti_in_rf(da, w))
+        measures.append(dn.ti_in_rf(da, w).values)
         measure_names.append('ti_in_rf')
         
     if 'k_stim' in measure_list and 'k_pos' in measure_list:

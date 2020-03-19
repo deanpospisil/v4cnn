@@ -181,7 +181,12 @@ plt.savefig(fig_dir + 'CNN and APC.pdf')
 plt.figure()
 plt.scatter(cnn_orth_apc_r2, apc_r2)
 plt.xlabel('CNN ORTH APC (R)')
-plt.ylabel('APC (R)')
+plt.ylabel('APC (R)')# Note the difference in argument order
+model = sm.OLS(y, X).fit()
+predictions = model.predict(X) # make the predictions by the model
+
+# Print out the statistics
+model.summary()
 plt.ylim(0,1);plt.xlim(0,1)
 plt.plot([0,1], [0,1])
 plt.axis('square')

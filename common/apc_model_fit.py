@@ -124,18 +124,22 @@ def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
     dmod = dmod.reindex_like(dmod+da)#reindex to the intersection of both
 
     da = da - da.mean(('shapes'))
+    da = da.load()
     ats = dmod.attrs
     dmod = dmod - dmod.mean(('shapes'))
-    dmod = dmod/dmod.vnorm(('shapes'))
+    #dmod = dmod/dmod.vnorm(('shapes'))
+    dmod = dmod/dmod.dot(dmod, 'shapes')**0.5
     #dmod = dmod/(dmod**2).sum('shapes')
 
-    resp_n = da.vnorm(('shapes'))
+    #resp_n = da.vnorm(('shapes'))
+    resp_n = da.dot(da, 'shapes')**0.5
     #resp_n = (da**2).sum(('shapes'))**0.5
 
     proj_resp_on_model = da.dot(dmod)
 
     if not fit_over_dims == None:
-        resp_norm = resp_n.vnorm(fit_over_dims)
+        #resp_norm = resp_n.vnorm(fit_over_dims)
+        resp_norm = resp_n.dot(resp_n, fit_over_dims)**0.5
         #resp_norm = (resp_n**2).sum(fit_over_dims)**0.5
 
         proj_resp_on_model_var = proj_resp_on_model.sum(fit_over_dims)
@@ -159,12 +163,16 @@ def cor_resp_to_model(da, dmod, fit_over_dims=None, prov_commit=False):
     cor[cor==-666] = np.nan
 
     for key in model_fit_params.coords.keys():
-        cor[key] = ('unit', np.squeeze(model_fit_params[key]))
+        if len(model_fit_params[key].values.shape + (1,))>1:
+            cor[key] = ('unit', np.squeeze(model_fit_params[key]))
+    cor['models'] = ('unit', corarg.values)
+    print(cor)
 
-    if prov_commit==True and ('model' in ats.keys()):
-        sha = dm.provenance_commit(top_dir)
-        cor.attrs['analysis'] = sha
-        cor.attrs['model'] = ats['model']
+#
+#    if prov_commit==True and ('model' in ats.keys()):
+#        sha = dm.provenance_commit(top_dir)
+#        cor.attrs['analysis'] = sha
+#        cor.attrs['model'] = ats['model']
 
     return cor
 

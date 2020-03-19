@@ -25,9 +25,12 @@ response_file = resp_dir  + 'data/responses/bvlc_reference_caffenet_wyeth_check.
 
 
 
-base_image_nm = 'test_imgs_wyeth'
-net = '/home/dean/caffe/models/bvlc_reference_caffenet/bvlc_reference_caffenet'
-ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
+base_image_nm = 'Kiani_ImageSet'
+net = '/home/dean/caffe.orig/models/bvlc_reference_caffenet/bvlc_reference_caffenet'
+ann_dir = '/home/dean/caffe.orig/models/bvlc_reference_caffenet/'
+
+
+
 stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=range(3))
 da = cf.get_net_resp(base_image_nm, ann_dir,
                      net.split('net/')[1].split('.')[0],

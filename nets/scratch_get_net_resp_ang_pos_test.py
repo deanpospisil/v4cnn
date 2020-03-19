@@ -27,20 +27,29 @@ import apc_model_fit as ac
 import d_curve as dc
 import d_img_process as imp
 import scipy.io as l
-
-
 #%%
-ann_dir = '/home/dean/caffe.orig/models/bvlc_reference_caffenet/'
+ann_dir = '/home/dean/caffe/models/bvlc_reference_caffenet/'
 response_folder = '/loc6tb/data/responses/'
 #response_folder = '/dean_temp/data/responses/'
 baseImageList = ['PC370', 'formlet']
 base_image_nm = 'imgnet_masked'
-base_image_nm = baseImageList[0]
+base_image_nm = 'angPosTest'
 
 
 all_iter = [
 'bvlc_reference_caffenet',
-#'blvc_caffenet_iter_1',
+#'bvlc_caffenet_reference_increase_wt_cov_random0.9',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.2',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.3',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.4',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.5',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.6',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.7',
+#'bvlc_caffenet_reference_increase_wt_cov_fc6_0.8',
+#'bvlc_caffenet_reference_increase_wt_cov_0.5',
+#'bvlc_caffenet_reference_increase_wt_cov_0.75',
+#'bvlc_caffenet_reference_increase_wt_cov_0.95'
+'blvc_caffenet_iter_1',
 ]
 #base_name = 'bvlc_caffenet_reference_shuffle_layer_'
 #all_iter += [base_name+str(layer) for layer in range(7)]
@@ -56,40 +65,36 @@ else:
     all_iter = all_iter*len(deploys)
 
 img_n_pix = 227
-max_pix_width = [ 32.,]
+max_pix_width = [ 64.,]
 
-mat = l.loadmat(top_dir + 'img_gen/PC3702001ShapeVerts.mat')
-s = np.array(mat['shapes'][0])
-
-#s = np.load(top_dir + 'img_gen/dp_ang_pos_verts.npy')
+s = np.load(top_dir + 'img_gen/dp_ang_pos_verts_shift.npy')
 base_stack = imp.center_boundary(s)
+
+n_rot = 100
+rotation = np.linspace(*(0, np.deg2rad(360-360./n_rot), n_rot))
 scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
-shape_ids = range(-1, 370)
+shape_ids = np.arange(18.)
+center_image = np.ceil(img_n_pix/2)
+x = (center_image, center_image, 1)
+y = (center_image, center_image, 1)
+stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(
+                                        shapes=shape_ids,
+                                        scale=scale,
+                                        x=x,
+                                        y=y,
+                                        rotation=rotation)
+
+shape_ids = range(0, 18)
 center_image = round(img_n_pix/2.)
-y = (64, 164, 51)
-#x = (center_image, center_image, 1)
-y = x
-amp = (100, 255, 2)
-#offsetsx = np.array(list(max_pix_width*np.array([0.5, 1, 2])))
-shape_ids = np.arange(-1, 370, 1)
-
-scale = max_pix_width/dc.biggest_x_y_diff(base_stack)
-
-stim_trans_cart_dict, stim_trans_dict = cf.stim_trans_generator(shapes=shape_ids,
-                     scale=scale,
-                     x=x,
-                     y=y,
-                     amp = amp)
-
-
 
 #%%
 for  iter_name, deploy  in zip(all_iter, deploys):
     print(iter_name)
     #iteration_number = int(iter_name.split('iter_')[1].split('.')[0])   
-    response_description = (iter_name+ 'pix_width'+ str(scale)
-                            + '_x_' + str(x) + '_y_' + str(y)
-                            + str(base_image_nm)  +'.nc')
+    response_description = (iter_name+ '_pix_width'+ str(max_pix_width)
+                            + '_x_' + str(x) + '_y_' + str(y) 
+                            +'_rots_'+ str(n_rot) + '_' +str(base_image_nm)  +
+                            '.nc')
     response_file = (response_folder + response_description)
 
     if  os.path.isfile(response_file):

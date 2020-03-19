@@ -29,8 +29,8 @@ def cor_over_dim(a, b, dims):
 
 
 data_dir = '/loc6tb/'
-fns  = ['bvlc_reference_caffenetpix_width[32.0]_x_(113.0, 113.0, 1)_y_(113.0, 113.0, 1)_offsets_fine_PC370'
- ,'blvc_caffenet_iter_1pix_width[32.0]_x_(113.0, 113.0, 1)_y_(113.0, 113.0, 1)_offsets_fine_PC370']
+fns  = ['v4cnn/bvlc_reference_caffenetpix_width[32.0]_x_(113.0, 113.0, 1)_y_(113.0, 113.0, 1)_offsets_fine_PC370'
+ ,'v4cnn/blvc_caffenet_iter_1pix_width[32.0]_x_(113.0, 113.0, 1)_y_(113.0, 113.0, 1)_offsets_fine_PC370']
 #%%
 #need to reduce size of dataarray according to when there are no responses.
 labels = ['trained', 'untrained']
@@ -57,7 +57,7 @@ for fn, label in zip(fns, labels):
             ar = a.isel(lr=1).sum('shapes')
             
             
-            a = a.reshape(2, 31**2).T
+            a = a.values.reshape(2, 31**2).T
             B = da.isel(unit=unit, offsetsx=offset).squeeze().transpose('shapes', 'shapes2').values
             B = B.reshape(31**2, 1)
             non_zero_ind = a==0

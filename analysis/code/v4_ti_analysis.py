@@ -21,6 +21,8 @@ def norm_av_cov(unit, return_num_den=False):
         return numerator/denominator
     
 top_dir = '/Users/deanpospisil/Desktop/modules/v4cnn/'
+top_dir = '/home/dean/Desktop/v4cnn/'
+
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt 
@@ -41,6 +43,8 @@ cav_pref = []
 vex_pref = []
 vex_pref_snr = []
 cav_pref_snr = []
+
+cat_true = cat==1
 
 for i, a_cat in enumerate(cat):
    if a_cat == 1:

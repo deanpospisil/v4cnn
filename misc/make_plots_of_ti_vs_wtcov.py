@@ -6,15 +6,15 @@ Created on Tue May 30 20:36:19 2017
 """
 import os, sys
 import matplotlib.pyplot as plt
-import pickle
+import pickle as pk
 from scipy.stats import linregress
 import numpy as np
-
+import pandas as pd
 top_dir = os.getcwd().split('v4cnn')[0]
 sys.path.append(top_dir+'xarray/')
 #%%
 import xarray as xr
-top_dir = top_dir + '/v4cnn'
+top_dir = top_dir + 'v4cnn'
 
 #%%
 if sys.platform == 'linux2': 
@@ -27,15 +27,15 @@ layer_labels = ['conv2', 'conv3', 'conv4', 'conv5', 'fc6']
     
 with open(top_dir + '/data/an_results/ti_vs_wt_cov_exps_all_lays.p', 'rb') as f:    
     try:
-        an = pickle.load(f, encoding='latin1')
+        an = pk.load(f, encoding='latin1')
     except:
-        an = pickle.load(f)
+        an = pk.load(f)
         
 with open(top_dir + '/nets/netwtsd.p', 'rb') as f:    
     try:
-        netwtsd = pickle.load(f, encoding='latin1')
+        netwtsd = pk.load(f, encoding='latin1')
     except:
-        netwtsd = pickle.load(f)
+        netwtsd = pk.load(f)
 #net num descriptor
 net_num_desc = [
         'Orig.',
