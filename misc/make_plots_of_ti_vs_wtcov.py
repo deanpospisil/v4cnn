@@ -63,7 +63,7 @@ wt_layer_name_dict = {'relu1':'conv1', 'norm1':'conv1', 'pool1':'conv1', 'conv1'
                       'relu4':'conv4', 'conv4':'conv4',
                       'relu5':'conv5', 'conv5':'conv5', 'pool5':'conv5',
                       'fc6':'fc6', 'relu6':'fc6'}
-def ti_wt_cov_scatters(net_nums, layer_names, an, alpha=1, figsize=None):
+def ti_wt_cov_scatters(net_nums, layer_names, an, alpha=1, figsize=None, s=10):
 #net_nums = range(len(an[1][:]))
     i = 0 
     wt_layer_name_dict = {'relu1':'conv1', 'norm1':'conv1', 'pool1':'conv1', 'conv1':'conv1',
@@ -84,11 +84,11 @@ def ti_wt_cov_scatters(net_nums, layer_names, an, alpha=1, figsize=None):
             plt.subplot(len(net_nums), len(layer_names), i)
             x = wts[wts.layer_label==wt_layer_name_dict[layer_name]]
             y = resps[resps.layer_label.values.astype(str)==layer_name]
-            plt.scatter(x, y, s=2, edgecolors='none', color='k', alpha=alpha)
+            plt.scatter(x, y, s=s, edgecolors='none', color='k', alpha=alpha)
             slope, intercept, rvalue, pvalue, stderr = linregress(x,y)
             plt.plot([np.min(x), np.max(x)], [(np.min(x)*slope+intercept), np.max(x)*slope+intercept])
-            plt.scatter([-0.1,],[np.median(y),], color='r', s=10)
-            plt.scatter([np.median(x),], [-0.1,], color='r', s=10)
+            plt.scatter([-0.1,],[np.median(y),], color='r', s=s+4)
+            plt.scatter([np.median(x),], [-0.1,], color='r', s=s+4)
 
             plt.axis('square')
             plt.xlim(-0.1,1);plt.ylim(-0.1,1)
@@ -103,7 +103,7 @@ def ti_wt_cov_scatters(net_nums, layer_names, an, alpha=1, figsize=None):
                 plt.ylabel('Response Cov.')
             if j == 0:
                 plt.title(layer_name + '\n r='+ str(np.round(np.corrcoef(x,y)[0,1], 2)))
-            plt.grid();
+            #plt.grid();
         
     return fig
 
@@ -148,10 +148,10 @@ def ti_ti_cov_scatters(net_nums1, net_nums2,  layer_names, an):
         
     return fig
 #%%
-imtype ='.png'
+imtype ='.pdf'
 net_nums = [0,]
-layer_names = ['conv2', 'conv3','conv4', 'conv5', 'fc6']
-ti_wt_cov_scatters(net_nums, layer_names, an)  
+layer_names = ['conv2', 'conv3','conv4', 'conv5']
+ti_wt_cov_scatters(net_nums, layer_names, an, s=7)  
  
 plt.savefig(top_dir+'/analysis/figures/images/ti/ti_wt_cov_orig_just_conv' + imtype, bbox_inches='tight')
 #%%
@@ -313,6 +313,44 @@ for an_rf in rf[:10000]:
     in_rf = np.sum(resp_plus_close, 0) == np.sum(stim_in, 0)
     in_rf_num.append(sum(in_rf))
 plt.plot(in_rf_num)
+    
+#%%
+wtcov = an[1][0]
+layer_labels = ['conv2', 'conv3', 'conv4', 'conv5', 'fc6']
+f = open('/Users/deanpospisil/Desktop/modules/v4cnn/misc/low_wtcov.txt', 'w')
+
+for label in layer_labels:
+    sp = wtcov[wtcov.layer_label.values == label]
+    inds = sp.argsort().values
+    for ind in  inds[::1][:5]:
+        f.write(str(sp[ind].layer_label.values) + ' ' + str(sp[ind].layer_unit.values))
+        f.write('\n')
+f.close()
+
+#%%
+layer_names = ['conv2', 'conv3','conv4', 'conv5']
+colors = []
+plt.figure(figsize=(3,2.5))
+for layer_name in layer_names:
+    x = wts[wts.layer_label==wt_layer_name_dict[layer_name]]
+    
+    plt.hist(x, range=(0,1), cumulative=True,bins=1000,histtype='step', 
+             normed=True, lw=3, alpha=0.7)
+    plt.xlim(0,0.98)
+
+plt.xlabel('Weight correlation')
+plt.ylabel('Fraction units')
+plt.xticks([0,0.25,0.5,.75,1]);plt.yticks([0,0.25,0.5,.75,1])
+plt.gca().set_xticklabels([0,0.25,0.5,.75,1]);
+plt.gca().set_yticklabels([0,0.25,0.5,.75,1]);
+layer_names = ['2', '3','4', '5']
+
+plt.legend(layer_names, loc='lower right', title='DNN Layer', fontsize=10)
+plt.tight_layout()
+plt.savefig(top_dir +'/analysis/figures/images/texture/weight_correlatio.pdf')
+    
+
+    
     
 
 

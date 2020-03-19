@@ -26,7 +26,41 @@ import numpy as np
 import matplotlib.pyplot as plt 
 fn = top_dir +'data/responses/v4_ti_resp.nc'
 v4 = xr.open_dataset(fn)['resp'].load()
+t = [norm_av_cov(v4[i] - v4[i].mean('shapes')) for i in range(80)]
 
+
+max_mean_ind = v4.max('shapes').argmax('x')
+trials = 5
+n_repeats = 40
+av_r = []
+for unit, pos in zip(v4, max_mean_ind):
+    resp = unit[int(pos.values)].dropna('shapes').values
+    a = np.random.poisson(lam=resp, size=(n_repeats, trials, len(resp)))
+    repeats = np.mean(a, 1)
+    
+    resp = resp - np.mean(resp)
+    resp = resp / sum(resp**2)**0.5
+    
+    repeats = repeats - np.mean(repeats, 1, keepdims=True)
+    repeats = repeats / np.sum(repeats**2, 1, keepdims=True)**0.5
+
+    av_r.append(np.mean(np.dot(resp, repeats.T)))
+   
+plt.scatter(av_r, t)  
+plt.xlabel('Average R Perfect Model')
+plt.ylabel('Translation Invariance')
+
+plt.figure()
+plt.scatter(v4.max(['shapes','x'])-v4.min(['shapes','x']), t)
+plt.xlabel('Neuron range')
+plt.ylabel('Translation Invariance')
+
+plt.figure()
+plt.scatter(v4.max(['shapes', 'x'])-v4.min(['shapes', 'x']), av_r)
+plt.ylabel('Average R Perfect Model')
+plt.xlabel('Neuron range')
+
+#%%
 cat = pd.read_csv(top_dir + 'data/responses/PositionData_Yasmine/TXT_category', delimiter=' ')
 cat = cat['c'].values
 
@@ -90,3 +124,13 @@ for ind in inds[:]:
             ' Prefer convex: ' + str(cat[ind]==1)+
             ' cell:' + str(ind))
     plt.savefig(top_dir +'cell:' + str(ind))
+    
+#%%
+for i in range(80):  
+    unit = v4[i]
+    unit = unit.transpose('shapes','x')
+    unit = unit.dropna('x', 'all').dropna('shapes', 'all')
+    p = unit.to_pandas()
+    p.to_csv(top_dir + 'data/responses/ti_csvs/' + str(i))    
+
+

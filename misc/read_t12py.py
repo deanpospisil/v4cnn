@@ -28,6 +28,7 @@ def nan_unrag_col(mat, needed_len=25):
 cells = os.listdir(top_dir+ 'data/responses/apc_orig')
 cells = [cell for cell in cells if not '.' in cell]
 all_cell_data = []
+all_cellt_data = []
 cell_names = []
 for cell in cells:
     text_file = open(top_dir + 'data/responses/apc_orig/'+ cell, "r")
@@ -63,6 +64,7 @@ for cell in cells:
     change_shape_id = (trial_info_01[:,1]>=38)*-4
     trial_info_01[:, 1] = trial_info_01[:, 1] + change_shape_id
     
+    
     shape_index = []
     for trial in trial_info_01:
         shape_id = int(trial[1])
@@ -79,16 +81,29 @@ for cell in cells:
             
         resp_time_course[a_shape_index].append(trace)
     resp_time_course = np.array(resp_time_course)
-
+    
+    #here is where I get the time course.
+    maxtrials = (np.max([len(trials) for trials in resp_time_course]))
     post_stim_resp = [[] for key in keys[:,0]]
     for i, a_shape in enumerate(resp_time_course):
         post_stim_resp[i] = np.sum(np.array(a_shape)[:, (time>0)*(time<500)], 1)
+    nsamps = np.shape(time)[0]
+    nstim = len(keys)
+    resp = np.zeros((nstim, maxtrials, nsamps))
+    resp[...] = np.nan
+    
+    for j, a_stim in enumerate(resp_time_course):
+        resp[j, :len(a_stim), :] = np.array(a_stim)
 
             
     post_stim_resp_nan = nan_unrag_col(post_stim_resp)
     cell_name = clines[0].split()[1]
     a_cell = xr.DataArray(post_stim_resp_nan, dims=('shapes', 'trials'), 
-                 coords=(np.arange(-1,370), range(25)), name=cell_name)        
+                 coords=(np.arange(-1,370), range(25)), name=cell_name) 
+    
+    a_cellt = xr.DataArray(resp, dims=('shapes', 'trials', 't'), 
+                 coords=(np.arange(-1,370), range(maxtrials), time), name=cell_name) 
+      
     start_time = float(clines[1].split()[1])
     duration = float(clines[2].split()[1])
     fs = float(clines[3].split()[1])  
@@ -97,9 +112,16 @@ for cell in cells:
     a_cell.attrs['fs'] = fs
     cell_names.append(cell_name)
     all_cell_data.append(a_cell)
+    all_cellt_data.append(a_cellt)
 
-cells_ds = xr.concat(all_cell_data, dim='unit')
-cells_ds['w_lab'] = ('unit', cell_names)
-cells_ds = cells_ds.to_dataset(name='resp')
-cells_ds.to_netcdf(top_dir+ 'data/responses/apc_orig/apc370_with_trials.nc')
+#cells_ds = xr.concat(all_cell_data, dim='unit')
+#cells_ds['w_lab'] = ('unit', cell_names)
+#cells_ds = cells_ds.to_dataset(name='resp')
+#cells_ds.to_netcdf(top_dir+ 'data/responses/apc_orig/apc370_with_trials.nc')
+
+
+cells_dst = xr.concat(all_cellt_data, dim='unit')
+cells_dst['w_lab'] = ('unit', cell_names)
+cells_dst = cells_dst.to_dataset(name='resp')
+cells_dst.to_netcdf(top_dir+ 'data/responses/apc_orig/apc370t.nc')
 
