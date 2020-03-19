@@ -44,7 +44,7 @@ def beautify(ax=None, spines_to_remove = ['top', 'right']):
         ax = [ax,]
     for a_ax in ax:
         # Remove 'spines' (axis lines)
-        for spine in spines_to_remove:
+r        for spine in spines_to_remove:
             a_ax.spines[spine].set_visible(False)
     
         # Make ticks only where there are spines
@@ -445,6 +445,7 @@ if 'cnn_an' not in locals() or goforit:
                                     
                                     
 
+<<<<<<< HEAD
     #da_0 = da_0[apc.coords['shapes'].values]
     apc = apc - apc.mean('shapes')
     da_0n = apc/(apc.dot(apc, 'shapes')**0.5)
@@ -474,6 +475,14 @@ if 'cnn_an' not in locals() or goforit:
         corrected_v4_apc.append(r2_unbiased(y_expt, da_0n[..., rind].values, n=n, m=len(y_expt)))
         
         
+=======
+fn = results_dir +  fns[0]
+try:
+    an=pk.load(open(fn,'rb'), 
+               encoding='latin1')
+except:
+    an=pk.load(open(fn,'rb'))
+>>>>>>> 4b9ff218dfb66876a9eca6a5220ceffaa6d987fb
 #%%
 #labels_file = '/home/dean/caffe/' + 'data/ilsvrc12/synset_words.txt'
 #labels = np.loadtxt(labels_file, str, delimiter='\t')
@@ -1653,8 +1662,13 @@ for ax, label in zip(ax_list, labels):
       fontsize=14, fontweight='bold', va='top', ha='right')
 
 v4_name = 'V4_362PC2001'
+<<<<<<< HEAD
 v4_resp_apc_b = xr.open_dataset(data_dir + 'data/responses/v4cnn/' + v4_name + '.nc')['resp'].load()
 v4_resp_apc_b = v4_resp_apc.transpose('shapes', 'unit')
+=======
+v4_resp_apc_b = xr.open_dataset(data_dir + 'data/responses/' + v4_name + '.nc')['resp'].load()
+#v4_resp_apc_b = v4_resp_apc.transpose('shapes', 'unit')
+>>>>>>> 4b9ff218dfb66876a9eca6a5220ceffaa6d987fb
 k_apc = kurtosis(v4_resp_apc_b).values
 
 ax = ax_list[0]
@@ -2272,10 +2286,26 @@ for layer in layers_to_examine:
     num_greater += np.sum(a>0.7)
 
 
+#%%
+k = kurtosis(da_0)
 
+
+<<<<<<< HEAD
 #%%
 
 layers_to_examine = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5', 'fc6', 'fc7', 'fc8']
+=======
+layers_to_examine = ['relu1','pool1', 'norm1', 'relu2','pool2', 'norm2', 'pool5', 
+                     'relu3','relu4','relu5', 'relu6','relu7',]
+var = np.concatenate([alt['k_stim'].iloc[layer==all_lays].dropna().ravel() 
+                        for layer in layers_to_examine])
+n_samps = len(var)
+ax.hist(var, bins=n_bins, histtype='step', weights=[1./n_samps,]*n_samps,
+         color='m', range=[0,370], log=True,)
+
+layers_to_examine = ['conv1','conv2','conv3','conv4','conv5', 'fc6','fc7','fc8']
+all_lays= alt.index.get_level_values(0)
+>>>>>>> 4b9ff218dfb66876a9eca6a5220ceffaa6d987fb
 
 layers_to_examine = ['relu1','pool1', 'norm1', 'relu2','pool2', 'norm2', 'pool5', 
                     'relu3','relu4','relu5', 'relu6','relu7',]
